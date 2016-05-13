@@ -120,16 +120,15 @@ newlinemsg:	.asciz '\r\n'
 
 ; include the various subsystem implementations
 
-		.include 'io.asm'
 		.include 'strings.asm'
 		.include 'timer.asm'
-		.include 'uart.asm'
 		.include 'memory.asm'
 		.include 'misc.asm'
 		.include 'tasks.asm'
-		.include 'testtasks.asm'
-		.include 'init.asm'
-		.include 'uart-old.asm'
+		.include 'io.asm'
+
 		.include 'driver.asm'
+		.include 'uart.asm'
 
-
+		.include 'init.asm'
+		.include 'testtasks.asm'
