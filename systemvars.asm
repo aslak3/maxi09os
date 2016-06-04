@@ -11,8 +11,11 @@ interrupttable:	.rmb 2*INTCOUNT
 ; task switcher state
 
 currenttask:	.rmb 2
-readytasks:	.rmb 2
-waitingtasks:	.rmb 2
+
+readytasks:	.rmb LIST_SIZE
+waitingtasks:	.rmb LIST_SIZE
+
+rescheduleflag:	.rmb 1
 
 idletask:	.rmb 2
 
@@ -23,3 +26,10 @@ task2save:	.rmb 2
 
 interruptnest:	.rmb 1
 
+; interrupt table - handlers
+
+inthandlers:	.rmb 8*2
+
+; interrupt table - masks
+
+intmasks:	.rmb 8

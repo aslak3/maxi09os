@@ -7,7 +7,7 @@ nibtoaschex:	anda #0x0f		; mask out the high nibble
 		cmpa #0x39		; see if we are past '9'
 		ble nibtoaschexout	; no? number then, so we're done
 		adda #0x07		; yes? letter then, add 'A'-'9'
-nibtoaschexout:	sta ,x+			; add it to the string
+nibtoaschexout:	sta ,x+			; add it
 		rts		
 
 ; bytetoaschex - convert a byte in a to two characters in x, advancing it

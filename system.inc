@@ -10,14 +10,27 @@ NAK		.equ 0x15
 EOT		.equ 0x04
 SP		.equ 0x20
 
+; list struct offsets
+
+LIST_HEAD	.equ 0
+LIST_TAIL	.equ 2
+LIST_TAILPREV	.equ 4
+LIST_SIZE	.equ 6
+
+; node struct offsets
+
+NODE_NEXT	.equ 0
+NODE_PREV	.equ 2
+NODE_SIZE	.equ 4
+
 ; task struct offsets
 
-TASK_NEXT	.equ 0
-TASK_PC		.equ 2
-TASK_SP		.equ 4
-TASK_SIGWAIT	.equ 6
-TASK_SIGRECVD	.equ 7
-TASK_SIZE	.equ 8
+TASK_NODE	.equ 0
+TASK_PC		.equ NODE_SIZE+0
+TASK_SP		.equ NODE_SIZE+2
+TASK_SIGWAIT	.equ NODE_SIZE+4
+TASK_SIGRECVD	.equ NODE_SIZE+5
+TASK_SIZE	.equ NODE_SIZE+6
 
 ; the list of available drivers
 

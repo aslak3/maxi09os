@@ -1,6 +1,10 @@
 ; our two tasks
 
-init:		ldx #task1
+startedmsg:	.asciz 'init starting\r\n'
+
+init:		debug #startedmsg
+
+		ldx #task1
 		lbsr createtask
 		ldy #readytasks
 		lbsr addtaskto

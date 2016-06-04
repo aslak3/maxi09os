@@ -14,10 +14,12 @@ timerinit:	lda #0b11000000
 
 		; interrupt handler
 		ldx #timerhandler
+		stx inthandlers+(7*2)
 
 		; interrupt register
 		lda #INTMASK6522
 		sta IRQSOURCESS		; for the timer interrupt
+		sta intmasks+7
 
 		rts
 

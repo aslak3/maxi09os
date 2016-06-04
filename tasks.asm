@@ -14,31 +14,18 @@ createtask:	tfr x,y			; save initital pc in y
 		stu TASK_SP,x		; set stack pointer in task struct
 		sty TASK_PC,x		; save pc in task struct
 		clra			; for neatness...
-		clrb			; ...
-		std TASK_NEXT,x		; clear the next pointer in the task
 		sta TASK_SIGWAIT,x	; clear the signal bits
 		sta TASK_SIGRECVD,x	; yeap, both of them
 
 		rts
 
 addtaskto:	lbsr disable
-		ldu ,y			; get current first
-		stu TASK_NEXT,x		; new node's next is old first
-		stx ,y			; make the new one the first
+		lbsr addtail
 		lbsr enable
 		rts
 
-remtaskfrom:	lbsr disable
-		ldu TASK_NEXT,x		; get current next
-		clra
-		clrb
-		std TASK_NEXT,x
-remtaskloop:	cmpx TASK_NEXT,y
-		beq remtaskfound
-		ldy TASK_NEXT,y
-		bne remtaskloop
-		bra remtaskout		; not found, ignore
-remtaskfound:	stu TASK_NEXT,y		; set previous to one after removed
+remtask:	lbsr disable
+		lbsr remove
 remtaskout:	lbsr enable
 		rts
 
@@ -49,8 +36,7 @@ wait:		ldx currenttask
 		bne waitout		; already got the signal?
 					; if so we don't wait
 
-		ldy #readytasks		; remove the current task from
-		lbsr remtaskfrom	; ... the ready queue
+		lbsr remtask		; remove task from whatever
 
 		ldy #waitingtasks	; and add it to
 		lbsr addtaskto		; .... the waiting queue
@@ -72,8 +58,7 @@ signal:		ora TASK_SIGRECVD,x	; or in the new sigs with current
 		anda TASK_SIGWAIT,x	; mask the current listening set
 		beq signalout		; other end not listening; no wakey
 
-		ldy #waitingtasks	; renove the task
-		lbsr remtaskfrom	; ... from the waiting queue
+		lbsr remtask		; remove from whatever queue
 
 		ldy #readytasks		; and put it on
 		lbsr addtaskto		; ... the ready queue
@@ -82,38 +67,60 @@ signal:		ora TASK_SIGRECVD,x	; or in the new sigs with current
 
 signalout:	rts
 
+; pause the task in x, moving it to the waiting list
+
+pausetask:	pshs y
+		lbsr disable
+		lbsr remove
+		ldy #waitingtasks
+		lbsr addtail
+		lbsr enable
+		puls y
+		rts
+
+; resume the task in x, moving it to the ready list
+
+resumetask:	pshs y
+		lbsr disable
+		lbsr remove
+		ldy #readytasks
+		lbsr addtail
+		lbsr enable
+		puls y
+		rts
+
+; timer
+
 timerhandler:	lda T1CL6522		; clear interrupt
 
-yield:		ldx currenttask		; get the current task struct
+yield:		clr LED
+
+		ldx currenttask		; get the current task struct
 		sts TASK_SP,x		; save the current stack pointer
 
-		ldy readytasks		; start at the head
-		tfr y,u			; original first task
+		ldy #readytasks		; start at the head
+		ldx LIST_HEAD,y
+		ldy NODE_NEXT,x		; get the first node
 		beq scheduleidle	; no tasks, so idle
-		ldy TASK_NEXT,y		; this will become the new first
-		beq schedulefirst	; only one task, so done already
 
-		sty readytasks		; remove first orig tasks
-		
-findlastloop:	tfr y,x
-		ldy TASK_NEXT,y		; get the next task
-		bne findlastloop
-		stu TASK_NEXT,x		; make new end task old start
-		ldy #0			; no following node
-		sty TASK_NEXT,u		; make prev first the last task
+		ldy NODE_NEXT,y		; this will become the new first
+		beq finishschedule	; only one task, so done already
 
-		bra finishschedule
-
-scheduleidle:	ldx idletask
-		bra finishschedule
-
-schedulefirst:	ldx readytasks
+		ldy #readytasks
+		lbsr remtail
+		lbsr addhead
 
 finishschedule:	stx currenttask		; set the pointer for current task
 		lds TASK_SP,x
 		rti			; resume next task
 
-idler:		bra idler
+scheduleidle:	ldx idletask
+		bra finishschedule
+
+idler:		lda #0xff
+		sta LED
+		bra idler
+
 
 ;;;;;;;;;;;;;;; DEBUG
 
