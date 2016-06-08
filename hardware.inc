@@ -40,6 +40,14 @@ PORTB		.equ 1
 PORTC		.equ 2
 PORTD		.equ 3
 
+; baud rates - DLL value, DLM is 0
+
+B9600		.equ 0x0c
+B19200		.equ 0x06
+B38400		.equ 0x03
+B57600		.equ 0x02
+B115200		.equ 0x01
+
 ; 6522
 
 BASE6522	.equ 0x8100

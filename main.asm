@@ -68,9 +68,6 @@ clearloop:	clr ,x+
 		ldy #waitingtasks
 		lbsr initlist
 
-;		ldx #greetingmsg	; greetings!
-;		lbsr serialputstr	; output the greeting
-
 		lda #0xff		; led on
 		sta LED
 		ldy #0xd000		; small delay
@@ -81,12 +78,9 @@ clearloop:	clr ,x+
 
 		ldx #idler
 		lbsr createtask
+		debug #idlecreatedmsg
+		debugx
 		stx idletask
-
-		clra
-		clrb
-		std readytasks
-		std waitingtasks
 
 		ldx #init
 		lbsr createtask
@@ -100,6 +94,8 @@ clearloop:	clr ,x+
 		lbsr enable
 
 		rti			; start init
+
+idlecreatedmsg:	.asciz "Idle task created "
 
 ; enable interrupts
 

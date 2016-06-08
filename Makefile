@@ -11,7 +11,7 @@ INC = main.inc
 MAIN_ASM = main.asm
 ASMS = memory.asm timer.asm systemvars.asm strings.asm \
 	tasks.asm testtasks.asm init.asm driver.asm io.asm uart.asm \
-	debug.asm
+	debug.asm lists.asm
 
 INCS = hardware.inc
 
@@ -30,7 +30,7 @@ $(INC): $(MAP)
 	./map2inc.pl < $(MAP) > $(INC)
 
 clean:
-	rm -f $(BIN) $(INC) *.rel *.ihx *.map *.sym
+	rm -f $(BIN) $(INC) *.rel *.ihx *.map *.sym DEADJOE
 
 doupload:
 	$(UPLOAD) -f $(BIN) -s $(PROG_SERIAL)

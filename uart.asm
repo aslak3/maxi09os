@@ -70,10 +70,10 @@ uartopen:	ldx #uartportflags	; determine if uart is in use
 		sta LCR16C654,y
 		lda #0b10000000
 		sta MCR16C654,y		; clock select
-		lda #0x06
+		lda #B19200
 		sta DLL16C654,y
 		lda #0x00
-		sta DLM16C654,y		; 9600 baud
+		sta DLM16C654,y		; 19200
 		lda #0b00000011
 		sta LCR16C654,y		; 8n1 and back to normal
 		ldy #uarthandler
@@ -114,30 +114,35 @@ uartclose:	lda UART_PORT,x		; obtain the port number
 ;		puls y
 ;		rts
 
-pausedmsg:	.asciz 'task paused\r\n'
+pausedmsg:	.asciz 'task paused '
 wakedmsg:	.asciz 'task waked\r\n'
+gotcharmsg:	.asciz 'got char\r\n'
+donereadmsg:	.asciz 'done read\r\n'
 
 uartread:	pshs y
-		lbsr disable
-1$:		ldb UART_RX_COUNT_U,x	; get counter
-		cmpb UART_RX_COUNT_H,x	; compare..
+1$:		lbsr disable
+		ldb UART_RX_COUNT_U,x	; get counter
+		cmpb UART_RX_COUNT_H,x	; compare..,
 		bne 2$			; got a character? then return it
 		tfr x,y			; save the device pointer
 		ldx currenttask		; get current task
 		lbsr pausetask		; move the task to the waiting list
 		debug #pausedmsg
-		lbsr enable
+		debugx
 		swi			; reschedule
+		lbsr enable
 		debug #wakedmsg
 		tfr y,x			; restore the device pointer
 		bra 1$			; now go back and try again
-2$:		leau UART_RX_BUF,x	; get the buffer
+2$:		debug #gotcharmsg
+		leau UART_RX_BUF,x	; get the buffer
 		lda b,u			; get the last char written to buf
 		incb			; move along to the next
 		andb #31		; wrapping to 32 byte window
 		stb UART_RX_COUNT_U,x	; and save it
 		lbsr enable
 		puls y
+		debug #donereadmsg
 		rts
 
 ; write to the device in x, reg a, waiting until it's been sent

@@ -42,8 +42,8 @@ remhead:	pshs u			; save u
 		stx LIST_HEAD,y		; make this the new head
 		exg u,x
 		sty NODE_PREV,u		; and make this nodes prev the head
-		puls u			; restore u
-1$:		rts
+1$:		puls u			; restore u
+		rts
 
 ; remove the tail from list in y, old tail in x
 
@@ -56,8 +56,8 @@ remtail:	pshs u			; save u
 		leay 2,y		; move to the tail end of header
 		sty NODE_NEXT,u		; and make this nodes next the tail
 		leay -2,y		; need to restore the real header
-		puls u			; restore u
-1$:		rts
+1$:		puls u			; restore u
+		rts
 
 ; remove a node in x
 
