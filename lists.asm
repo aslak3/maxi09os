@@ -23,14 +23,14 @@ addhead:	pshs u			; save u
 
 ; add node at x to list in y at tail
 
-addtail:	pshs u			; save u
+addtail:	pshs u,y		; save u and y
 		ldu LIST_TAILPREV,y	; get the current tail
 		stx NODE_NEXT,u		; set old tail node's next to new node
 		stu NODE_PREV,x		; set the new prev to current tail
 		leay LIST_TAIL,y	; move list to its tail
 		sty NODE_NEXT,x		; set the new next to tail
 		stx LIST_TAIL,y		; set the new tail to the new node
-		puls u			; restore u
+		puls u,y		; restore u and y
 		rts
 
 ; remove the head from list in y, old head in x
@@ -47,7 +47,7 @@ remhead:	pshs u			; save u
 
 ; remove the tail from list in y, old tail in x
 
-remtail:	pshs u			; save u
+remtail:	pshs u,y		; save u and y
 		ldu LIST_TAILPREV,y	; get the current tail
 		ldx NODE_PREV,u		; get that node's prev
 		beq 1$			; if empty, nothing to do
@@ -55,8 +55,7 @@ remtail:	pshs u			; save u
 		exg u,x
 		leay 2,y		; move to the tail end of header
 		sty NODE_NEXT,u		; and make this nodes next the tail
-		leay -2,y		; need to restore the real header
-1$:		puls u			; restore u
+1$:		puls u,y		; restore u and y
 		rts
 
 ; remove a node in x
