@@ -265,4 +265,12 @@ PCOFFSET	.equ 10
 .endm
 .macro		setzero
 		orcc #0x04
-.endm		
+.endm
+
+.macro		setnotcarry
+		andcc #0xfe
+.endm
+
+.macro		setcarry
+		orcc #0x01
+.endm

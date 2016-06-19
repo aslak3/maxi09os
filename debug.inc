@@ -22,3 +22,10 @@
 .macro		debugb
 ;		lbsr debugprintb
 .endm
+
+.macro		debugint
+;		pshs a
+;		lda interruptnest
+;		debuga
+;		puls a
+.endm

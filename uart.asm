@@ -8,10 +8,9 @@ UART_RX_COUNT_H	.equ DEVICE_SIZE+64	; handler receive counter
 UART_TX_COUNT_H	.equ DEVICE_SIZE+65	; handler transmit counter
 UART_RX_COUNT_U	.equ DEVICE_SIZE+66	; user receive counter
 UART_TX_COUNT_U	.equ DEVICE_SIZE+67	; user transmit counter
-UART_TASK	.equ DEVICE_SIZE+68	; task that opened the port
-UART_BASEADDR	.equ DEVICE_SIZE+70	; base address of port
-UART_PORT	.equ DEVICE_SIZE+72	; port number
-UART_SIZE	.equ DEVICE_SIZE+73
+UART_BASEADDR	.equ DEVICE_SIZE+68	; base address of port
+UART_PORT	.equ DEVICE_SIZE+70	; port number
+UART_SIZE	.equ DEVICE_SIZE+71
 
 		.area RAM (ABS)
 
@@ -36,7 +35,7 @@ uartopen:	ldx #uartportflags	; determine if uart is in use
 		lbsr memoryalloc	; get the memory for the struct
 		sty DEVICE_DRIVER,x	; save the pointer for the dirver
 		ldy currenttask		; get the current task
-		sty UART_TASK,x		; save it so we can signal it
+		sty DEVICE_TASK,x	; save it so we can signal it
 		clr UART_RX_COUNT_H,x	; clear all buffer counters
 		clr UART_TX_COUNT_H,x	; ...
 		clr UART_RX_COUNT_U,x	; ...
@@ -58,6 +57,8 @@ uartopen:	ldx #uartportflags	; determine if uart is in use
 		ldy #BASE16C654		; get the base address of quart
 		leay a,y		; y is now the base adress of the port
 		sty UART_BASEADDR,x	; save the port in the device struct
+		lbsr signalalloc	; get a signal bit
+		sta DEVICE_SIGNAL,x	; save it in the device struct
 		lda #0b00000111
 		sta FCR16C654,y		; 16 deep fifo
 		lda #0b00000001		; receive interrupts
@@ -119,30 +120,21 @@ wakedmsg:	.asciz 'task waked\r\n'
 gotcharmsg:	.asciz 'got char\r\n'
 donereadmsg:	.asciz 'done read\r\n'
 
-uartread:	pshs y
-1$:		lbsr disable
+uartread:	lbsr disable
 		ldb UART_RX_COUNT_U,x	; get counter
 		cmpb UART_RX_COUNT_H,x	; compare..,
-		bne 2$			; got a character? then return it
-		tfr x,y			; save the device pointer
-		ldx currenttask		; get current task
-		lbsr pausetask		; move the task to the waiting list
-		debug #pausedmsg
-		debugx
-		swi			; reschedule
-		lbsr enable
-		debug #wakedmsg
-		tfr y,x			; restore the device pointer
-		bra 1$			; now go back and try again
-2$:		debug #gotcharmsg
+		beq 1$			; no character? then return
 		leau UART_RX_BUF,x	; get the buffer
 		lda b,u			; get the last char written to buf
 		incb			; move along to the next
 		andb #31		; wrapping to 32 byte window
 		stb UART_RX_COUNT_U,x	; and save it
 		lbsr enable
-		puls y
 		debug #donereadmsg
+		setnotzero		; got data
+		rts
+1$:		lbsr enable
+		setzero			; got no data
 		rts
 
 ; write to the device in x, reg a, waiting until it's been sent
@@ -155,6 +147,8 @@ uartwrite:	pshs y,b
 		sta THR16C654,y		; output the char
 		puls y,b
 		rts
+
+;;; INTERRUPT
 
 ; interrupt handler for any uart port
 
@@ -182,12 +176,11 @@ uarthandler:	debug #uarthandlermsg
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne 3$
 		debug #intfoundmsg
-;		bit #0xcc	; receive data ready
+;		bit #0xcc		; receive data ready
 ;		bne 2$			; 
 		debug #rxintfoundmsg
 		lbsr uartrxhandler	; handle the rx interrupt
-		ldx UART_TASK,x		; get task that owns port
-		lbsr resumetask		; make it next to run
+		lbsr uartsignal
 		ldb #1			; set the reschedule flag
 		stb rescheduleflag	; so the schedule is run at end
 3$:		debug #decmsg
@@ -218,4 +211,11 @@ uartrxhandler:	debug #uartrxmsg
 2$:		stb UART_RX_COUNT_H,x	; save the buffer write counter
 		puls a,b,u
 		debug #uartrxoutmsg
+		rts
+
+uartsignal:	pshs a,x
+		lda DEVICE_SIGNAL,x	; get interrupt bit
+		ldx DEVICE_TASK,x	; get task that owns port
+		lbsr intsignal		; make it next to run
+		puls a,x
 		rts

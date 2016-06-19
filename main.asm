@@ -57,8 +57,6 @@ clearloop:	clr ,x+
 		lbsr debuginit
 
 		lbsr timerinit		; init the timer
-;		lbsr uartinit		; uart interrupt routing
-;		lbsr serialinit		; setup the console serial port
 		lbsr memoryinit		; init the heap
 
 		clr rescheduleflag
@@ -87,50 +85,55 @@ clearloop:	clr ,x+
 		ldy #readytasks
 		lbsr addtaskto
 
-		stx currenttask
-
-		lds TASK_SP,x
-
-		lbsr enable
-
-		rti			; start init
+		lbra finishschedule
 
 idlecreatedmsg:	.asciz "Idle task created "
 
 ; enable interrupts
 
-enable:		disableinterrupts
+enablemsg:	.asciz "enable\r\n"
+intsenabledmsg:	.asciz "ints now enabled\r\n"
+
+enable:		debug #enablemsg
+		debugint
+		disableinterrupts
 		inc interruptnest
 		bgt enableout		; nest value > 0?
 		rts
 enableout:	enableinterrupts
+		debug #intsenabledmsg
 		rts
 
 ; disable interrupts
 
-disable:	disableinterrupts
+disablemsg:	.asciz "disable\r\n"
+
+disable:	debug #disablemsg
+		debugint
+		disableinterrupts
 		dec interruptnest
 		ble disableout		; nest value <= 0? 
 		enableinterrupts
-		rts
-disableout:	disableinterrupts
-		rts
+disableout:	rts
 
 ; irq routine - dispatch to device handlers
 
 firqinterrupt:	rti
 
+irqintmsg:	.asciz 'irq int detected\r\n'
 nointmsg:	.asciz 'no interrupt routine found\r\n'
 
-irqinterrupt:	ldx #inthandlers	; handler table
+irqinterrupt:	debug #irqintmsg
+		ldx #inthandlers	; handler table
 		ldy #intmasks		; mask table
 		ldb #INTCOUNT		; 8 interrupts (priorities)
 		lda ACTIVEIRQ		; get the current state
+		debuga
 1$:		decb			; dec the priority 
 		bmi 2$			; exit when -1, to include 0
 		bita b,y		; mask the current status
 		beq 1$			; zero? back for the next
-		rolb			; convert to word list
+		lslb			; convert to word list
 		jmp [b,x]		; jump to the handler routine
 2$:		debug #nointmsg
 3$:		bra 3$			; no interrupt handler found
@@ -162,6 +165,7 @@ newlinemsg:	.asciz '\r\n'
 
 		.include 'driver.asm'
 		.include 'uart.asm'
+		.include 'led.asm'
 
 		.include 'init.asm'
 		.include 'testtasks.asm'

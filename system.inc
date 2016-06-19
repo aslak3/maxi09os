@@ -26,25 +26,30 @@ NODE_SIZE	.equ 4
 ; task struct offsets
 
 TASK_NODE	.equ 0
-TASK_PC		.equ NODE_SIZE+0
-TASK_SP		.equ NODE_SIZE+2
-TASK_SIGWAIT	.equ NODE_SIZE+4
-TASK_SIGRECVD	.equ NODE_SIZE+5
-TASK_SIZE	.equ NODE_SIZE+6
+TASK_PC		.equ NODE_SIZE+0	; the initial program counter
+TASK_SP		.equ NODE_SIZE+2	; the current stack pointer
+TASK_SIGALLOC	.equ NODE_SIZE+4	; signal bits in use
+TASK_SIGWAIT	.equ NODE_SIZE+5	; signal bits being waited on
+TASK_SIGRECVD	.equ NODE_SIZE+6	; signal bits recieved
+TASK_INTNEST	.equ NODE_SIZE+7
+TASK_DISPCOUNT	.equ NODE_SIZE+8
+TASK_SIZE	.equ NODE_SIZE+10
 
 ; the list of available drivers
 
-DRIVER_OPEN	.equ 0
-DRIVER_NAME	.equ 2
+DRIVER_OPEN	.equ 0			; device open routine
+DRIVER_NAME	.equ 2			; driver name ("uart\0")
 DRIVER_SIZE	.equ 10
 
 ; operations that can be performed on a open device
 
-DEVICE_DRIVER	.equ 0
-DEVICE_CLOSE	.equ 2
-DEVICE_READ	.equ 4
-DEVICE_WRITE	.equ 6
-DEVICE_SIZE	.equ 8
+DEVICE_DRIVER	.equ 0			; pointer to the driver for device
+DEVICE_CLOSE	.equ 2			; device close routine
+DEVICE_READ	.equ 4			; read a byte into a
+DEVICE_WRITE	.equ 6			; write a byte from a
+DEVICE_TASK	.equ 8			; the task that opened the device
+DEVICE_SIGNAL	.equ 10			; the signal bit for the device
+DEVICE_SIZE	.equ 11
 
 ; stack frame offsets
 

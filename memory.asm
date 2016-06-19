@@ -49,7 +49,11 @@ memoryinit:	ldy #HEAP_START		; only one block to setup
 ; memoryalloc - size of memory in x, start of allocated memory in x on
 ; return or 0
 
-memoryalloc:	pshs a,b,y		; save y
+memoryallocmsg:	.asciz 'memoryalloc\r\n'
+
+memoryalloc:	debug #memoryallocmsg
+		debugx
+		pshs a,b,y		; save y
 		leax MEM_SIZE,x		; add the overhead to the request
 		lbsr disable		; critical section
 		ldy #HEAP_START		; start at the start of the heap

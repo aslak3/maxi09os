@@ -1,6 +1,7 @@
 ; GENERIC DRIVER FUNCTIONS
 
 drivertable:	.word uartdef
+		.word leddef
 		.word 0x0000
 
 ; open device by string in x, with optional unit number in a

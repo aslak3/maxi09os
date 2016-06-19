@@ -8,10 +8,13 @@ putstr:		lda ,y+			; get the next char
 		bra putstr		; more chars
 1$:		rts
 
+outofwaitmsg:	.asciz 'outof wait\r\n'
+
 ; gets a string, filling it into y from the device at x
 
 getstr:		clrb			; set the length to 0
 getstrloop:	lbsr sysread		; get a char in a
+		beq getstrwait		; need to wait
 		cmpa #CR		; cr?
 		beq getstrout		; if it is, then out
 		cmpa #LF		; lf?
@@ -38,3 +41,8 @@ getstrbs:	tstb			; see if the char count is 0
 		lda #BS			; then back one again
 		lbsr syswrite
 		bra getstrloop		; echo the bs and charry on
+getstrwait:	lda DEVICE_SIGNAL,x
+		lbsr wait
+		debug #outofwaitmsg
+		debuga
+		bra getstrloop

@@ -19,9 +19,6 @@ rescheduleflag:	.rmb 1
 
 idletask:	.rmb 2
 
-task1save:	.rmb 2
-task2save:	.rmb 2
-
 ; interrupt nest count, <=0 disabled, >0 enabled
 
 interruptnest:	.rmb 1

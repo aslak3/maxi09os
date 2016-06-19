@@ -11,7 +11,7 @@ INC = main.inc
 MAIN_ASM = main.asm
 ASMS = memory.asm timer.asm systemvars.asm strings.asm \
 	tasks.asm testtasks.asm init.asm driver.asm io.asm uart.asm \
-	debug.asm lists.asm
+	debug.asm lists.asm led.asm
 
 INCS = hardware.inc
 

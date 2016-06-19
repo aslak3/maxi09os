@@ -4,6 +4,8 @@
 
 task1data:	.rmb 100
 task2data:	.rmb 100
+porta:		.rmb 2
+portb:		.rmb 2
 
 		.area ROM (ABS)
 

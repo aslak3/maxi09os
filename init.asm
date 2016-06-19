@@ -14,9 +14,8 @@ init:		debug #startedmsg
 		ldy #readytasks
 		lbsr addtaskto
 
-		ldx currenttask
-		lbsr pausetask
-		swi
+		lda #0xff
+		lbsr wait
 
 again:		bra again
 
