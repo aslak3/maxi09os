@@ -56,7 +56,9 @@ clearloop:	clr ,x+
 
 		lbsr debuginit
 
-		lbsr timerinit		; init the timer
+		lbsr driverprepare
+
+		lbsr tickerinit		; init the timer
 		lbsr memoryinit		; init the heap
 
 		clr rescheduleflag
@@ -156,7 +158,7 @@ newlinemsg:	.asciz '\r\n'
 
 		.include 'debug.asm'
 		.include 'strings.asm'
-		.include 'timer.asm'
+		.include 'ticker.asm'
 		.include 'memory.asm'
 		.include 'misc.asm'
 		.include 'tasks.asm'
@@ -166,6 +168,7 @@ newlinemsg:	.asciz '\r\n'
 		.include 'driver.asm'
 		.include 'uart.asm'
 		.include 'led.asm'
+		.include 'timer.asm'
 
 		.include 'init.asm'
 		.include 'testtasks.asm'

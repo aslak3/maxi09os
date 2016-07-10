@@ -2,7 +2,26 @@
 
 drivertable:	.word uartdef
 		.word leddef
+		.word timerdef
 		.word 0x0000
+
+; inits all drivers
+
+drvprepstart:	.asciz 'driverprepare start\r\n'
+drvprepend:	.asciz 'driverprepare end\r\n'
+
+driverprepare:	debug #drvprepstart
+		ldu #drivertable
+1$:		ldy ,u
+		beq 3$
+		ldx DRIVER_PREPARE,y
+		debugx
+		beq 2$
+		jsr [DRIVER_PREPARE,y]
+2$:		leau 2,u
+		bra 1$
+3$:		debug #drvprepend
+		rts	
 
 ; open device by string in x, with optional unit number in a
 
@@ -30,3 +49,10 @@ sysread:	jmp [DEVICE_READ,x]	; this is a jump
 ; write to a evice. x is the device struct, a has what to write
 
 syswrite:	jmp [DEVICE_WRITE,x]	; this is a jump
+
+; generic do anything to a device, x is the device struct
+
+syscontrolmsg:	.asciz 'About to do a syscontrol!!!!!!!!\r\n'
+
+syscontrol:	debug #syscontrolmsg
+		jmp [DEVICE_CONTROL,x]	; this is a jump

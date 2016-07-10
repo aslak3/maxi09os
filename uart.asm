@@ -1,5 +1,16 @@
 ; uart driver - for the 16C654
 
+		.area RAM (ABS)
+
+uartportflags:	.rmb 4			; four flags, 0=port a etc
+uarts:		.rmb LIST_SIZE		; node for the open port
+
+		.area ROM (ABS)
+
+uartprepare:	ldy #uarts
+		lbsr initlist
+		rts
+
 ; uartopen - port number in a reg
 
 UART_RX_BUF	.equ DEVICE_SIZE+0	; receive circular bufrer
@@ -12,14 +23,8 @@ UART_BASEADDR	.equ DEVICE_SIZE+68	; base address of port
 UART_PORT	.equ DEVICE_SIZE+70	; port number
 UART_SIZE	.equ DEVICE_SIZE+71
 
-		.area RAM (ABS)
-
-uartportflags:	.rmb 4			; four flags, 0=port a etc
-uarthandles:	.rmb 4*2		; four handles
-
-		.area ROM (ABS)
-
 uartdef:	.word uartopen
+		.word uartprepare
 		.asciz "uart"
 
 ; uart open - open the uart port in a reg, returning the device in x
@@ -41,10 +46,8 @@ uartopen:	ldx #uartportflags	; determine if uart is in use
 		clr UART_RX_COUNT_U,x	; ...
 		clr UART_TX_COUNT_U,x	; ...
 		sta UART_PORT,x		; save the uart port
-		ldy #uarthandles	; get the top of the hanlder list
-		tfr a,b
-		rolb			; multiple the port by 2
-		stx b,y			; save the handler
+		ldy #uarts		; get the top of the handler list
+		lbsr addtail		; add the uart to the list
 		ldy #uartclose		; save the close pointer
 		sty DEVICE_CLOSE,x	; ... in the device struct
 		ldy #uartread		; save the read pointer
@@ -96,11 +99,8 @@ uartclose:	lda UART_PORT,x		; obtain the port number
 		ldy #uartportflags	; get the top of the open flags
 		lbsr disable
 		clr a,y			; mark it unused
+		lbsr remove		; remove it from the uart list
 		lbsr memoryfree		; free the open device handle
-		ldx #0			; for the handler pointer
-		ldy #uarthandles	; get the top of the hanlder list
-		rola			; multiple the port by 2
-		stx a,y			; save the handler
 		lbsr enable
 		rts
 
@@ -120,7 +120,8 @@ wakedmsg:	.asciz 'task waked\r\n'
 gotcharmsg:	.asciz 'got char\r\n'
 donereadmsg:	.asciz 'done read\r\n'
 
-uartread:	lbsr disable
+uartread:	pshs b
+		lbsr disable
 		ldb UART_RX_COUNT_U,x	; get counter
 		cmpb UART_RX_COUNT_H,x	; compare..,
 		beq 1$			; no character? then return
@@ -132,9 +133,11 @@ uartread:	lbsr disable
 		lbsr enable
 		debug #donereadmsg
 		setnotzero		; got data
+		puls b
 		rts
 1$:		lbsr enable
 		setzero			; got no data
+		puls b
 		rts
 
 ; write to the device in x, reg a, waiting until it's been sent
@@ -163,11 +166,11 @@ rxintfoundmsg:	.asciz 'rx interrupt found\r\n'
 
 uarthandler:	debug #uarthandlermsg
 		lda #4			; there are four.. ports!
-		ldu #uarthandles	; the four device pointers table
+		ldy #uarts		; the four device pointers table
+		ldx LIST_HEAD,y
 1$:		debug #nextdevicemsg
-		ldx ,u++		; get the device address
-		debugx
-		beq 3$			; if 0, back for the next
+		ldy NODE_NEXT,x		; see if this is the last ...
+		beq 4$			; device?
 		debug #theresadevmsg
 		ldy UART_BASEADDR,x	; get the port start address
 2$:		debugy
@@ -183,10 +186,9 @@ uarthandler:	debug #uarthandlermsg
 		lbsr uartsignal
 		ldb #1			; set the reschedule flag
 		stb rescheduleflag	; so the schedule is run at end
-3$:		debug #decmsg
-		deca
-		bne 1$			; check the next port
-		debug #doingtailmsg
+3$:		ldx NODE_NEXT,x		; get the next open device
+		bra 1$			; check the next port
+4$:		debug #doingtailmsg
 		jmp tailhandler		; cheeck the reschedule state
 
 ; handle receive interrupts - x has the device handle, y the base addr

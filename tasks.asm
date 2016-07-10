@@ -63,8 +63,8 @@ donewaitingmsg:	.asciz 'Done waiting\r\n'
 wait:		debug #waitmsg
 		pshs x,y,b
 		ldx currenttask
-		sta TASK_SIGWAIT,x	; save what we are waiting for
 		lbsr disable
+		sta TASK_SIGWAIT,x	; save what we are waiting for
 		bita TASK_SIGRECVD,x	; mask out the unwaited bits
 		bne 1$			; already got the signal?
 		lbsr remove		; remove task from whatever
@@ -96,14 +96,14 @@ signal:		debug #signalmsg
 intsignal:	pshs y
 		ora TASK_SIGRECVD,x	; or in the new sigs with current
 		sta TASK_SIGRECVD,x	; and save them in the target task
-		anda TASK_SIGWAIT,x	; mask the current listening set
+		bita TASK_SIGWAIT,x	; mask the current listening set
 		beq 1$			; other end not listening; no wakey
 		lbsr remove		; remove from whatever queue
 		ldy #readytasks		; and put it on
 		lbsr addtail		; ... the ready queue
 1$:		puls y
 		rts
-; timer
+; ticker
 
 tickmsg:	.asciz 'tick\r\n'
 yieldmsg:	.asciz 'Yield\r\n'
@@ -112,8 +112,10 @@ idlemsg:	.asciz 'Idle\r\n'
 rrmsg:		.asciz 'RR\r\n'
 finmsg:		.asciz 'Fin\r\n'
 
-timerhandler:	debug #tickmsg
+tickerhandler:	debug #tickmsg
 		lda T1CL6522		; clear interrupt
+
+		lbsr runtimers
 
 yield:		debug #yieldmsg
 		ldx currenttask		; get the current task struct

@@ -7,6 +7,7 @@ ledinuse:	.rmb 1			; 1 for open, 0 for closed
 		.area ROM (ABS)
 
 leddef:		.word ledopen
+		.word 0x0000
 		.asciz "led"
 
 ; led open
