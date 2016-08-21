@@ -5,6 +5,7 @@
 portadev:	.rmb 2
 timerdev:	.rmb 2
 waitsigs:	.rmb 1
+task1data:	.rmb 100
 
 portbdev:	.rmb 2
 task2data:	.rmb 100
@@ -16,8 +17,8 @@ timerdevice:	.asciz 'timer'
 youtyped:	.asciz '\r\nYou typed: '
 
 task1startmsg:	.asciz 'task 1 starting\r\n'
-task1msg:	.asciz 'Tick tock...\r\n'
-buttonmsg:	.asciz 'Ouch!\r\n'
+task1msg:	.asciz 'Timer expired\r\n'
+buttonmsg:	.asciz 'Key pressed: '
 abouttowaitmsg:	.asciz 'About to wait\r\n'
 donewaitmsg:	.asciz 'Done wait\r\n'
 startingtimermsg:	.asciz 'Starting timer!\r\n'
@@ -28,7 +29,8 @@ timerctrlblk:	.byte 1
 bumpblk:	.byte 0
 		.word 40*5
 
-task1:		lda #PORTA
+task1:		lda #PORTB
+		ldb #B19200
 		ldx #uartdevice		; we want a uart
 		lbsr sysopen
 		stx portadev
@@ -55,8 +57,8 @@ task1:		lda #PORTA
 		lbsr wait
 		sta waitsigs
 		ldx portadev
-		ldy #donewaitmsg
-		lbsr putstr
+;		ldy #donewaitmsg
+;		lbsr putstr
 
 		lda waitsigs
 		ldx timerdev
@@ -80,6 +82,14 @@ task1:		lda #PORTA
 		ldy #buttonmsg
 		lbsr putstr
 		tfr b,a
+		ldx #task1data
+		lbsr bytetoaschex
+		ldx portadev
+		ldy #task1data
+		lbsr putstr
+		ldy #newlinemsg
+		lbsr putstr
+		tfr b,a
 		cmpa #0x20
 		beq 5$
 		bra 4$
@@ -91,12 +101,13 @@ task1:		lda #PORTA
 		ldx portadev
 		ldy #startingtimermsg
 		lbsr putstr
-		bra 1$
+		lbra 1$
 
 task2startmsg:	.asciz 'task2 starting\r\n'		
-task2msg:	.asciz '\r\n\r\nAnd hello from TASK TWO on PORT C, enter a string: '
+task2msg:	.asciz '\r\n\r\nAnd hello from TASK TWO on PORT B, enter a string: '
 
-task2:		lda #PORTB
+task2:		lda #PORTA
+		ldb #B19200
 		ldx #uartdevice		; we want a uart
 		lbsr sysopen
 

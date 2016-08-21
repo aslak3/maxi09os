@@ -23,6 +23,7 @@ driverprepare:	debug #drvprepstart
 3$:		debug #drvprepend
 		rts	
 
+
 ; open device by string in x, with optional unit number in a
 
 sysopen:	ldu #drivertable	; setup table search
@@ -56,3 +57,14 @@ syscontrolmsg:	.asciz 'About to do a syscontrol!!!!!!!!\r\n'
 
 syscontrol:	debug #syscontrolmsg
 		jmp [DEVICE_CONTROL,x]	; this is a jump
+
+; helpers
+
+; signals the task that owns the device in x
+
+driversignal:	pshs a,x
+		lda DEVICE_SIGNAL,x	; get interrupt bit
+		ldx DEVICE_TASK,x	; get task that owns port
+		lbsr intsignal		; make it next to run
+		puls a,x
+		rts  

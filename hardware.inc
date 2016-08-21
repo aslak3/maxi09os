@@ -39,6 +39,7 @@ PORTA		.equ 0
 PORTB		.equ 1
 PORTC		.equ 2
 PORTD		.equ 3
+PORTCOUNT	.equ 4
 
 ; baud rates - DLL value, DLM is 0
 

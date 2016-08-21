@@ -19,7 +19,6 @@ ledopen:	lbsr disable		; enter critical section
 		sta ledinuse		; ...
 		ldx #DEVICE_SIZE	; allocate the device struct
 		lbsr memoryalloc	; get the memory for the struct
-		sty DEVICE_DRIVER,x	; save the pointer for the dirver
 		ldy #ledclose		; save the close pointer
 		sty DEVICE_CLOSE,x	; ... in the device struct
 		ldy #ledwrite		; save the write pointer

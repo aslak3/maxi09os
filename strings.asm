@@ -5,9 +5,9 @@
 nibtoaschex:	anda #0x0f		; mask out the high nibble
 		adda #0x30		; add '0'
 		cmpa #0x39		; see if we are past '9'
-		ble nibtoaschexout	; no? number then, so we're done
+		ble 1$		; no? number then, so we're done
 		adda #0x07		; yes? letter then, add 'A'-'9'
-nibtoaschexout:	sta ,x+			; add it
+1$:		sta ,x+			; add it
 		rts		
 
 ; bytetoaschex - convert a byte in a to two characters in x, advancing it
@@ -33,33 +33,33 @@ wordtoaschex:	pshs b			; save low byte
 ; concatstr - add string y to string x, not copying the null
 
 concatstr:	lda ,y+			; get the char in y
-		beq concatstrout	; if its a null then finish
+		beq 1$		; if its a null then finish
 		sta ,x+			; otherwise add it to x
 		bra concatstr		; go back for more
-concatstrout:	rts
+1$:		rts
 
 ; concatstrn - add a chars of y to x, not ocpying the null
 
 concatstrn:	ldb ,y+
 		stb ,x+
 		deca
-		beq concatstrnout
+		beq 1$
 		bra concatstrn
-concatstrnout:	rts
+1$:		rts
 
 ; strcmp - compare the string at x with the string at y, on exit z is set
 ; if the strings are the same. saves a, x and y
 
 strcmp:		pshs a,x,y
-strcmploop:	lda ,x+			; load left string byte
+strcmploop::	lda ,x+			; load left string byte
 		beq endcheck		; see if we have reached the end
 		cmpa ,y+		; compare with right
 		bne notamatch		; no match, then out
 		bra strcmploop		; back for more
-endcheck:	lda ,y+			; check the right end
+endcheck::	lda ,y+			; check the right end
 		bne notamatch		; not a null? no match
 		setzero			; a null, so we have a match, set zero
 		bra strcmpout		; done
-notamatch:	setnotzero		; not a match, so not zero
-strcmpout:	puls a,x,y
+notamatch::	setnotzero		; not a match, so not zero
+strcmpout::	puls a,x,y
 		rts

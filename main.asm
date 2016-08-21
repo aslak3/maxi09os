@@ -165,6 +165,8 @@ newlinemsg:	.asciz '\r\n'
 		.include 'io.asm'
 		.include 'lists.asm'
 
+		.include 'uartlowlevel.asm'
+
 		.include 'driver.asm'
 		.include 'uart.asm'
 		.include 'led.asm'

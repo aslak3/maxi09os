@@ -26,7 +26,6 @@ timerdef:	.word timeropen
 
 timeropen:	ldx #TIMER_SIZE		; allocate the device struct
 		lbsr memoryalloc	; get the memory for the struct
-		sty DEVICE_DRIVER,x	; save the pointer for the dirver
 		ldy currenttask         ; get the current task
 		sty DEVICE_TASK,x	; save it so we can signal it
 		ldy #timerclose		; save the close pointer
