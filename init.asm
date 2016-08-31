@@ -1,8 +1,13 @@
 ; our two tasks
 
+		.include 'system.inc'
+		.include 'debug.inc'
+
+		.area ROM
+
 startedmsg:	.asciz 'init starting\r\n'
 
-init:		debug #startedmsg
+init::		debug #startedmsg
 
 		ldx #task1
 		lbsr createtask

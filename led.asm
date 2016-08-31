@@ -1,12 +1,14 @@
 ; led driver
 
-		.area RAM (ABS)
+		.include 'hardware.inc'
+
+		.area RAM
 
 ledinuse:	.rmb 1			; 1 for open, 0 for closed
 
-		.area ROM (ABS)
+		.area ROM
 
-leddef:		.word ledopen
+leddef::	.word ledopen
 		.word 0x0000
 		.asciz "led"
 

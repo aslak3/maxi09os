@@ -1,14 +1,17 @@
 ; debug - port c output
 
-		.area RAM (ABS)
+		.include 'hardware.inc'
+		.include 'debug.inc'
+
+		.area RAM
 
 debugbuffer:	.rmb 100
 
-		.area ROM (ABS)
+		.area ROM
 
 startingmsg:	.asciz 'debug starting\r\n'
 
-debuginit:	ldy #BASEPC16C654
+debuginit::	ldy #BASEPC16C654
 		clra
 		sta IER16C654,y		; ... interrupts
 		lda #0xbf		; bf magic to enhanced feature reg
@@ -30,7 +33,7 @@ debuginit:	ldy #BASEPC16C654
 
 ; write to the debug port the string in x
 
-debugprint:	pshs a,b,y,cc
+debugprint::	pshs a,b,y,cc
 		ldy #BASEPC16C654
 1$:		lda ,x+			; byte to send
 		beq 3$			; end?
@@ -42,7 +45,7 @@ debugprint:	pshs a,b,y,cc
 3$:		puls a,b,y,cc
 		rts
 
-debugprintx:	pshs a,b,cc,x
+debugprintx::	pshs a,b,cc,x
 		tfr x,d
 		ldx #debugbuffer
 		lbsr wordtoaschex
@@ -54,7 +57,7 @@ debugprintx:	pshs a,b,cc,x
 		puls a,b,cc,x
 		rts
 
-debugprinty:	pshs a,b,cc,x
+debugprinty::	pshs a,b,cc,x
 		tfr y,d
 		ldx #debugbuffer
 		lbsr wordtoaschex
@@ -66,7 +69,7 @@ debugprinty:	pshs a,b,cc,x
 		puls a,b,cc,x
 		rts
 
-debugprinta:	pshs a,b,cc,x
+debugprinta::	pshs a,b,cc,x
 		ldx #debugbuffer
 		lbsr bytetoaschex
 		clr ,x+
@@ -77,7 +80,7 @@ debugprinta:	pshs a,b,cc,x
 		puls a,b,cc,x
 		rts
 
-debugprintb:	pshs a,b,cc,x
+debugprintb::	pshs a,b,cc,x
 		ldx #debugbuffer
 		tfr b,a
 		lbsr bytetoaschex

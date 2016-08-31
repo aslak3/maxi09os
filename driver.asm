@@ -1,6 +1,12 @@
 ; GENERIC DRIVER FUNCTIONS
 
+		.include 'system.inc'
+		.include 'debug.inc'
+
+		.area ROM
+
 drivertable:	.word uartdef
+		.word consoledef
 		.word leddef
 		.word timerdef
 		.word 0x0000
@@ -10,7 +16,7 @@ drivertable:	.word uartdef
 drvprepstart:	.asciz 'driverprepare start\r\n'
 drvprepend:	.asciz 'driverprepare end\r\n'
 
-driverprepare:	debug #drvprepstart
+driverprepare::	debug #drvprepstart
 		ldu #drivertable
 1$:		ldy ,u
 		beq 3$
@@ -26,7 +32,7 @@ driverprepare:	debug #drvprepstart
 
 ; open device by string in x, with optional unit number in a
 
-sysopen:	ldu #drivertable	; setup table search
+sysopen::	ldu #drivertable	; setup table search
 1$:		ldy ,u			; get the def pointer
 		beq 2$			; end of list? exit with null
 		leay DRIVER_NAME,y	; get the device name
@@ -41,30 +47,32 @@ sysopen:	ldu #drivertable	; setup table search
 
 ; close the device at x
 
-sysclose:	jmp [DEVICE_CLOSE,x]	; this is a jump
+sysclose::	jmp [DEVICE_CLOSE,x]	; this is a jump
 
 ; read from a device. x is the device struct, a reg has the result
 
-sysread:	jmp [DEVICE_READ,x]	; this is a jump
+sysread::	jmp [DEVICE_READ,x]	; this is a jump
 
 ; write to a evice. x is the device struct, a has what to write
 
-syswrite:	jmp [DEVICE_WRITE,x]	; this is a jump
+syswrite::	jmp [DEVICE_WRITE,x]	; this is a jump
 
 ; generic do anything to a device, x is the device struct
 
-syscontrolmsg:	.asciz 'About to do a syscontrol!!!!!!!!\r\n'
-
-syscontrol:	debug #syscontrolmsg
-		jmp [DEVICE_CONTROL,x]	; this is a jump
+syscontrol::	jmp [DEVICE_CONTROL,x]	; this is a jump
 
 ; helpers
 
 ; signals the task that owns the device in x
 
-driversignal:	pshs a,x
+driversignalmsg:	.asciz 'driver signalling task\r\n'
+
+driversignal::	pshs a,x
+		debug #driversignalmsg
 		lda DEVICE_SIGNAL,x	; get interrupt bit
 		ldx DEVICE_TASK,x	; get task that owns port
+		debugx
+		debuga
 		lbsr intsignal		; make it next to run
 		puls a,x
 		rts  

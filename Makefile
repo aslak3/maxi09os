@@ -8,29 +8,40 @@ BIN = main.bin
 MAP = main.map
 INC = main.inc
 
-MAIN_ASM = main.asm
-ASMS = memory.asm ticker.asm systemvars.asm strings.asm \
-	tasks.asm testtasks.asm init.asm driver.asm io.asm uart.asm \
-	debug.asm lists.asm led.asm timer.asm uartlowlevel.asm
+AREA_BASES = -b VECTORS=0xfff0 -b ROM=0xc000 -b RAM=0x0000
+
+MAIN_REL = main.rel
+RELS = memory.rel ticker.rel systemvars.rel strings.rel \
+	tasks.rel testtasks.rel init.rel driver.rel io.rel uart.rel \
+	debug.rel lists.rel led.rel timer.rel uartlowlevel.rel \
+	console.rel scancodes.rel misc.rel
 
 INCS = hardware.inc
 
-all: $(BIN) $(INC)
+all: $(BIN)
 
 %.bin: %.ihx
 	hex2bin -out $@ $<
 
-%.ihx: %.rel
-	aslink -nmwi $<
+%.ihx: $(MAIN_REL) $(RELS)
+	aslink $(AREA_BASES) -nmwi $< $(MAIN_REL) $(RELS)
 	
-%.rel: $(ASMS) $(INCS) $(MAIN_ASM)
-	as6809 -oxs $(MAIN_ASM)
+%.rel: %.asm
+	as6809 -oxs $@ $<
 
-$(INC): $(MAP)
-	./map2inc.pl < $(MAP) > $(INC)
+externs.inc: *.asm
+	for I in *.asm; do \
+		echo "; $$I"; \
+		echo; \
+		for F in $$(cat $$I | grep :: | cut -d ":" -f 1); do \
+			echo "\t\t.globl $$F"; \
+		done; \
+		echo; \
+	 done \
+	 > externs.inc
 
 clean:
-	rm -f $(BIN) $(INC) *.rel *.ihx *.map *.sym DEADJOE
+	rm -f $(BIN) $(INC) *.rel *.ihx *.map *.sym externs.inc
 
 doupload:
 	$(UPLOAD) -f $(BIN) -s $(PROG_SERIAL)

@@ -1,8 +1,14 @@
 ; starts a new task, x is the initial pc
 
+		.include 'system.inc'
+		.include 'debug.inc'
+		.include 'hardware.inc'
+
+		.area ROM
+
 STACK		.equ 256
 
-createtask:	tfr x,y			; save initital pc in y
+createtask::	tfr x,y			; save initital pc in y
 		ldx #STACK+TASK_SIZE	; STACK bytes of stack per task
 		lbsr memoryalloc	; alloc and get stack in y
 
@@ -26,21 +32,21 @@ createtask:	tfr x,y			; save initital pc in y
 
 		rts
 
-addtaskto:	lbsr disable
+addtaskto::	lbsr disable
 		lbsr addtail
 		lbsr enable
 		rts
 
-remtask:	lbsr disable
+remtask::	lbsr disable
 		lbsr remove
 		lbsr enable
 		rts
 
 ; allocate the first avaialble signal bit, returning a bit mask in a
 
-signalallocmsg:	.asciz 'Signal allocation\r\n'
+sigallocmsg:	.asciz 'Signal allocation\r\n'
 
-signalalloc:	debug #signalallocmsg
+signalalloc::	debug #sigallocmsg
 		pshs x
 		ldx currenttask		; get current task pointer
 		lda #1			; the bit to test
@@ -60,7 +66,7 @@ signalalloc:	debug #signalallocmsg
 waitmsg:	.asciz 'Waiting\r\n'
 donewaitingmsg:	.asciz 'Done waiting\r\n'
 
-wait:		debug #waitmsg
+wait::		debug #waitmsg
 		pshs x,y,b
 		ldx currenttask
 		lbsr disable
@@ -84,7 +90,7 @@ wait:		debug #waitmsg
 
 signalmsg:	.asciz 'Signaling\r\n'
 
-signal:		debug #signalmsg
+signal::		debug #signalmsg
 		lbsr disable
 		lbsr intsignal
 		swi			; now reschedule
@@ -93,7 +99,7 @@ signal:		debug #signalmsg
 
 ;;; INTERRUPT
 
-intsignal:	pshs y
+intsignal::	pshs y
 		ora TASK_SIGRECVD,x	; or in the new sigs with current
 		sta TASK_SIGRECVD,x	; and save them in the target task
 		bita TASK_SIGWAIT,x	; mask the current listening set
@@ -112,12 +118,12 @@ idlemsg:	.asciz 'Idle\r\n'
 rrmsg:		.asciz 'RR\r\n'
 finmsg:		.asciz 'Fin\r\n'
 
-tickerhandler:	debug #tickmsg
+tickerhandler::	debug #tickmsg
 		lda T1CL6522		; clear interrupt
 
 		lbsr runtimers
 
-yield:		debug #yieldmsg
+yield::		debug #yieldmsg
 		ldx currenttask		; get the current task struct
 		sts TASK_SP,x		; save the current stack pointer
 		lda interruptnest
@@ -135,7 +141,7 @@ yield:		debug #yieldmsg
 		lbsr remtail
 		lbsr addhead
 
-finishschedule:	debugx
+finishschedule::	debugx
 		stx currenttask		; set the pointer for current task
 		lds TASK_SP,x		; setup the stack from the task
 		lda TASK_INTNEST,x	; get the int nest count from task
@@ -152,20 +158,19 @@ scheduleidle:	ldx idletask
 
 leddevice:	.asciz 'led'
 
-idler:		ldx #leddevice
-		lbsr sysopen
+; idler task
 
-idlerloop:	lda #1
+idler::		ldx #leddevice
+		lbsr sysopen
+1$:		lda #1
 		lbsr syswrite
 		ldy #0x6000
 		lbsr delay
-
 		clra
 		lbsr syswrite
 		ldy #0x6000
 		lbsr delay
-
-		bra idlerloop
+		bra 1$
 
 ;;;;;;;;;;;;;;; DEBUG
 
@@ -201,5 +206,4 @@ initialpcmsg:	.asciz 'Initial PC: '
 ;		ldx #waittasksmsg
 ;		ldy #waitingtasks
 ;		lbsr dumptasks
-
 ;		rts

@@ -1,14 +1,4 @@
-; ascii constants
-
-NULL            .equ 0x00
-BS              .equ 0x08
-CR              .equ 0x0d
-LF              .equ 0x0a
-SOH		.equ 0x01
-ACK		.equ 0x06
-NAK		.equ 0x15
-EOT		.equ 0x04
-SP		.equ 0x20
+		.include 'externs.inc'
 
 ; list struct offsets
 

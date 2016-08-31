@@ -1,5 +1,10 @@
 ; memory allocator and deallocator
 
+		.include 'system.inc'
+		.include 'debug.inc'
+
+		.area ROM
+
 HEAP_START	.equ 0x4000
 HEAP_LEN	.equ 0x2000
 
@@ -8,7 +13,7 @@ MEM_LENGTH_O	.equ 2
 MEM_FREE_O	.equ 4
 MEM_SIZE	.equ 5
 
-memoryinit:	ldy #HEAP_START		; only one block to setup
+memoryinit::	ldy #HEAP_START		; only one block to setup
 		ldx #0			; null for end of list
 		stx MEM_NEXT_O,y	; set the next entry to null
 		ldx #HEAP_LEN		; get the total size
@@ -51,7 +56,7 @@ memoryinit:	ldy #HEAP_START		; only one block to setup
 
 memoryallocmsg:	.asciz 'memoryalloc\r\n'
 
-memoryalloc:	debug #memoryallocmsg
+memoryalloc::	debug #memoryallocmsg
 		debugx
 		pshs a,b,y		; save y
 		leax MEM_SIZE,x		; add the overhead to the request
@@ -95,7 +100,7 @@ blockfitso:	puls y			; return start of previously block
 		
 ; free memory block at x
 
-memoryfree:	lda #1			; we are freeing
+memoryfree::	lda #1			; we are freeing
 		leax -MEM_SIZE,x	; go back the size of the struct
 		sta MEM_FREE_O,x	; and set free to 1
 		rts

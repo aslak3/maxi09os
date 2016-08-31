@@ -1,84 +1,80 @@
 ; our two tasks
 
-		.area RAM (ABS)
+		.include 'system.inc'
+		.include 'hardware.inc'
+		.include 'debug.inc'
+
+		.area RAM
 
 portadev:	.rmb 2
-timerdev:	.rmb 2
+consoledev:	.rmb 2
 waitsigs:	.rmb 1
 task1data:	.rmb 100
 
 portbdev:	.rmb 2
 task2data:	.rmb 100
 
-		.area ROM (ABS)
+		.area ROM
 
 uartdevice:	.asciz 'uart'
-timerdevice:	.asciz 'timer'
+consoledevice:	.asciz 'console'
 youtyped:	.asciz '\r\nYou typed: '
 
+abouttowaitmsg:	.asciz 'about to wait\r\n'
 task1startmsg:	.asciz 'task 1 starting\r\n'
 task1msg:	.asciz 'Timer expired\r\n'
 buttonmsg:	.asciz 'Key pressed: '
-abouttowaitmsg:	.asciz 'About to wait\r\n'
 donewaitmsg:	.asciz 'Done wait\r\n'
-startingtimermsg:	.asciz 'Starting timer!\r\n'
-
-timerctrlblk:	.byte 1
-		.word 40
 
 bumpblk:	.byte 0
 		.word 40*5
 
-task1:		lda #PORTB
+task1::		lda #PORTA
 		ldb #B19200
 		ldx #uartdevice		; we want a uart
 		lbsr sysopen
 		stx portadev
 
-		ldx #timerdevice
+		lda #0
+		ldx #consoledevice
 		lbsr sysopen
-		stx timerdev
+		stx consoledev
 
 		debug #task1startmsg
-
-		ldy #timerctrlblk
-		lda #TIMERCMD_START
-		lbsr syscontrol
-
-		debug #task1msg
 
 1$:		ldx portadev
 		ldy #abouttowaitmsg
 		lbsr putstr
-		ldx timerdev
+		ldx consoledev
 		lda DEVICE_SIGNAL,x
 		ldx portadev
 		ora DEVICE_SIGNAL,x
 		lbsr wait
 		sta waitsigs
 		ldx portadev
-;		ldy #donewaitmsg
-;		lbsr putstr
+		ldy #donewaitmsg
+		lbsr putstr
 
 		lda waitsigs
-		ldx timerdev
+		ldx consoledev
 		bita DEVICE_SIGNAL,x
-		bne 3$
+		bne 4$
 2$:		lda waitsigs
 		ldx portadev
 		bita DEVICE_SIGNAL,x
-		bne 4$
+		bne 3$
 		bra 1$
 
 3$:		ldx portadev
 		ldy #task1msg
 		lbsr putstr
-		bra 2$
+		bra 1$
 
-4$:		ldx portadev
+4$:		ldx consoledev
 		lbsr sysread
 		tfr a,b
 		beq 1$
+		ldx portadev
 		ldy #buttonmsg
 		lbsr putstr
 		tfr b,a
@@ -89,24 +85,12 @@ task1:		lda #PORTB
 		lbsr putstr
 		ldy #newlinemsg
 		lbsr putstr
-		tfr b,a
-		cmpa #0x20
-		beq 5$
 		bra 4$
-
-5$:		ldx timerdev
-		ldy #bumpblk
-		lda #TIMERCMD_START
-		lbsr syscontrol
-		ldx portadev
-		ldy #startingtimermsg
-		lbsr putstr
-		lbra 1$
 
 task2startmsg:	.asciz 'task2 starting\r\n'		
 task2msg:	.asciz '\r\n\r\nAnd hello from TASK TWO on PORT B, enter a string: '
 
-task2:		lda #PORTA
+task2::		lda #PORTB
 		ldb #B19200
 		ldx #uartdevice		; we want a uart
 		lbsr sysopen

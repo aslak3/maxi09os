@@ -1,10 +1,14 @@
 ; timer driver
 
-		.area RAM (ABS)
+		.include 'system.inc'
+		.include 'hardware.inc'
+		.include 'debug.inc'
+
+		.area RAM
 
 timers:		.rmb LIST_SIZE		; list of open timers
 
-		.area ROM (ABS)
+		.area ROM
 
 timersprepare:	ldy #timers
 		lbsr initlist
@@ -18,7 +22,7 @@ TIMER_RUNNING	.equ DEVICE_SIZE+4
 TIMER_REPEAT	.equ DEVICE_SIZE+5
 TIMER_SIZE	.equ DEVICE_SIZE+6
 
-timerdef:	.word timeropen
+timerdef::	.word timeropen
 		.word timersprepare
 		.asciz "timer"
 
@@ -83,7 +87,7 @@ stoptimer:	lbsr disable
 doingtimermsg:	.asciz 'Doing timer '
 timerdonemsg:	.asciz 'Timer done!!!!\r\n'
 
-runtimers:	pshs x,y,a
+runtimers::	pshs x,y,a
 		ldy #timers		; start with list
 		ldx LIST_HEAD,y		; get first node
 1$:		ldy NODE_NEXT,x		; we need to test for end

@@ -1,6 +1,10 @@
 ;;; TIMER ;;;
 
-tickerinit:	lda #0b11000000
+		.include 'hardware.inc'
+
+		.area ROM
+
+tickerinit::	lda #0b11000000
 		sta IER6522		; enable T1 interrupts
         
 		lda #0b01000000

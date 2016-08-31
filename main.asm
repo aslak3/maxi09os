@@ -1,38 +1,21 @@
-		.include 'systemvars.asm'
-
+		.include 'system.inc'
 		.include 'hardware.inc'
-
 		.include 'debug.inc'
 
-		.area ROM (ABS)
+		.area VECTORS
 
-; yield swi interrupt
-
-		.org 0xfffa
-
-		.word yield
-
-; fast interrupt vector
-
-		.org 0xfff6
-
-		.word firqinterrupt
-
-; normal interrupt vector
-
-		.org 0xfff8
-
-		.word irqinterrupt
-
-; setup the reset vector, last location in rom
-
-		.org 0xfffe
-	
-		.word reset
+		.word 0x0000		; reserved
+		.word 0x0000		; swi3
+		.word 0x0000		; swi2
+		.word firqinterrupt	; firq
+		.word irqinterrupt	; irq
+		.word yield		; swi
+		.word 0x0000		; nmi
+		.word reset		; reset
 
 ; this is the start of rom
 
-		.org 0xc000
+		.area ROM
 
 ; setup stack to the end of ram so it can go grown backwards
 
@@ -40,9 +23,9 @@ reset:		lda #0x02		; map all of the eeprom in
 		sta MUDDYSTATE
 
 		ldx #RAMSTART
-clearloop:	clr ,x+
+1$:		clr ,x+
 		cmpx #RAMEND
-		bne clearloop
+		bne 1$
 
 		disableinterrupts
 		clr interruptnest
@@ -78,7 +61,7 @@ clearloop:	clr ,x+
 
 		ldx #idler
 		lbsr createtask
-		debug #idlecreatedmsg
+		debug #idlecreatmsg
 		debugx
 		stx idletask
 
@@ -89,34 +72,34 @@ clearloop:	clr ,x+
 
 		lbra finishschedule
 
-idlecreatedmsg:	.asciz "Idle task created "
+idlecreatmsg:	.asciz "Idle task created "
 
 ; enable interrupts
 
 enablemsg:	.asciz "enable\r\n"
-intsenabledmsg:	.asciz "ints now enabled\r\n"
+intsenablemsg:	.asciz "ints now enabled\r\n"
 
-enable:		debug #enablemsg
+enable::		debug #enablemsg
 		debugint
 		disableinterrupts
 		inc interruptnest
-		bgt enableout		; nest value > 0?
+		bgt 1$			; nest value > 0?
 		rts
-enableout:	enableinterrupts
-		debug #intsenabledmsg
+1$:		enableinterrupts
+		debug #intsenablemsg
 		rts
 
 ; disable interrupts
 
 disablemsg:	.asciz "disable\r\n"
 
-disable:	debug #disablemsg
+disable::	debug #disablemsg
 		debugint
 		disableinterrupts
 		dec interruptnest
-		ble disableout		; nest value <= 0? 
+		ble 1$			; nest value <= 0? 
 		enableinterrupts
-disableout:	rts
+1$:		rts
 
 ; irq routine - dispatch to device handlers
 
@@ -143,7 +126,7 @@ irqinterrupt:	debug #irqintmsg
 tailmsg:	.asciz 'tail handler\r\n'
 reschedmsg:	.asciz 'rescheduling\r\n'
 
-tailhandler:	debug #tailmsg
+tailhandler::	debug #tailmsg
 		lda rescheduleflag	; check the reschedule flag
 		bne 1$			; flag? need to reschedule
 		rti			; regular exit
@@ -152,25 +135,5 @@ tailhandler:	debug #tailmsg
 		jmp yield		; reschedule the interrupt target
 
 greetingmsg:	.asciz 'MAXI09OS 0.1\r\n'
-newlinemsg:	.asciz '\r\n'
 
-; include the various subsystem implementations
-
-		.include 'debug.asm'
-		.include 'strings.asm'
-		.include 'ticker.asm'
-		.include 'memory.asm'
-		.include 'misc.asm'
-		.include 'tasks.asm'
-		.include 'io.asm'
-		.include 'lists.asm'
-
-		.include 'uartlowlevel.asm'
-
-		.include 'driver.asm'
-		.include 'uart.asm'
-		.include 'led.asm'
-		.include 'timer.asm'
-
-		.include 'init.asm'
-		.include 'testtasks.asm'
+newlinemsg::	.asciz '\r\n'

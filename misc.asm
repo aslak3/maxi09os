@@ -1,14 +1,16 @@
 ;;; MISC ;;;
 
-; delay by y - subroutine
+		.area ROM
 
-delay:		leay -1,y		; decrement y
+; delay by y
+
+delay::		leay -1,y		; decrement y
 		bne delay		; not zero? do it again
 		rts
 
 ; wordswap
 
-wordswap:	pshs d
+wordswap::	pshs d
 		ldd ,x
 		exg a,b
 		std ,x
@@ -17,7 +19,7 @@ wordswap:	pshs d
 
 ; div32
 
-div32:		lsra
+div32::		lsra
 		rorb
 		lsra
 		rorb
@@ -31,7 +33,7 @@ div32:		lsra
 
 ; mul32
 
-mul32:		lslb
+mul32::		lslb
 		rola
 		lslb
 		rola

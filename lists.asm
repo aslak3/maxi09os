@@ -1,6 +1,10 @@
 ; inits a list in y
 
-initlist:	pshs x			; save x, we'll need it later
+		.include 'system.inc'
+
+		.area ROM
+
+initlist::	pshs x			; save x, we'll need it later
 		leax LIST_TAIL,y	; calc the tail node
 		stx LIST_HEAD,y		; set the dummy head
 		ldx #0			; null
@@ -12,7 +16,7 @@ initlist:	pshs x			; save x, we'll need it later
 
 ; adds node at x to list in y at head
 
-addhead:	pshs u			; save u
+addhead::	pshs u			; save u
 		ldu LIST_HEAD,y		; get the current head
 		stx NODE_PREV,u		; set old head node's prev to new node
 		stu NODE_NEXT,x		; set the new next to current head
@@ -23,7 +27,7 @@ addhead:	pshs u			; save u
 
 ; add node at x to list in y at tail
 
-addtail:	pshs u,y		; save u and y
+addtail::	pshs u,y		; save u and y
 		ldu LIST_TAILPREV,y	; get the current tail
 		stx NODE_NEXT,u		; set old tail node's next to new node
 		stu NODE_PREV,x		; set the new prev to current tail
@@ -35,7 +39,7 @@ addtail:	pshs u,y		; save u and y
 
 ; remove the head from list in y, old head in x
 
-remhead:	pshs u			; save u
+remhead::	pshs u			; save u
 		ldu LIST_HEAD,y		; get the current head
 		ldx NODE_NEXT,u		; get that node's next
 		beq 1$			; if empty, nothing to do
@@ -47,7 +51,7 @@ remhead:	pshs u			; save u
 
 ; remove the tail from list in y, old tail in x
 
-remtail:	pshs u,y		; save u and y
+remtail::	pshs u,y		; save u and y
 		ldu LIST_TAILPREV,y	; get the current tail
 		ldx NODE_PREV,u		; get that node's prev
 		beq 1$			; if empty, nothing to do
@@ -60,7 +64,7 @@ remtail:	pshs u,y		; save u and y
 
 ; remove a node in x
 
-remove:		pshs u,y		; save u and y
+remove::	pshs u,y		; save u and y
 		ldy NODE_NEXT,x		; get the dead nodes next
 		ldu NODE_PREV,x		; get the dead nodes prev
 		sty NODE_NEXT,u		; make the prevs next the prev

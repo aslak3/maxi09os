@@ -1,14 +1,10 @@
 ; uart driver - for the 16C654
 
-		.area RAM (ABS)
+		.include 'system.inc'
+		.include 'hardware.inc'
+		.include 'debug.inc'
 
-uartdevices:	.rmb 2*PORTCOUNT	; all the port devices
-
-		.area ROM (ABS)
-
-uartprepare:	rts
-
-; uartopen - port number in a reg
+PORTCOUNT	.equ 4
 
 UART_RX_BUF	.equ DEVICE_SIZE+0	; receive circular bufrer
 UART_TX_BUF	.equ DEVICE_SIZE+32	; transmit circular buffer
@@ -17,14 +13,22 @@ UART_TX_COUNT_H	.equ DEVICE_SIZE+65	; handler transmit counter
 UART_RX_COUNT_U	.equ DEVICE_SIZE+66	; user receive counter
 UART_TX_COUNT_U	.equ DEVICE_SIZE+67	; user transmit counter
 UART_BASEADDR	.equ DEVICE_SIZE+68	; base address of port
-UART_PORT	.equ DEVICE_SIZE+70	; port number
+UART_UNIT	.equ DEVICE_SIZE+70	; port number
 UART_SIZE	.equ DEVICE_SIZE+71
 
-uartdef:	.word uartopen
+		.area RAM
+
+uartdevices:	.rmb 2*PORTCOUNT	; all the port devices
+
+		.area ROM
+
+uartdef::	.word uartopen
 		.word uartprepare
 		.asciz "uart"
 
-; uart open - open the uart port in a reg, returning the device in x
+uartprepare:	rts
+
+; uartopen - open the uart port in a reg, returning the device in x
 ; as per sysopen - b has the baud rate
 
 uartopen:	lbsr uartllopen		; y has base address
@@ -42,7 +46,7 @@ uartopen:	lbsr uartllopen		; y has base address
 		clr UART_TX_COUNT_H,x	; ...
 		clr UART_RX_COUNT_U,x	; ...
 		clr UART_TX_COUNT_U,x	; ...
-		sta UART_PORT,x		; save the uart port
+		sta UART_UNIT,x		; save the uart port
 		ldy #uartclose		; save the close pointer
 		sty DEVICE_CLOSE,x	; ... in the device struct
 		ldy #uartread		; save the read pointer
@@ -59,11 +63,10 @@ uartopen:	lbsr uartllopen		; y has base address
 
 ; uart close - give it the device in x
 
-uartclose:	lda UART_PORT,x		; obtain the port number
+uartclose:	lda UART_UNIT,x		; obtain the port number
 		lbsr uartllclose
 		lbsr remove		; remove it from the uart list
 		lbsr memoryfree		; free the open device handle
-		lbsr enable
 		rts
 
 ; read from the device in x, into a, waiting until there's a char
@@ -120,7 +123,7 @@ uartwrite:	pshs y,b
 uartrxmsg:	.asciz 'in uart rx handler\r\n'
 uartrxoutmsg:	.asciz 'going out uart rx handler\r\n'
 
-uartrxhandler:	pshs a,b,u
+uartrxhandler::	pshs a,b,u
 		debug #uartrxmsg
 		rola			; two bytes for a pointer
 		ldy #uartdevices	; the open devices table
