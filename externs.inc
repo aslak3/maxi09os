@@ -22,6 +22,10 @@
 		.globl syscontrol
 		.globl driversignal
 
+; font.asm
+
+		.globl fontdata
+
 ; init.asm
 
 		.globl init
@@ -127,4 +131,16 @@
 		.globl uartllclose
 		.globl uartllsetbaud
 		.globl uartllhandler
+
+; v99lowlevel.asm
+
+		.globl vindirect
+		.globl vsetcolour
+		.globl vsetcolours
+		.globl vinit
+		.globl vwrite
+		.globl vclear
+		.globl vread
+		.globl vseekwrite
+		.globl vseekread
 

@@ -1,5 +1,6 @@
 ; debug - port c output
 
+		.include 'system.inc'
 		.include 'hardware.inc'
 		.include 'debug.inc'
 

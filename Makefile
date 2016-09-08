@@ -14,7 +14,7 @@ MAIN_REL = main.rel
 RELS = memory.rel ticker.rel systemvars.rel strings.rel \
 	tasks.rel testtasks.rel init.rel driver.rel io.rel uart.rel \
 	debug.rel lists.rel led.rel timer.rel uartlowlevel.rel \
-	console.rel scancodes.rel misc.rel
+	console.rel scancodes.rel misc.rel v99lowlevel.rel fontdata.rel
 
 INCS = hardware.inc
 

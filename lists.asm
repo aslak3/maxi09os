@@ -1,8 +1,10 @@
-; inits a list in y
+; linked list routines
 
 		.include 'system.inc'
 
 		.area ROM
+
+; inits a list in y
 
 initlist::	pshs x			; save x, we'll need it later
 		leax LIST_TAIL,y	; calc the tail node

@@ -79,7 +79,7 @@ idlecreatmsg:	.asciz "Idle task created "
 enablemsg:	.asciz "enable\r\n"
 intsenablemsg:	.asciz "ints now enabled\r\n"
 
-enable::		debug #enablemsg
+enable::	debug #enablemsg
 		debugint
 		disableinterrupts
 		inc interruptnest
@@ -101,6 +101,8 @@ disable::	debug #disablemsg
 		enableinterrupts
 1$:		rts
 
+;;; INTERRUPT CONTEXT
+
 ; irq routine - dispatch to device handlers
 
 firqinterrupt:	rti
@@ -108,11 +110,11 @@ firqinterrupt:	rti
 irqintmsg:	.asciz 'irq int detected\r\n'
 nointmsg:	.asciz 'no interrupt routine found\r\n'
 
-irqinterrupt:	debug #irqintmsg
+irqinterrupt:	lda ACTIVEIRQ		; get the current state
 		ldx #inthandlers	; handler table
 		ldy #intmasks		; mask table
 		ldb #INTCOUNT		; 8 interrupts (priorities)
-		lda ACTIVEIRQ		; get the current state
+		debug #irqintmsg
 		debuga
 1$:		decb			; dec the priority 
 		bmi 2$			; exit when -1, to include 0
@@ -121,6 +123,7 @@ irqinterrupt:	debug #irqintmsg
 		lslb			; convert to word list
 		jmp [b,x]		; jump to the handler routine
 2$:		debug #nointmsg
+;		rti
 3$:		bra 3$			; no interrupt handler found
 
 tailmsg:	.asciz 'tail handler\r\n'

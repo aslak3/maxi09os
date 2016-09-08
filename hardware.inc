@@ -1,7 +1,3 @@
-; ascii constants
-
-		.include "system.inc"
-
 ; 16C654 QUART
 
 BASE16C654	.equ 0x8000

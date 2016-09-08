@@ -1,31 +1,31 @@
 ; debug - port c output
 
 .macro		debug thing
-		pshs x
-		ldx thing
-		lbsr debugprint
-		puls x
+;		pshs x
+;		ldx thing
+;		lbsr debugprint
+;		puls x
 .endm
 
 .macro		debugx
-		lbsr debugprintx
+;		lbsr debugprintx
 .endm
 
 .macro		debugy
-		lbsr debugprinty
+;		lbsr debugprinty
 .endm
 
 .macro		debuga
-		lbsr debugprinta
+;		lbsr debugprinta
 .endm
 
 .macro		debugb
-		lbsr debugprintb
+;		lbsr debugprintb
 .endm
 
 .macro		debugint
-		pshs a
-		lda interruptnest
-		debuga
-		puls a
+;		pshs a
+;		lda interruptnest
+;		debuga
+;		puls a
 .endm

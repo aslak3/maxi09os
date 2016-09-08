@@ -1,5 +1,6 @@
 ; led driver
 
+		.include 'system.inc'
 		.include 'hardware.inc'
 
 		.area RAM

@@ -76,10 +76,10 @@ consoleopen:	ldx #CON_SIZE		; allocate the device struct
 		sty DEVICE_WRITE,x	; ... in the device struct
 		lbsr signalalloc	; get a signal bit
 		sta DEVICE_SIGNAL,x	; save it in the device struct
-		setzero
+		setzero			; 0 is good
 		rts
 1$:		ldx #0			; return 0
-		setnotzero		; port is in use
+		setnotzero		; not 0 is bad - port is in use
 		rts
 
 ; console close - give it the device in x

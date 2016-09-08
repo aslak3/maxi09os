@@ -1,5 +1,6 @@
 ;;; TIMER ;;;
 
+		.include 'system.inc'
 		.include 'hardware.inc'
 
 		.area ROM
