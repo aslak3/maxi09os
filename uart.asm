@@ -26,7 +26,10 @@ uartdef::	.word uartopen
 		.word uartprepare
 		.asciz "uart"
 
-uartprepare:	rts
+uartprepdone:	.asciz 'uart prepare done\r\n'
+
+uartprepare:	debug #uartprepdone
+		rts
 
 ; uartopen - open the uart port in a reg, returning the device in x
 ; as per sysopen - b has the baud rate
@@ -34,6 +37,7 @@ uartprepare:	rts
 uartopen:	lbsr uartllopen		; y has base address
 		bne 1$			; 0 for good, else bad
 		lbsr uartllsetbaud	; set the rate from b
+;		lbsr uartllsethwhs	; enable hardware handshaking
 		ldx #UART_SIZE		; allocate the device struct
 		lbsr memoryalloc	; get the memory for the struct
 		sty UART_BASEADDR,x	; save port base address
@@ -132,7 +136,7 @@ uartrxhandler::	pshs a,b,u
 		ldb UART_RX_COUNT_H,x	; get current count of bytes
 1$:		lda LSR16C654,y		; get the current status
 		debuga
-		bita #0b0000001		; look for rx state
+		bita #0b0000011		; look for rx state
 		beq 2$			; bit clear? no data, out
 		lda RHR16C654,y		; get the byte from the port
 		leau UART_RX_BUF,x	; get the buffer

@@ -63,7 +63,7 @@ uartllclose::	pshs y
 
 uartllsetbaud::	pshs a
 		lda #0xbf		; bf magic to enhanced feature reg
-		sta LCR16C654,y		; 8n1 and config baud
+		sta LCR16C654,y		; 8n1 and config baud	
 		lda #0b00010000
 		sta EFR16C654,y		; enable mcr
 		lda #0b10000011
@@ -73,6 +73,16 @@ uartllsetbaud::	pshs a
 		stb DLL16C654,y
 		clra
 		sta DLM16C654,y
+		lda #0b00000011
+		sta LCR16C654,y		; 8n1 and back to normal
+		puls a
+		rts
+
+uartllsethwhs::	pshs a
+		lda #0xbf		; bf magic to enhanced feature reg
+		sta LCR16C654,y		; 8n1 and config baud
+		lda #0b11010000		; rts cts
+		sta EFR16C654,y
 		lda #0b00000011
 		sta LCR16C654,y		; 8n1 and back to normal
 		puls a

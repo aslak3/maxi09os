@@ -16,7 +16,7 @@ RELS = memory.rel ticker.rel systemvars.rel strings.rel \
 	debug.rel lists.rel led.rel timer.rel uartlowlevel.rel \
 	console.rel scancodes.rel misc.rel v99lowlevel.rel fontdata.rel
 
-INCS = hardware.inc
+INCS = hardware.inc v99lowlevel.inc system.inc debug.inc
 
 all: $(BIN)
 
@@ -26,7 +26,7 @@ all: $(BIN)
 %.ihx: $(MAIN_REL) $(RELS)
 	aslink $(AREA_BASES) -nmwi $< $(MAIN_REL) $(RELS)
 	
-%.rel: %.asm
+%.rel: %.asm $(INCS)
 	as6809 -oxs $@ $<
 
 externs.inc: *.asm

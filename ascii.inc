@@ -12,7 +12,7 @@ ASC_BS		.equ 0x08
 ASC_HT		.equ 0x09
 ASC_LF		.equ 0x0a
 ASC_VT		.equ 0x0b
-ASC_NP		.equ 0x0c
+ASC_FF		.equ 0x0c
 ASC_CR		.equ 0x0d
 ASC_SO		.equ 0x0e
 ASC_SI		.equ 0x0f

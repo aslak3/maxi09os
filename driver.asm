@@ -15,11 +15,14 @@ drivertable:	.word uartdef
 
 drvprepstart:	.asciz 'driverprepare start\r\n'
 drvprepend:	.asciz 'driverprepare end\r\n'
+doingdriver:	.asciz 'doing driver '
 
 driverprepare::	debug #drvprepstart
 		ldu #drivertable
 1$:		ldy ,u
 		beq 3$
+		debug #doingdriver
+		debugy
 		ldx DRIVER_PREPARE,y
 		debugx
 		beq 2$

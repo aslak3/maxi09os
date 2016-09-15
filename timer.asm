@@ -10,8 +10,14 @@ timers:		.rmb LIST_SIZE		; list of open timers
 
 		.area ROM
 
-timersprepare:	ldy #timers
+timerprepdone:	.asciz 'timerprep done\r\n'
+
+timerprepare:	pshs y
+		ldy #timers
 		lbsr initlist
+		debug #timerprepdone
+		lbsr dumplist
+		puls y
 		rts
 
 ; timer device instance struct
@@ -23,7 +29,7 @@ TIMER_REPEAT	.equ DEVICE_SIZE+5
 TIMER_SIZE	.equ DEVICE_SIZE+6
 
 timerdef::	.word timeropen
-		.word timersprepare
+		.word timerprepare
 		.asciz "timer"
 
 ; timer open
@@ -44,13 +50,17 @@ timeropen:	ldx #TIMER_SIZE		; allocate the device struct
 		clr TIMER_RUNNING,x	; clear we are counting flag ...
 		clr TIMER_REPEAT,x	; and we are repeating
 		ldy #timers
+		lbsr disable
 		lbsr addtail
+		lbsr enable
+		lbsr dumplist
 		setnotzero
 		rts
 
 ; timer close - give it the device in x
 
-timerclose:	lbsr memoryfree		; free the open device handle
+timerclose:	lbsr remove		; remove the node
+		lbsr memoryfree		; free the open device handle
 		rts
 
 ; write to the device in x, reg a is command, reg y is param block

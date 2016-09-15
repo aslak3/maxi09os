@@ -1,41 +1,11 @@
 ; v99(58) low level routines
 
+		.include 'system.inc'
 		.include 'hardware.inc'
+		.include 'v99lowlevel.inc'
+		.include 'debug.inc'
 
 		.area ROM
-
-; simple timing delay
-
-.macro		sleep
-		nop
-		nop
-		nop
-.endm
-
-; stores whats in register a in the v99 register
-
-.macro		loadareg register
-		sta VDIRECTPORT
-		lda #register|0x80
-		sta VDIRECTPORT
-.endm
-
-; stores the value in the v99 register
-
-.macro		loadconstreg register, value
-		lda #value
-		sta VDIRECTPORT
-		lda #register|0x80
-		sta VDIRECTPORT
-.endm
-
-; gets the value of the status register
-
-.macro		getstatusreg register
-		lda #register
-		loadareg VSTATUSREG
-		lda VSTATUSPORT
-.endm
 
 ; save into the registers, starting from the register in a. the value
 ; pointed by x and counted by y are copied in
@@ -76,16 +46,12 @@ vsetcolours::	clra			; start from col 0
 
 ; sets up "core" registers
 
-vinit::		pshs a,y,u
+vinit::		pshs a
 		loadconstreg VBANKREG, 0x00
 		loadconstreg VDISPLAYPOSREG, 0x08
 		loadconstreg VDISPLAYOFFREG, 0x00
 		loadconstreg VINTLINEREG, 0x00
-
-		ldy #0x0000		; vram start address
-		ldu #0x0000		; length
-		lbsr vclear		; clear 64KB
-		puls a,y,u
+		puls a
 		rts
 
 ; writes to y in vram, count u bytes, from x in mpu ram
@@ -94,7 +60,7 @@ vwrite::	pshs y,a
 		lbsr vseekwrite		; seek to y for writing
 		tfr u,y			; leau does not set z, so need y
 1$:		lda ,x+			; get byte from mpu ram
-		sta VPORT0		; save it to the vdc
+		writeaport0		; save it to the vdc
 		leay -1,y		; decrement
 		bne 1$			; back for more?
 		puls y,a
@@ -106,7 +72,7 @@ vclear::	pshs y,a
 		lbsr vseekwrite		; seek to y for writing
 		tfr u,y			; leau does not set z, so need y
 		clra			; we are clearing
-1$:		sta VPORT0		; clear the byte in vram
+1$:		writeaport0		; clear the byte in vram
 		leay -1,y		; decrement counter
 		bne 1$			; back for more?
 		puls y,a
@@ -117,7 +83,7 @@ vclear::	pshs y,a
 vread::		pshs y,a
 		lbsr vseekread
 		tfr u,y			; leau does not set z, so need y
-1$:		lda VPORT0		; get the vram byte
+1$:		readaport0		; get the vram byte
 		sta ,x+			; sve in mpu ram
 		leay -1,y		; dec counter
 		bne 1$			; back for more?
@@ -142,7 +108,7 @@ vseekcommon:	tfr y,d			; we need to do some shifting
 ; seek to vram address y for writing
 
 vseekwrite::	pshs a,b
-		lbsr vseekcommon
+		lbsr vseekcommon	; common address register stuff
 		ora #0b01000000		; set writing mode
 		sta VADDRPORT		; write last vram address byte
 		sleep			; have a nop nap
@@ -151,7 +117,9 @@ vseekwrite::	pshs a,b
 
 ; seek to vram address at y for reading
 
-vseekread::	lbsr vseekcommon
-		sta VADDRPORT
-		sleep
+vseekread::	pshs a,b
+		lbsr vseekcommon	; common addess register stuff
+		sta VADDRPORT		; save the last byte
+		sleep			; nop nap
+		puls a,b
 		rts

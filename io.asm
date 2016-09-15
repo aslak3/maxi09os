@@ -14,7 +14,7 @@ putstr::	lda ,y+			; get the next char
 		bra putstr		; more chars
 1$:		rts
 
-outofwaitmsg:	.asciz 'outof wait\r\n'
+outofwaitmsg:	.asciz 'out of wait\r\n'
 
 ; gets a string, filling it into y from the device at x
 
@@ -27,8 +27,6 @@ getstrloop:	lbsr sysread		; get a char in a
 		beq getstrout		; if it is, then out
 		cmpa #ASC_BS		; backspace pressed?
 		beq getstrbs		; handle backspace
-		cmpa #ASC_SP		; check if less then space
-		blo getstrloop		; if so, then ignore it
 		sta ,y+			; add it to string
 		incb			; increment the number of chars
 getstrecho:	lbsr syswrite		; echo it

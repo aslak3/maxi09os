@@ -22,6 +22,8 @@
 reset:		lda #0x02		; map all of the eeprom in
 		sta MUDDYSTATE
 
+		nop
+
 		ldx #RAMSTART
 1$:		clr ,x+
 		cmpx #RAMEND

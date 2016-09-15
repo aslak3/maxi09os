@@ -22,7 +22,7 @@
 		.globl syscontrol
 		.globl driversignal
 
-; font.asm
+; fontdata.asm
 
 		.globl fontdata
 
@@ -47,6 +47,7 @@
 		.globl remhead
 		.globl remtail
 		.globl remove
+		.globl dumplist
 
 ; main.asm
 
@@ -110,6 +111,9 @@
 
 		.globl task1
 		.globl task2
+		.globl task3
+		.globl task4
+		.globl task5
 
 ; ticker.asm
 
@@ -130,6 +134,7 @@
 		.globl uartllopen
 		.globl uartllclose
 		.globl uartllsetbaud
+		.globl uartllsethwhs
 		.globl uartllhandler
 
 ; v99lowlevel.asm
