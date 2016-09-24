@@ -97,7 +97,7 @@ uartread:	pshs b
 		leau UART_RX_BUF,x	; get the buffer
 		lda b,u			; get the last char written to buf
 		incb			; move along to the next
-		andb #31		; wrapping to 32 byte window
+		andb #63		; wrapping to 32 byte window
 		stb UART_RX_COUNT_U,x	; and save it
 		lbsr enable
 		debug #donereadmsg
@@ -133,8 +133,8 @@ uartrxhandler::	pshs a,b,u
 		ldy #uartdevices	; the open devices table
 		ldx a,y			; get the device for the port
 		ldy UART_BASEADDR,x	; get the base address
-		ldb UART_RX_COUNT_H,x	; get current count of bytes
-1$:		lda LSR16C654,y		; get the current status
+1$:		ldb UART_RX_COUNT_H,x	; get current count of bytes
+		lda LSR16C654,y		; get the current status
 		debuga
 		bita #0b0000011		; look for rx state
 		beq 2$			; bit clear? no data, out
@@ -142,11 +142,15 @@ uartrxhandler::	pshs a,b,u
 		leau UART_RX_BUF,x	; get the buffer
 		sta b,u			; save the new char in the buffer
 		incb			; we got a char
-		andb #31		; wrap 0->31
-		cmpb UART_RX_COUNT_U,x	; get current user pointer
-		bne 1$			; back for more chars unless overrun
-2$:		stb UART_RX_COUNT_H,x	; save the buffer write counter
-		lbsr driversignal	; signal the task that owns it
+		andb #63		; wrap 0->63
+		stb UART_RX_COUNT_H,x	; save the buffer write counter
+		subb UART_RX_COUNT_U,x	; get current user pointer
+		cmpb #-1		; one behind?
+		beq 2$			; back for more chars unless overrun
+		cmpb #63
+		beq 2$
+		bra 1$
+2$:		lbsr driversignal	; signal the task that owns it
 		puls a,b,u
 		debug #uartrxoutmsg
 		rts

@@ -16,11 +16,9 @@
 
 CONSOLECOUNT	.equ 6			; the number of virtual consoles
 PORTKEYBOARD	.equ PORTD		; the uart port attached to keybard
-COLCOUNT	.equ 80
-ROWCOUNT	.equ 24
-BYTESPERCONSOLE	.equ ROWCOUNT*COLCOUNT	; bytes for a screen of text
-SROWCOUNT	.equ ROWCOUNT-1		; number of rows to scroll
-BYTESPERSCROLL	.equ SROWCOUNT*COLCOUNT
+COLS		.equ 80
+ROWS		.equ 24
+HALF		.equ 12			; for scrolling half
 CURSORVAL	.equ 127		; the cursor pattern number
 
 CON_RX_BUF	.equ DEVICE_SIZE+0	; receive circular bufrer
@@ -34,15 +32,16 @@ CON_CAPSLOCK	.equ DEVICE_SIZE+69	; caps lock on?
 CON_VRAMADDR	.equ DEVICE_SIZE+70	; base vram address for this console
 CON_CURSOR_ROW	.equ DEVICE_SIZE+72	; row position of cursor
 CON_CURSOR_COL	.equ DEVICE_SIZE+73	; column position of cursor
-CON_SIZE	.equ DEVICE_SIZE+74
+CON_SCROLL_BIG	.equ DEVICE_SIZE+74
+CON_SIZE	.equ DEVICE_SIZE+75
 
 		.area RAM
 
 condevices:	.rmb 2*CONSOLECOUNT	; all the port devices
 kbdbaseaddr:	.rmb 2			; uart port d base
 activeconsole:	.rmb 1			; the active console
-linestarts:	.rmb 2*ROWCOUNT		; 24 line offsets, not per console
-scrollbuffer:	.rmb (ROWCOUNT-1)*COLCOUNT	; holding area used by scrolling
+linestarts:	.rmb 2*ROWS		; 24 line offsets, not per console
+scrollbuffer:	.rmb (ROWS-1)*COLS	; holding area used by scrolling
 
 		.area ROM
 
@@ -138,7 +137,7 @@ consoleprep:	pshs a,b,x,y,u
 		ldx #linestarts		; start of offset table
 		ldy #0x0000		; pos of first column of each row
 1$:		sty ,x++		; store the pos in the table
-		leay COLCOUNT,y		; COLCOUNT coloumns to a row
+		leay COLS,y		; COLS coloumns to a row
 		deca			; decrement row counter
 		bne 1$			; back to the next row?
 		debug #offsetsmade
@@ -149,10 +148,12 @@ consoleprep:	pshs a,b,x,y,u
 		rts
 
 ; console open - open the console unit in a reg, returning the device in x
-; as per sysopen
+; as per sysopen. b contains the scroll mode (0 for one line, not 0 for
+; half of a screen at a time)
 
 consoleopen:	ldx #CON_SIZE		; allocate the device struct
 		lbsr memoryalloc	; get the memory for the struct
+		stb CON_SCROLL_BIG,x	; should we do big scrolls?
 		ldy currenttask		; get the current task
 		sty DEVICE_TASK,x	; save it so we can signal it
 		clr CON_RX_COUNT_H,x	; clear all buffer counters
@@ -192,8 +193,6 @@ consoleclose:	lda #PORTKEYBOARD	; obtain the port number for kbd
 
 ; console read - get the last char in the buffer in a
 
-conreadmsg:	.asciz 'console done read\r\n'
-
 consoleread:	pshs b
 		lbsr disable		; into critical section
 		ldb CON_RX_COUNT_U,x	; get counter
@@ -205,7 +204,6 @@ consoleread:	pshs b
 		andb #31		; wrapping to 32 byte window
 		stb CON_RX_COUNT_U,x	; and save it
 		lbsr enable		; out of critical section
-		debug #conreadmsg
 		setnotzero		; got data
 		puls b
 		rts
@@ -226,6 +224,8 @@ consolewrite:	pshs a,x,y,u
 		beq handlebs		; if so, deal with it
 		cmpa #ASC_FF		; clear screen?
 		beq handleff		; if so, deal with it
+		cmpa #ASC_HT		; tab
+		beq handleht
 		bita #0x80		; test high bit
 		bne consolewriteo	; skip high bit set char
 		tsta			; check for ASC_NUL
@@ -239,7 +239,7 @@ handleregular:	lbsr seekcursor		; otherwise, move to the current pos
 		lda CON_CURSOR_COL,x	; get the current cursor pos
 		inca			; add one
 		sta CON_CURSOR_COL,x	; and save it
-		cmpa #COLCOUNT		; moved off the end of the row?
+		cmpa #COLS		; moved off the end of the row?
 		beq newline		; if so, we need to wrap the line
 consolewriteo:	lbsr enable		; end of vdc critical section
 		puls a,x,y,u
@@ -253,11 +253,10 @@ newline:	clr CON_CURSOR_COL,x	; move cursor to left of row
 handlelf:	lda CON_CURSOR_ROW,x	; get current row position
 		inca			; add one
 		sta CON_CURSOR_ROW,x	; save new position
-		cmpa #ROWCOUNT		; have we moved past the end?
+		cmpa #ROWS		; have we moved past the end?
 		bne newlineout		; if not, we are finished
 		lbsr scrollup		; otherwise we need to scroll!
-		lda #ROWCOUNT-1		; move the cursor to the last row
-		sta CON_CURSOR_ROW,x	; save it
+
 newlineout:	bra consolewriteo
 
 handlebs:	lbsr blankcursor	; blank out old cursor pos
@@ -266,12 +265,22 @@ handlebs:	lbsr blankcursor	; blank out old cursor pos
 		dec CON_CURSOR_COL,x	; otherwise move left
 		lbsr drawcursor		; and draw the new cursor pos
 		bra consolewriteo
-oldline:	lda #COLCOUNT-1		; last coloumn on a row
+oldline:	lda #COLS-1		; last coloumn on a row
 		sta CON_CURSOR_COL,x	; save the cursor position
 		dec CON_CURSOR_ROW,x	; back one line
 		bra consolewriteo
 
 handleff:	lbsr clearconsole
+		bra consolewriteo
+
+handleht:	lbsr blankcursor	; blank current cursor positionlda CON_CURSOR_COL,x	; get current col position
+		lda CON_CURSOR_COL,x	; get current col position
+		adda #8			; move across 8 chars
+		anda #0xf8		; round back to nearest 8
+		sta CON_CURSOR_COL,x	; and save it
+		cmpa #COLS		; moved off the end of the row?
+		beq newline		; if so, we need to wrap the line
+		lbsr drawcursor		; and draw the new cursor pos
 		bra consolewriteo
 
 handlecontrol:	ora #0x40		; switch to the caps char set
@@ -293,7 +302,7 @@ clearconsole:	pshs y,u
 		clr CON_CURSOR_ROW,x	; home the cursor to top
 		clr CON_CURSOR_COL,x	; ... left		
 		ldy CON_VRAMADDR,x	; base address of this console
-		ldu #BYTESPERCONSOLE	; number of bytes for a scren
+		ldu #ROWS*COLS		; number of bytes for a scren
 		lbsr disable		; enter critical vdc section
 		lbsr vclear		; zero the screen data
 		lbsr enable		; leave critical vdc section
@@ -334,24 +343,56 @@ drawcursor:	pshs a
 		puls a
 		rts
 
-; shift the diplay, referenced by the device at x, up by one row. the
-; bottom most row also needs to be cleared, since otherise it will have
-; the old text shown
+; shift the diplay, referenced by the device at x, up by either one row
+; or half the screen, based on what is configured
 
-scrollup:	pshs x,y
+scrollup:	pshs a
+		lda CON_SCROLL_BIG,x	; get the scroll mode
+		tsta			; see what mode it is
+		beq 1$			; not big?
+		lbsr scrolluphalf	; big, so scroll half
+		lda #ROWS-HALF		; move the cursor to half way ...
+		bra scrollupout		; ... down
+1$:		lbsr scrollupone	; otherwise, scrol one row
+		lda #ROWS-1		; and move the cursor ...
+scrollupout:	sta CON_CURSOR_ROW,x	; to the bottom most row
+		puls a
+		rts
+
+; scroll the screen up by half (12 rows)
+		
+scrolluphalf:	pshs x,y,u
 		ldy CON_VRAMADDR,x	; get the base address
-		leay COLCOUNT,y		; move to the start of the 2nd row
+		leay HALF*COLS,y	; move to half way in
 		ldx #scrollbuffer	; our temp location for the row
-		ldu #BYTESPERSCROLL	; set up the length counter
-		lbsr vread		; read in this row
-		leay -COLCOUNT,y	; write into the previous row
+		ldu #(ROWS-HALF)*COLS	; set up the length counter
+		lbsr vread		; read in this half
+		leay -(ROWS-HALF)*COLS,y; move to the top half
 		ldx #scrollbuffer	; reset the temp row pointer 
-		ldu #BYTESPERSCROLL	; set up the length counter
-		lbsr vwrite		; write out this new row
-		leay BYTESPERSCROLL,y	; move to next row for reading
-		ldu #COLCOUNT		; which we are clearing
+		ldu #(ROWS-HALF)*COLS	; set up the length counter
+		lbsr vwrite		; write out, offset half
+		leay (ROWS-HALF)*COLS,y	; move back to the second half
+		ldu #HALF*COLS		; which we are clearing
+		lbsr vclear		; clear this half for new text
+		puls x,y,u
+		rts
+
+; scroll the screen up by one row
+
+scrollupone:	pshs x,y,u
+		ldy CON_VRAMADDR,x	; get the base address
+		leay 1*COLS,y		; move to the start of the 2nd row
+		ldx #scrollbuffer	; our temp location for the row
+		ldu #(ROWS-1)*COLS	; set up the length counter
+		lbsr vread		; read in the rest of the rows
+		leay -1*COLS,y		; write into the previous row
+		ldx #scrollbuffer	; reset the temp row pointer 
+		ldu #(ROWS-1)*COLS	; set up the length counter
+		lbsr vwrite		; write out, offset one row
+		leay (ROWS-1)*COLS,y	; move to next row for reading
+		ldu #1*COLS		; which we are clearing
 		lbsr vclear		; clear this row for new text
-		puls x,y
+		puls x,y,u
 		rts
 
 ;;; INTERRUPT

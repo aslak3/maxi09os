@@ -44,6 +44,7 @@ bumpblk:	.byte 0
 		.word 40*5
 
 task1::		lda #0
+		clrb
 		ldx #consolename		; we want a console
 		lbsr sysopen
 		stx consoledev
@@ -124,6 +125,7 @@ task2startmsg:	.asciz 'task2 starting\r\n'
 task2msg:	.asciz '\r\n\r\nAnd hello from TASK TWO on console 1, enter a string: '
 
 task2::		lda #1
+		clrb
 		ldx #consolename		; we want a console
 		lbsr sysopen
 
@@ -146,6 +148,7 @@ task3startmsg:	.asciz 'task3 starting\r\n'
 task3msg:	.asciz '\r\n\r\nAnd hello from TASK THREE on console 2, enter a string: '
 
 task3::		lda #2
+		ldb #1				; big scrolling
 		ldx #consolename		; we want a console
 		lbsr sysopen
 
@@ -167,6 +170,7 @@ task3::		lda #2
 task4starting:	.asciz 'Task four on console 3 serial terminal\r\n\r\n'
 
 task4::		lda #3
+		ldb #1			; big scrolling
 		ldx #consolename
 		lbsr sysopen
 		stx task4consoledev
@@ -215,8 +219,6 @@ task5::		lda #1
 		ldb #B19200
 		ldx #uartname		; we want a console
 		lbsr sysopen
-
-		debug #task5startmsg
 
 1$:		ldy #task5msg
 		lbsr putstr

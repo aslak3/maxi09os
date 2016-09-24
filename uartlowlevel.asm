@@ -33,7 +33,7 @@ uartllopen::	pshs a,b,x
 		lda RHR16C654,y
 3$:		lda #0b00000001		; receive interrupts
 		sta IER16C654,y		; ... interrupts
-		lda #0b00000111
+		lda #0b01000001
 		sta FCR16C654,y		; 16 deep fifo
 		ldx #uartllhandler
 		stx inthandlers+(6*2)
@@ -81,7 +81,7 @@ uartllsetbaud::	pshs a
 uartllsethwhs::	pshs a
 		lda #0xbf		; bf magic to enhanced feature reg
 		sta LCR16C654,y		; 8n1 and config baud
-		lda #0b11010000		; rts cts
+		lda #0b10000000		; rts cts
 		sta EFR16C654,y
 		lda #0b00000011
 		sta LCR16C654,y		; 8n1 and back to normal
@@ -104,6 +104,7 @@ uartllhandler::	debug #uartllhandlermsg
 		lbsr uartrxhandler	; handle the normal uart
 		bra uarthandlero
 notporta:	ldb BASEPB16C654+ISR16C654
+		debugb
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notportb
 		lda #1
