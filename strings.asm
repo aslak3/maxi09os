@@ -9,7 +9,7 @@
 nibtoaschex:	anda #0x0f		; mask out the high nibble
 		adda #0x30		; add '0'
 		cmpa #0x39		; see if we are past '9'
-		ble 1$		; no? number then, so we're done
+		ble 1$			; no? number then, so we're done
 		adda #0x07		; yes? letter then, add 'A'-'9'
 1$:		sta ,x+			; add it
 		rts		
@@ -37,7 +37,7 @@ wordtoaschex::	pshs b			; save low byte
 ; concatstr - add string y to string x, not copying the null
 
 concatstr::	lda ,y+			; get the char in y
-		beq 1$		; if its a null then finish
+		beq 1$			; if its a null then finish
 		sta ,x+			; otherwise add it to x
 		bra concatstr		; go back for more
 1$:		rts

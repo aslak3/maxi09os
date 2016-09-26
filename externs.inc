@@ -47,7 +47,6 @@
 		.globl remhead
 		.globl remtail
 		.globl remove
-		.globl dumplist
 
 ; main.asm
 

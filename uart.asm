@@ -26,10 +26,7 @@ uartdef::	.word uartopen
 		.word uartprepare
 		.asciz "uart"
 
-uartprepdone:	.asciz 'uart prepare done\r\n'
-
-uartprepare:	debug #uartprepdone
-		rts
+uartprepare:	rts
 
 ; uartopen - open the uart port in a reg, returning the device in x
 ; as per sysopen - b has the baud rate

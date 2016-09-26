@@ -44,5 +44,5 @@ ledclose:	lbsr disable
 
 ; write to the device in x, reg a
 
-ledwrite:	sta LED
+ledwrite:	sta LED			; on or off, it's in a
 		rts

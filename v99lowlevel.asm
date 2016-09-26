@@ -47,10 +47,14 @@ vsetcolours::	clra			; start from col 0
 ; sets up "core" registers
 
 vinit::		pshs a
-		loadconstreg VBANKREG, 0x00
-		loadconstreg VDISPLAYPOSREG, 0x08
-		loadconstreg VDISPLAYOFFREG, 0x00
-		loadconstreg VINTLINEREG, 0x00
+		clra			; disable the extension bank
+		loadareg VBANKREG
+		lda #0x08		; position screen in the middle
+		loadareg VDISPLAYPOSREG
+		clra
+		loadareg VDISPLAYOFFREG
+		clra
+		loadareg VINTLINEREG
 		puls a
 		rts
 
@@ -90,21 +94,6 @@ vread::		pshs y,a
 		puls y,a
 		rts
 
-; prepare the vdc for reading or writing from y in vram
-
-vseekcommon:	tfr y,d			; we need to do some shifting
-		lsra
-		lsra
-		lsra
-		lsra
-		lsra
-		lsra			; six shifts put a15 at bit 1
-		loadareg VADDRREG
-		tfr y,d			; retore original address
-		stb VADDRPORT		; the low 8 bits of address (easy)
-		anda #0b00111111	; mask out the high two bits
-		rts
-
 ; seek to vram address y for writing
 
 vseekwrite::	pshs a,b
@@ -123,3 +112,19 @@ vseekread::	pshs a,b
 		sleep			; nop nap
 		puls a,b
 		rts
+
+; prepare the vdc for reading or writing from y in vram
+
+vseekcommon:	tfr y,d			; we need to do some shifting
+		lsra
+		lsra
+		lsra
+		lsra
+		lsra
+		lsra			; six shifts put a15 at bit 1
+		loadareg VADDRREG
+		tfr y,d			; retore original address
+		stb VADDRPORT		; the low 8 bits of address (easy)
+		anda #0b00111111	; mask out the high two bits
+		rts
+

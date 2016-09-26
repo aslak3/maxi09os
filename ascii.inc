@@ -1,5 +1,7 @@
 ; ascii constants
 
+; standard 0 to 32 control codes (including space)
+
 ASC_NUL		.equ 0x00
 ASC_SOH		.equ 0x01
 ASC_STX		.equ 0x02
@@ -33,6 +35,8 @@ ASC_GS		.equ 0x1d
 ASC_RS		.equ 0x1e
 ASC_US		.equ 0x1f
 ASC_SP		.equ 0x20
+
+; amiga 600 maxi09os special chars for function and cursor keys
 
 ASC_F1		.equ 0x80
 ASC_F2		.equ 0x81

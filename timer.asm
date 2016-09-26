@@ -10,13 +10,9 @@ timers:		.rmb LIST_SIZE		; list of open timers
 
 		.area ROM
 
-timerprepdone:	.asciz 'timerprep done\r\n'
-
 timerprepare:	pshs y
 		ldy #timers
 		lbsr initlist
-		debug #timerprepdone
-		lbsr dumplist
 		puls y
 		rts
 
@@ -53,7 +49,6 @@ timeropen:	ldx #TIMER_SIZE		; allocate the device struct
 		lbsr disable
 		lbsr addtail
 		lbsr enable
-		lbsr dumplist
 		setnotzero
 		rts
 

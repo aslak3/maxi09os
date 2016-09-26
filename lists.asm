@@ -74,17 +74,3 @@ remove::	pshs u,y		; save u and y
 		stu NODE_PREV,y		; make the nexts prev the next
 		puls u,y		; restore u and y
 		rts
-
-dashes:		.asciz '---\r\n'
-
-dumplist::	pshs x,y
-		debug #dashes
-		ldx LIST_HEAD,y
-1$:		ldy NODE_NEXT,x
-		beq 2$
-		debugx
-		tfr y,x
-		bra 1$
-2$:		debug #dashes
-		puls x,y
-		rts
