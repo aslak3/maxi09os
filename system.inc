@@ -22,8 +22,9 @@ TASK_SIGALLOC	.equ NODE_SIZE+4	; signal bits in use
 TASK_SIGWAIT	.equ NODE_SIZE+5	; signal bits being waited on
 TASK_SIGRECVD	.equ NODE_SIZE+6	; signal bits recieved
 TASK_INTNEST	.equ NODE_SIZE+7
-TASK_DISPCOUNT	.equ NODE_SIZE+8
-TASK_SIZE	.equ NODE_SIZE+10
+TASK_PERMITNEST	.equ NODE_SIZE+8
+TASK_DISPCOUNT	.equ NODE_SIZE+9
+TASK_SIZE	.equ NODE_SIZE+11
 
 ; an element the list of available drivers
 

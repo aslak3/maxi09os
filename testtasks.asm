@@ -178,7 +178,7 @@ task4::		lda #3
 		ldy #task4starting
 		lbsr putstr
 
-		lda #0
+		lda #1
 		ldb #B9600
 		ldx #uartname
 		lbsr sysopen
@@ -215,7 +215,7 @@ readuart:	ldx task4uartdev
 
 task5msg:	.asciz '\r\n\r\nAnd hello from TASK FIVE on UART port 1, enter a string: '
 
-task5::		lda #1
+task5::		lda #0
 		ldb #B19200
 		ldx #uartname		; we want a console
 		lbsr sysopen

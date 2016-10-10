@@ -31,6 +31,7 @@ reset:		lda #0x02		; map all of the eeprom in
 
 		disableinterrupts
 		clr interruptnest
+		clr permitnest
 
 		lds #STACKEND+1
 
@@ -102,6 +103,16 @@ disable::	debug #disablemsg
 		ble 1$			; nest value <= 0? 
 		enableinterrupts
 1$:		rts
+
+; enable multitasking
+
+permit::	inc permitnest
+		rts
+
+; disable multitasking
+
+forbid::	dec permitnest
+		rts
 
 ;;; INTERRUPT CONTEXT
 

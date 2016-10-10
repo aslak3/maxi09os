@@ -27,19 +27,24 @@ createtask::	tfr x,y			; save initital pc in y
 		sta TASK_SIGRECVD,x	; yeap, this too
 		lda #1
 		sta TASK_INTNEST,x	; clear interrupt nest
+		sta TASK_PERMITNEST,x	; clear permit nest
 		ldy #0
 		sty TASK_DISPCOUNT,x	; count of scheduled times
 
 		rts
 
-addtaskto::	lbsr disable
-		lbsr addtail
-		lbsr enable
+; add the node in x to the tail of the list in y, disabling as we go
+
+addtaskto::	lbsr disable		; enter critical section
+		lbsr addtail		; add to the end
+		lbsr enable		; leave critical section
 		rts
 
-remtask::	lbsr disable
-		lbsr remove
-		lbsr enable
+; remove the node in x, disabling as we go
+
+remtask::	lbsr disable		; enter critical section
+		lbsr remove		; remove the node
+		lbsr enable		; leave critical section
 		rts
 
 ; allocate the first avaialble signal bit, returning a bit mask in a
@@ -68,8 +73,8 @@ donewaitingmsg:	.asciz 'Done waiting\r\n'
 
 wait::		debug #waitmsg
 		pshs x,y,b
-		ldx currenttask
-		lbsr disable
+		ldx currenttask		; obtain the current task
+		lbsr disable		; enter critical section
 		sta TASK_SIGWAIT,x	; save what we are waiting for
 		bita TASK_SIGRECVD,x	; mask out the unwaited bits
 		bne 1$			; already got the signal?
@@ -84,17 +89,20 @@ wait::		debug #waitmsg
 		anda TASK_SIGWAIT,x	; re-mask the waiting bits
 		stb TASK_SIGRECVD,x	; and save the unwaited for ones
 		debug #donewaitingmsg
-		lbsr enable
+		lbsr enable		; leave critical section
 		puls x,y,b
 		rts
 
 signalmsg:	.asciz 'Signaling\r\n'
 
-signal::		debug #signalmsg
-		lbsr disable
-		lbsr intsignal
-		swi			; now reschedule
-		lbsr enable
+; user space signaler - signal the task in x with the signal in a,
+; scheduling the target of the schedule next.
+
+signal::	debug #signalmsg
+		lbsr disable		; enter criticial section
+		lbsr intsignal		; use the interrupt signal sender
+		swi			; now reschedule, returning later
+		lbsr enable		; leave critial section
 		rts
 
 ;;; INTERRUPT
@@ -121,56 +129,64 @@ finmsg:		.asciz 'Fin\r\n'
 tickerhandler::	debug #tickmsg
 		lda T1CL6522		; clear interrupt
 
-		lbsr runtimers
+		lbsr runtimers		; run all the timer devices
 
 yield::		debug #yieldmsg
-		ldx currenttask		; get the current task struct
+		tst permitnest		; see if task switch is enabled
+		bgt permitted		; >0, so task switching is enabled
+		rti			; if not, just return now
+
+permitted:	ldx currenttask		; get the current task struct
 		sts TASK_SP,x		; save the current stack pointer
-		lda interruptnest
-		sta TASK_INTNEST,x
+		lda interruptnest	; get the current int nest count
+		sta TASK_INTNEST,x	; save it in the outgoing task
+		lda permitnest		; same for the permitted nest count
+		sta TASK_PERMITNEST,x	; save it to the outgoing task
 
 		ldy #readytasks		; start at the head
-		ldx LIST_HEAD,y
-		ldy NODE_NEXT,x		; get the first node
+		ldx LIST_HEAD,y		; get the first node
+		ldy NODE_NEXT,x		; get its following node
 		beq scheduleidle	; no tasks, so idle
 
 		ldy NODE_NEXT,y		; this will become the new first
 		beq finishschedule	; only one task, so done already
 
-		ldy #readytasks
-		lbsr remtail
-		lbsr addhead
+		ldy #readytasks		; get the list of ready tasks
+		lbsr remtail		; remvoe the tail and add ...
+		lbsr addhead		; ... it to the head, rotating it
 
 finishschedule::	debugx
 		stx currenttask		; set the pointer for current task
 		lds TASK_SP,x		; setup the stack from the task
 		lda TASK_INTNEST,x	; get the int nest count from task
 		sta interruptnest	; restore the interrupt nest count
-		ldy TASK_DISPCOUNT,x	; incremenet the dispatch counter
-		leay 1,y
-		sty TASK_DISPCOUNT,x
+		lda TASK_PERMITNEST,x	; get the permit nest count from task
+		sta permitnest		; restore the permit nest count
+		ldy TASK_DISPCOUNT,x	; get the dispatch counter
+		leay 1,y		; increment it
+		sty TASK_DISPCOUNT,x	; and save it back
 		debugy
 		rti			; resume next task
 
-scheduleidle:	ldx idletask
+scheduleidle:	ldx idletask		; get the idle task handlee
 		debug #idlemsg
-		bra finishschedule
-
-leddevice:	.asciz 'led'
+		bra finishschedule	; it will be made the current task
 
 ; idler task
 
-idler::		ldx #leddevice
-		lbsr sysopen
-1$:		lda #1
-		lbsr syswrite
-		ldy #0x6000
-		lbsr delay
-		clra
-		lbsr syswrite
-		ldy #0x6000
-		lbsr delay
-		bra 1$
+leddevice:	.asciz 'led'
+
+idler::		ldx #leddevice		; get the led device name
+		lbsr sysopen		; open it
+1$:		lda #1			; on
+		lbsr syswrite		; make the led turn on
+		ldy #0x6000		; delay for a "reasonable" time
+		lbsr delay		; and delay
+		clra			; off
+		lbsr syswrite		; make the led turn off
+		ldy #0x6000		; delay for a "reasonable" time
+		lbsr delay		; and delay
+		bra 1$			; and back for more, forever
 
 ;;;;;;;;;;;;;;; DEBUG
 

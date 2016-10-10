@@ -20,9 +20,10 @@ rescheduleflag::	.rmb 1
 
 idletask::	.rmb 2
 
-; interrupt nest count, <=0 disabled, >0 enabled
+; interrupt nest count, <1 disabled, >=1 enabled
 
 interruptnest::	.rmb 1
+permitnest::	.rmb 1
 
 ; interrupt table - handlers
 

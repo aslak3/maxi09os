@@ -95,10 +95,6 @@ consoledef::	.word consoleopen
 
 conprepstart:	.asciz 'con prep start\r\n'
 conprepend:	.asciz 'con prep end\r\n'
-doingvdc:	.asciz 'doing vdc\r\n'
-donevinit:	.asciz 'done vinit\r\n'
-loadedfonts:	.asciz 'loaded fonts\r\n'
-offsetsmade:	.asciz 'offset made for rows\r\n'
 
 consoleprep:	pshs a,b,x,y,u
 		debug #conprepstart
@@ -107,9 +103,7 @@ consoleprep:	pshs a,b,x,y,u
 		sty kbdbaseaddr		; save the base address
 		ldb #B9600		; the mcu currently uses 9600...
 		lbsr uartllsetbaud	; for its baud rate
-		debug #doingvdc
 		lbsr vinit		; clear video memory, center screen
-		debug #donevinit
 		lda #0b00000100		; text 2 settings (80 columns)
 		loadareg VMODE0REG	; set this in mode 0 register
 		lda #0b01010000		; bl=1, enable display
@@ -125,14 +119,13 @@ consoleprep:	pshs a,b,x,y,u
 		lbsr vsetcolours	; set the 2 colourscolours
 		lda #0x10		; foreground=white, background=black
 		loadareg VCOLOUR1REG	; set the text colour register
-		ldx #fontdata		; the msx font data in mpu ram
 		ldy #0			; 0 byte control codes
 		ldu #8*32		; 32 characters of empty font data
 		lbsr vclear		; clear it
+		ldx #fontdata		; the msx font data in mpu ram
 		ldy #8*32		; skip 32 chars worth; control codes
 		ldu #8*96		; 96 characters of font data
 		lbsr vwrite		; set up the font data in vram
-		debug #loadedfonts
 		lda #24			; 24 lines on the screen
 		ldx #linestarts		; start of offset table
 		ldy #0x0000		; pos of first column of each row
@@ -140,7 +133,6 @@ consoleprep:	pshs a,b,x,y,u
 		leay COLS,y		; COLS coloumns to a row
 		deca			; decrement row counter
 		bne 1$			; back to the next row?
-		debug #offsetsmade
 		clr activeconsole	; start on console 0 though not open
 		lbsr showactive		; show this unopen console
 		debug #conprepend
@@ -185,10 +177,7 @@ consoleopen:	ldx #CON_SIZE		; allocate the device struct
 
 ; console close - give it the device in x
 
-consoleclose:	lda #PORTKEYBOARD	; obtain the port number for kbd
-		lbsr uartllclose	; low level close on port
-		lbsr remove		; remove it from the uart list
-		lbsr memoryfree		; free the open device handle
+consoleclose:	lbsr memoryfree		; free the open device handle
 		rts
 
 ; console read - get the last char in the buffer in a
@@ -215,7 +204,7 @@ consoleread:	pshs b
 ; write to the device in x, reg a
 
 consolewrite:	pshs a,x,y,u
-		lbsr disable		; critical section  due to vdc access
+		lbsr forbid		; critical section due to vdc access
 		cmpa #ASC_CR		; is it a return?
 		beq handlecr		; if so, deal with it
 		cmpa #ASC_LF		; is it a line feed?
@@ -241,7 +230,7 @@ handleregular:	lbsr seekcursor		; otherwise, move to the current pos
 		sta CON_CURSOR_COL,x	; and save it
 		cmpa #COLS		; moved off the end of the row?
 		beq newline		; if so, we need to wrap the line
-consolewriteo:	lbsr enable		; end of vdc critical section
+consolewriteo:	lbsr permit		; end of vdc critical section
 		puls a,x,y,u
 		rts
 		

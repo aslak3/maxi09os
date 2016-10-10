@@ -52,6 +52,8 @@
 
 		.globl enable
 		.globl disable
+		.globl permit
+		.globl forbid
 		.globl tailhandler
 		.globl newlinemsg
 
@@ -89,6 +91,7 @@
 		.globl rescheduleflag
 		.globl idletask
 		.globl interruptnest
+		.globl permitnest
 		.globl inthandlers
 		.globl intmasks
 
