@@ -125,19 +125,12 @@ nointmsg:	.asciz 'no interrupt routine found\r\n'
 
 irqinterrupt:	lda ACTIVEIRQ		; get the current state
 		ldx #inthandlers	; handler table
-		ldy #intmasks		; mask table
-		ldb #INTCOUNT		; 8 interrupts (priorities)
-		debug #irqintmsg
-		debuga
-1$:		decb			; dec the priority 
-		bmi 2$			; exit when -1, to include 0
-		bita b,y		; mask the current status
-		beq 1$			; zero? back for the next
-		lslb			; convert to word list
-		jmp [b,x]		; jump to the handler routine
-2$:		debug #nointmsg
-;		rti
-3$:		bra 3$			; no interrupt handler found
+		lsla			; table is in words
+		ldx a,x			; get the handler routine
+		beq 1$			; see if there is no routine
+		jmp ,x			; otherwise jump to the routine
+1$:		debug #nointmsg
+2$:		bra 2$			; no interrupt handler found
 
 tailmsg:	.asciz 'tail handler\r\n'
 reschedmsg:	.asciz 'rescheduling\r\n'

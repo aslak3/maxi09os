@@ -36,10 +36,9 @@ uartllopen::	pshs a,b,x
 		lda #0b01000001
 		sta FCR16C654,y		; 16 deep fifo
 		ldx #uartllhandler
-		stx inthandlers+(6*2)
+		stx inthandlers+(INTPOSUART*2)
 		lda #INTMASKUART	; enable the uart interrupt
 		sta IRQSOURCESS		; ... to be routed via disco
-		sta intmasks+6
 		lbsr enable		; exit critical section
 		setzero
 		bra 2$

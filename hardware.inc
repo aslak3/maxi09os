@@ -188,17 +188,18 @@ INTMASKIDE	.equ 0x20
 INTMASKVDC	.equ 0x40
 INTMASKMUDDY	.equ 0x80
 
-; and irq bit numbers
+; and interrupt handler numbers
 
-INTBITKBDREQ	.equ 0
-INTBITOPL	.equ 1
-INTBIT6522	.equ 2
-INTBITRTC	.equ 3
-INTBITUART	.equ 4
-INTBITIDE	.equ 5
-INTBITVDC	.equ 6
-INTBITMUDDY	.equ 7
-INTCOUNT	.equ 8 ; used to size per-int tables
+INTPOSNULL	.equ 0 ; no interrupt happened
+INTPOSKBDREQ	.equ 1
+INTPOSOPL	.equ 2
+INTPOS6522	.equ 3
+INTPOSRTC	.equ 4
+INTPOSUART	.equ 5
+INTPOSIDE	.equ 6
+INTPOSVDC	.equ 7
+INTPOSMUDDY	.equ 8
+INTPOSCOUNT	.equ 9 ; used to size per-int tables
 
 ; ide
 

@@ -84,7 +84,6 @@
 
 ; systemvars.asm
 
-		.globl interrupttable
 		.globl currenttask
 		.globl readytasks
 		.globl waitingtasks
@@ -93,7 +92,6 @@
 		.globl interruptnest
 		.globl permitnest
 		.globl inthandlers
-		.globl intmasks
 
 ; tasks.asm
 

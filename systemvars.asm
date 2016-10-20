@@ -7,8 +7,6 @@
 
 ; interrupt handler table
 
-interrupttable::	.rmb 2*INTCOUNT
-
 ; task switcher state
 
 currenttask::	.rmb 2
@@ -27,8 +25,4 @@ permitnest::	.rmb 1
 
 ; interrupt table - handlers
 
-inthandlers::	.rmb 8*2
-
-; interrupt table - masks
-
-intmasks::	.rmb 8
+inthandlers::	.rmb INTPOSCOUNT*2
