@@ -34,6 +34,8 @@
 
 		.globl putstr
 		.globl getstr
+		.globl putbyte
+		.globl putword
 
 ; led.asm
 
@@ -70,17 +72,23 @@
 		.globl div32
 		.globl mul32
 
+; monitor.asm
+
+		.globl monitorstart
+
 ; scancodes.asm
 
 		.globl mapscancode
 
 ; strings.asm
 
+		.globl nibtoaschex
 		.globl bytetoaschex
 		.globl wordtoaschex
-		.globl concatstr
-		.globl concatstrn
+		.globl copystr
+		.globl printableasc
 		.globl strcmp
+		.globl parseinput
 
 ; systemvars.asm
 
@@ -96,6 +104,8 @@
 ; tasks.asm
 
 		.globl createtask
+		.globl newtask
+		.globl settaskname
 		.globl addtaskto
 		.globl remtask
 		.globl signalalloc

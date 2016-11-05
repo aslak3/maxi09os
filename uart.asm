@@ -24,7 +24,7 @@ uartdevices:	.rmb 2*PORTCOUNT	; all the port devices
 
 uartdef::	.word uartopen
 		.word uartprepare
-		.asciz "uart"
+		.asciz 'uart'
 
 uartprepare:	rts
 

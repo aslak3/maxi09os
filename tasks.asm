@@ -8,7 +8,21 @@
 
 STACK		.equ 256
 
-createtask::	tfr x,y			; save initital pc in y
+; createtask - create a task with initial pc in x, name in y and make it
+; ready to run
+
+createtask::	pshs y
+		lbsr newtask
+		lbsr settaskname
+		ldy #readytasks
+		lbsr addtaskto
+		puls y
+		rts
+
+; new task - x is the initial pc
+
+newtask::	pshs a,y,u
+		tfr x,y			; save initital pc in y
 		ldx #STACK+TASK_SIZE	; STACK bytes of stack per task
 		lbsr memoryalloc	; alloc and get stack in y
 
@@ -30,7 +44,16 @@ createtask::	tfr x,y			; save initital pc in y
 		sta TASK_PERMITNEST,x	; clear permit nest
 		ldy #0
 		sty TASK_DISPCOUNT,x	; count of scheduled times
+		puls a,y,u
 
+		rts
+
+; set the task in x's name to y
+
+settaskname::	pshs x
+		leax TASK_NAME,x	; obtain name member
+		lbsr copystr		; copy the string
+		puls x			; get the task pointer back
 		rts
 
 ; add the node in x to the tail of the list in y, disabling as we go

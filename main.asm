@@ -64,18 +64,22 @@ reset:		lda #0x02		; map all of the eeprom in
 
 		ldx #idler
 		lbsr createtask
+		ldy #idlername
+		lbsr settaskname
 		debug #idlecreatmsg
 		debugx
 		stx idletask
 
 		ldx #init
+		ldy #initname
 		lbsr createtask
-		ldy #readytasks
-		lbsr addtaskto
 
 		lbra finishschedule
 
 idlecreatmsg:	.asciz "Idle task created "
+
+idlername:	.asciz "idler"
+initname:	.asciz "init"
 
 ; enable interrupts
 

@@ -50,3 +50,33 @@ getstrwait:	lda DEVICE_SIGNAL,x	; get the signal mask to wait on
 		debug #outofwaitmsg	; done waiting, we have some data
 		debuga
 		bra getstrloop		; go and get the new data
+
+; putnibble - convert a low nibble in a and output it via x
+
+putnibble:	anda #0x0f		; mask out the high nibble
+		adda #0x30		; add '0'
+		cmpa #0x39		; see if we are past '9'
+		ble 1$			; no? number then, so we're done
+		adda #0x07		; yes? letter then, add 'A'-'9'
+1$:		lbsr syswrite		; output it
+		rts		
+
+; putbyte - convert a byte in a to two characters and send them via x
+	
+putbyte::	pshs a			; save original input byte
+		lsra			; move high nibble into low nibble
+		lsra			; ..
+		lsra			; ..
+		lsra			; ..
+		bsr putnibble		; convert the low nibble
+		puls a			; get the original input back
+		bsr putnibble		; convert the high nibble
+		rts
+
+; putword - convert a word in d to four characters and send them via x
+
+putword::	pshs b			; save low byte
+		bsr putbyte		; output high byte
+		puls a			; restore low byte
+		bsr putbyte		; and output low byte
+		rts

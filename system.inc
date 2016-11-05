@@ -13,29 +13,31 @@ NODE_NEXT	.equ 0
 NODE_PREV	.equ 2
 NODE_SIZE	.equ 4
 
-; task struct offsets
+; a record describe a task in the system
 
-TASK_NODE	.equ 0
+TASK_NODE	.equ 0			; a node for this task
 TASK_PC		.equ NODE_SIZE+0	; the initial program counter
 TASK_SP		.equ NODE_SIZE+2	; the current stack pointer
 TASK_SIGALLOC	.equ NODE_SIZE+4	; signal bits in use
 TASK_SIGWAIT	.equ NODE_SIZE+5	; signal bits being waited on
 TASK_SIGRECVD	.equ NODE_SIZE+6	; signal bits recieved
-TASK_INTNEST	.equ NODE_SIZE+7
-TASK_PERMITNEST	.equ NODE_SIZE+8
-TASK_DISPCOUNT	.equ NODE_SIZE+9
-TASK_SIZE	.equ NODE_SIZE+11
+TASK_INTNEST	.equ NODE_SIZE+7	; interrupt nest count
+TASK_PERMITNEST	.equ NODE_SIZE+8	; permit nest count
+TASK_DISPCOUNT	.equ NODE_SIZE+9	; dispatch counter
+TASK_NAME	.equ NODE_SIZE+11	; task name ("my task\0")
+TASK_DEFAULT_IO	.equ NODE_SIZE+19
+TASK_SIZE	.equ NODE_SIZE+21
 
-; an element the list of available drivers
+; a record describing an available driver
 
 DRIVER_OPEN	.equ 0			; device open routine
 DRIVER_PREPARE	.equ 2			; prepare a driver
 DRIVER_NAME	.equ 4			; driver name ("uart\0")
 DRIVER_SIZE	.equ 12
 
-; operations that can be performed on a open device
+; an open device
 
-DEVICE_NODE	.equ 0			; list node
+DEVICE_NODE	.equ 0			; list node (unused currently)
 DEVICE_CLOSE	.equ NODE_SIZE+0	; device close routine
 DEVICE_READ	.equ NODE_SIZE+2	; read a byte into a
 DEVICE_WRITE	.equ NODE_SIZE+4	; write a byte from a
@@ -65,6 +67,6 @@ FSTACK_PC	.equ 1
 TIMERCMD_START	.equ 0
 TIMERCMD_STOP	.equ 1
 
-TIMERCTRL_REP	.equ 0
+TIMERCTRL_REP	.equ 0			; repeating?
 TIMERCTRL_END	.equ 1
 TIMERCTRL_SIZE	.equ 3
