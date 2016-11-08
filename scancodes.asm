@@ -8,6 +8,7 @@
 
 leftshifton:	.rmb 1
 rightshifton:	.rmb 1
+capslockon:	.rmb 1
 controlon:	.rmb 1
 
 		.area ROM
@@ -360,6 +361,8 @@ keydown:	anda #0x7f		; mask out the up/down; its in b
 		beq asciilshift
 		cmpa #KEY_R_SHIFT	; right shift?
 		beq asciirshift
+		cmpa #KEY_CAPS_LOCK	; caps lock?
+		beq asciicapslock
 		cmpa #KEY_CTRL		; control?
 		beq asciicontrol
 		tstb			; key direction?
@@ -372,6 +375,8 @@ asciilshift:	stb leftshifton		; set left shift pressed flag
 		bra nonprintable	; done
 asciirshift:	stb rightshifton	; set right shift pressed flag
 		bra nonprintable	; done
+asciicapslock:	stb capslockon		; set caps lock pressed flag
+		bra nonprintable	; done
 asciicontrol:	stb controlon		; set control prssed flag
 		bra nonprintable	; done
 
@@ -381,6 +386,8 @@ printablekey:	ldx #unshiftmap		; assume we are not shifting
 		tst leftshifton		; check for left shift down
 		bne 3$			; is it?
 		tst rightshifton	; check for right shift down
+		bne 3$			; is it?
+		tst capslockon		; check for caps lock on
 		bne 3$			; is it?
 1$:		lda a,x			; find ascii value
 		bra mapscancodeo	; cleanup
