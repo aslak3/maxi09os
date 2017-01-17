@@ -13,7 +13,8 @@ MEM_LENGTH_O	.equ 2
 MEM_FREE_O	.equ 4
 MEM_SIZE	.equ 5
 
-memoryinit::	ldy #HEAP_START		; only one block to setup
+memoryinit::	debug ^'Memory init',DEBUG_MEMORY
+		ldy #HEAP_START		; only one block to setup
 		ldx #0			; null for end of list
 		stx MEM_NEXT_O,y	; set the next entry to null
 		ldx #HEAP_LEN		; get the total size
@@ -54,10 +55,8 @@ memoryinit::	ldy #HEAP_START		; only one block to setup
 ; memoryalloc - size of memory in x, start of allocated memory in x on
 ; return or 0
 
-memoryallocmsg:	.asciz 'memoryalloc\r\n'
-
-memoryalloc::	debug #memoryallocmsg
-		debugx
+memoryalloc::	debug ^'Memory alloc',DEBUG_MEMORY
+		debugx DEBUG_MEMORY
 		pshs a,b,y		; save y
 		leax MEM_SIZE,x		; add the overhead to the request
 		lbsr disable		; critical section
@@ -100,7 +99,8 @@ blockfitso:	puls y			; return start of previously block
 		
 ; free memory block at x
 
-memoryfree::	lda #1			; we are freeing
+memoryfree::	debug ^'Memory free',DEBUG_MEMORY
+		lda #1			; we are freeing
 		leax -MEM_SIZE,x	; go back the size of the struct
 		sta MEM_FREE_O,x	; and set free to 1
 		rts

@@ -3,6 +3,7 @@
 		.include 'system.inc'
 		.include 'ascii.inc'
 		.include 'scancodes.inc'
+		.include 'hardware.inc'
 
 		.area RAM
 
@@ -16,7 +17,7 @@ controlon:	.rmb 1
 unshiftmap:
 
 ; row 0
-
+	
 		.byte ASC_ESC		; escape
 		.byte ASC_NUL		; unwired
 		.byte ASC_F1		; f1
@@ -382,16 +383,18 @@ asciicontrol:	stb controlon		; set control prssed flag
 
 printablekey:	ldx #unshiftmap		; assume we are not shifting
 		tst controlon		; check control first
-		bne 2$
+		bne 3$
 		tst leftshifton		; check for left shift down
-		bne 3$			; is it?
+		bne 4$			; is it?
 		tst rightshifton	; check for right shift down
-		bne 3$			; is it?
-		tst capslockon		; check for caps lock on
-		bne 3$			; is it?
+		bne 4$			; is it?
 1$:		lda a,x			; find ascii value
+		tst capslockon		; check for caps lock on
+		beq 2$			; is it?
+		lbsr toupper		; otherwise uppercase the letter
+2$:		setnotzero
 		bra mapscancodeo	; cleanup
-2$:		ldx #controlmap		; controling, use alternate table
+3$:		ldx #controlmap		; controling, use alternate table
 		bra 1$			; get key
-3$:		ldx #shiftmap		; shifting, use alternate table
+4$:		ldx #shiftmap		; shifting, use alternate table
 		bra 1$			; get key

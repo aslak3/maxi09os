@@ -60,10 +60,7 @@ timerclose:	lbsr remove		; remove the node
 
 ; write to the device in x, reg a is command, reg y is param block
 
-timerctrlmsg:	.asciz 'timer control entered\r\n'
-timerstartmsg:	.asciz 'timer started\r\n'
-
-timercontrol:	debug #timerctrlmsg
+timercontrol:	debug ^'Timer control',DEBUG_SPEC_DRV
 		cmpa #TIMERCMD_START
 		beq starttimer
 		cmpa #TIMERCMD_STOP
@@ -79,7 +76,7 @@ starttimer:	lbsr disable
 		sty TIMER_COUNTER,x
 		lda #1
 		sta TIMER_RUNNING,x
-		debug #timerstartmsg
+		debug ^'Timer start',DEBUG_SPEC_DRV
 		lbsr enable
 		rts
 stoptimer:	lbsr disable
@@ -89,16 +86,13 @@ stoptimer:	lbsr disable
 
 ;;; INTERUPT
 
-doingtimermsg:	.asciz 'Doing timer '
-timerdonemsg:	.asciz 'Timer done!!!!\r\n'
-
 runtimers::	pshs x,y,a
 		ldy #timers		; start with list
 		ldx LIST_HEAD,y		; get first node
 1$:		ldy NODE_NEXT,x		; we need to test for end
-		beq runtimersout	; end of list?
-		debug #doingtimermsg
-		debugx
+		lbeq runtimersout	; end of list?
+		debug ^'Doing a timer',DEBUG_INT
+		debugx DEBUG_INT
 		lda TIMER_RUNNING,x	; see if timer running
 		beq 3$			; not running, so next
 		ldy TIMER_COUNTER,x	; get current value
@@ -117,10 +111,10 @@ runtimers::	pshs x,y,a
 2$:		lda DEVICE_SIGNAL,x	; get signal bit for task
 		tfr x,y			; save timer device struct
 		ldx DEVICE_TASK,x	; get the task for that owns timer
-		debug #timerdonemsg
+		debug ^'Timer done',DEBUG_INT
 		lbsr intsignal		; signal the task
 		tfr y,x			; back to the device struct in x
 3$:		ldx NODE_NEXT,x		; get the next open timer
-		bra 1$			; back for more
+		lbra 1$			; back for more
 runtimersout:	puls x,y,a
 		rts

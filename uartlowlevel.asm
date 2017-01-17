@@ -91,11 +91,7 @@ uartllsethwhs::	pshs a
 
 ; interrupt handler for any uart port
 
-uartllhandlermsg:	.asciz 'in uart low level handler\r\n'
-doingtailmsg:	.asciz 'doing tail\r\n'
-unknownuartmsg:	.asciz 'cant find active uart interrupt\r\n'
-
-uartllhandler::	debug #uartllhandlermsg
+uartllhandler::	debug ^'In UART LowLevel handler',DEBUG_SPEC_DRV
 		ldb BASEPA16C654+ISR16C654
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notporta
@@ -103,7 +99,7 @@ uartllhandler::	debug #uartllhandlermsg
 		lbsr uartrxhandler	; handle the normal uart
 		bra uarthandlero
 notporta:	ldb BASEPB16C654+ISR16C654
-		debugb
+		debugb DEBUG_SPEC_DRV
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notportb
 		lda #1
@@ -116,11 +112,11 @@ notportb:	ldb BASEPC16C654+ISR16C654
 		lbsr uartrxhandler	; handle the normbal uart
 		bra uarthandlero
 notportc:	ldb BASEPD16C654+ISR16C654
-		debugb
+		debugb DEBUG_SPEC_DRV
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notportd
 		lbsr conrxhandler	; handle the keyboard
 		bra uarthandlero
-notportd:	debug #unknownuartmsg
-uarthandlero:	debug #doingtailmsg
+notportd:	debug ^'Unknown UART port',DEBUG_SPEC_DRV
+uarthandlero:	debug ^'End UART handler',DEBUG_SPEC_DRV
 		jmp tailhandler		; cheeck the reschedule state

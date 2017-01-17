@@ -3,23 +3,18 @@
 		.globl consoledef
 		.globl conrxhandler
 
-; debug.asm
-
-		.globl debuginit
-		.globl debugprint
-		.globl debugprintx
-		.globl debugprinty
-		.globl debugprinta
-		.globl debugprintb
-
 ; driver.asm
 
 		.globl driverprepare
 		.globl sysopen
+		.globl sysclosedefio
 		.globl sysclose
+		.globl sysreaddefio
 		.globl sysread
+		.globl syswritedefio
 		.globl syswrite
-		.globl syscontrol
+		.globl sysctrldefio
+		.globl sysctrl
 		.globl driversignal
 
 ; fontdata.asm
@@ -32,9 +27,13 @@
 
 ; io.asm
 
+		.globl putstrdefio
 		.globl putstr
+		.globl getstrdefio
 		.globl getstr
+		.globl putbytedefio
 		.globl putbyte
+		.globl putworddefio
 		.globl putword
 
 ; led.asm
@@ -86,16 +85,18 @@
 		.globl bytetoaschex
 		.globl wordtoaschex
 		.globl copystr
-		.globl printableasc
 		.globl strcmp
 		.globl parseinput
+		.globl printableasc
+		.globl toupper
 
 ; systemvars.asm
 
 		.globl currenttask
+		.globl defaultio
 		.globl readytasks
 		.globl waitingtasks
-		.globl rescheduleflag
+		.globl reschedflag
 		.globl idletask
 		.globl interruptnest
 		.globl permitnest
@@ -105,8 +106,11 @@
 
 		.globl createtask
 		.globl newtask
+		.globl exittask
+		.globl childexit
 		.globl settaskname
 		.globl addtaskto
+		.globl remtaskfrom
 		.globl remtask
 		.globl signalalloc
 		.globl wait
@@ -114,16 +118,14 @@
 		.globl intsignal
 		.globl tickerhandler
 		.globl yield
-		.globl finishschedule
+		.globl doneschedule
 		.globl idler
 
 ; testtasks.asm
 
-		.globl task1
-		.globl task2
-		.globl task3
-		.globl task4
-		.globl task5
+		.globl timertask
+		.globl echotask
+		.globl sertermtask
 
 ; ticker.asm
 

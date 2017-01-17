@@ -6,6 +6,10 @@
 
 ;;;;; IO
 
+; puts the string in y to the default io device
+
+putstrdefio::	ldx defaultio
+
 ; puts the string in y to the device at x
 
 putstr::	lda ,y+			; get the next char
@@ -14,7 +18,9 @@ putstr::	lda ,y+			; get the next char
 		bra putstr		; more chars
 1$:		rts
 
-outofwaitmsg:	.asciz 'out of wait\r\n'
+; gets a string, filling it into y from the default io device
+
+getstrdefio::	ldx defaultio
 
 ; gets a string, filling it into y from the device at x
 
@@ -47,19 +53,22 @@ getstrbs:	tstb			; see if the char count is 0
 		bra getstrloop		; echo the bs and charry on
 getstrwait:	lda DEVICE_SIGNAL,x	; get the signal mask to wait on
 		lbsr wait		; and wait...
-		debug #outofwaitmsg	; done waiting, we have some data
-		debuga
+		debug ^'Get string wait returned',DEBUG_DRIVER
+		debuga DEBUG_DRIVER
 		bra getstrloop		; go and get the new data
 
-; putnibble - convert a low nibble in a and output it via x
+; putnib - convert a low nibble in a and output it via x
 
-putnibble:	anda #0x0f		; mask out the high nibble
+putnib:		anda #0x0f		; mask out the high nibble
 		adda #0x30		; add '0'
 		cmpa #0x39		; see if we are past '9'
 		ble 1$			; no? number then, so we're done
 		adda #0x07		; yes? letter then, add 'A'-'9'
 1$:		lbsr syswrite		; output it
 		rts		
+; putbyte - convert a byte in a to two characters and send them via def io
+
+putbytedefio::	ldx defaultio
 
 ; putbyte - convert a byte in a to two characters and send them via x
 	
@@ -68,10 +77,15 @@ putbyte::	pshs a			; save original input byte
 		lsra			; ..
 		lsra			; ..
 		lsra			; ..
-		bsr putnibble		; convert the low nibble
+		bsr putnib		; convert the low nibble
 		puls a			; get the original input back
-		bsr putnibble		; convert the high nibble
+		bsr putnib		; convert the high nibble
 		rts
+
+; putworddefio - convert a word in d to four characters and send them via
+; default io
+
+putworddefio::	ldx defaultio
 
 ; putword - convert a word in d to four characters and send them via x
 

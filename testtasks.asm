@@ -10,32 +10,25 @@
 consoledev:	.rmb 2
 timerdev:	.rmb 2
 waitsigs:	.rmb 1
-task1data:	.rmb 200
 
-task2data:	.rmb 200
+timertestdata:	.rmb 200
 
-task3data:	.rmb 200
-
-task4consoledev:.rmb 2
-task4uartdev:	.rmb 2
-task4waitsigs:	.rmb 1
-
-task5data:	.rmb 200
+sertermcondev:	.rmb 2
+sertermuartdev:	.rmb 2
+sertermwaitsigs:.rmb 1
 
 		.area ROM
 
-consolename:	.asciz 'console'
-timername:	.asciz 'timer'
-uartname:	.asciz 'uart'
+consolenamez:	.asciz 'console'
+timernamez:	.asciz 'timer'
+uartnamez:	.asciz 'uart'
 
-youtyped:	.asciz '\r\nYou typed: '
-
-task1startmsg:	.asciz 'task 1 starting\r\n'
-task1msg:	.asciz 'Timer expired\r\n'
-buttonmsg:	.asciz 'Key pressed: '
-abouttowaitmsg:	.asciz 'About to wait\r\n'
-donewaitms:	.asciz 'Done wait\r\n'
-startingtimermsg:	.asciz 'Starting timer!\r\n'
+timertaskstartz:.asciz 'Timer task starting\r\n'
+timerexpiredz:	.asciz 'Timer expired\r\n'
+keypressedz:	.asciz 'Key pressed: '
+abouttowaitz:	.asciz 'About to wait\r\n'
+donewaitz:	.asciz 'Done wait\r\n'
+startingtimerz:	.asciz 'Starting timer!\r\n'
 
 timerctrlblk:	.byte 1
 		.word 40
@@ -43,30 +36,26 @@ timerctrlblk:	.byte 1
 bumpblk:	.byte 0
 		.word 40*5
 
-task1::		lda #0
+timertask::	lda #0
 		clrb
-		ldx #consolename		; we want a console
+		ldx #consolenamez		; we want a console
 		lbsr sysopen
 		stx consoledev
-		ldy #task1startmsg
+		ldy #timertaskstartz
 		lbsr putstr
 		lda #ASC_EOT
 		lbsr syswrite
 
-		ldx #timername
+		ldx #timernamez
 		lbsr sysopen
 		stx timerdev
 
-		debug #task1startmsg
-
 		ldy #timerctrlblk
 		lda #TIMERCMD_START
-		lbsr syscontrol
-
-		debug #task1msg
+		lbsr sysctrl
 
 1$:		ldx consoledev
-		ldy #abouttowaitmsg
+		ldy #abouttowaitz
 		lbsr putstr
 		ldx timerdev
 		lda DEVICE_SIGNAL,x
@@ -74,9 +63,6 @@ task1::		lda #0
 		ora DEVICE_SIGNAL,x
 		lbsr wait
 		sta waitsigs
-;		ldx consoledev
-;		ldy #donewaitmsg
-		lbsr putstr
 
 		lda waitsigs
 		ldx timerdev
@@ -89,7 +75,7 @@ task1::		lda #0
 		bra 1$
 
 3$:		ldx consoledev
-		ldy #task1msg
+		ldy #timerexpiredz
 		lbsr putstr
 		bra 2$
 
@@ -97,13 +83,13 @@ task1::		lda #0
 		lbsr sysread
 		tfr a,b
 		beq 1$
-		ldy #buttonmsg
+		ldy #keypressedz
 		lbsr putstr
 		tfr b,a
-		ldx #task1data
+		ldx #timertestdata
 		lbsr bytetoaschex
 		ldx consoledev
-		ldy #task1data
+		ldy #timertestdata
 		lbsr putstr
 		ldy #newlinemsg
 		lbsr putstr
@@ -115,121 +101,76 @@ task1::		lda #0
 5$:		ldx timerdev
 		ldy #bumpblk
 		lda #TIMERCMD_START
-		lbsr syscontrol
+		lbsr sysctrl
 		ldx consoledev
-		ldy #startingtimermsg
+		ldy #startingtimerz
 		lbsr putstr
 		lbra 1$
 
-task2startmsg:	.asciz 'task2 starting\r\n'		
-task2msg:	.asciz '\r\n\r\nAnd hello from TASK TWO on console 1, enter a string: '
+echogreetz:	.asciz '\r\n\r\nHello, enter a string: '
+youtypedz:	.asciz '\r\nYou typed: '
 
-task2::		lda #1
-		clrb
-		ldx #consolename		; we want a console
-		lbsr sysopen
+echotask::	ldx #200
+		lbsr memoryalloc
+		tfr x,u
 
-		debug #task2startmsg
+		ldx defaultio
 
-1$:		ldy #task2msg
+1$:		ldy #echogreetz
 		lbsr putstr
 
-		ldy #task2data
+		tfr u,y
 		lbsr getstr
 
-		ldy #youtyped
+		ldy #youtypedz
 		lbsr putstr
-		ldy #task2data
+		tfr u,y
 		lbsr putstr
 
 		bra 1$
 
-task3startmsg:	.asciz 'task3 starting\r\n'		
-task3msg:	.asciz '\r\n\r\nAnd hello from TASK THREE on console 2, enter a string: '
+sertermz:	.asciz 'Serial terminal\r\n\r\n'
 
-task3::		lda #2
-		ldb #1				; big scrolling
-		ldx #consolename		; we want a console
-		lbsr sysopen
-
-		debug #task3startmsg
-
-1$:		ldy #task3msg
-		lbsr putstr
-
-		ldy #task3data
-		lbsr getstr
-
-		ldy #youtyped
-		lbsr putstr
-		ldy #task3data
-		lbsr putstr
-
-		bra 1$
-
-task4starting:	.asciz 'Task four on console 3 serial terminal\r\n\r\n'
-
-task4::		lda #3
+sertermtask::	lda #3
 		ldb #1			; big scrolling
-		ldx #consolename
+		ldx #consolenamez
 		lbsr sysopen
-		stx task4consoledev
+		stx sertermcondev
 
-		ldy #task4starting
+		ldy #sertermz
 		lbsr putstr
 
 		lda #1
 		ldb #B9600
-		ldx #uartname
+		ldx #uartnamez
 		lbsr sysopen
-		stx task4uartdev
+		stx sertermuartdev
 
-task4loop:	ldx task4consoledev
+sertermloop:	ldx sertermcondev
 		lda DEVICE_SIGNAL,x
-		ldx task4uartdev
+		ldx sertermuartdev
 		ora DEVICE_SIGNAL,x
 		lbsr wait
-		sta task4waitsigs
-		lda task4waitsigs
-		ldx task4consoledev
+		sta sertermwaitsigs
+		lda sertermwaitsigs
+		ldx sertermcondev
 		bita DEVICE_SIGNAL,x
 		bne readconsole
 		lda waitsigs
-		ldx task4uartdev
+		ldx sertermuartdev
 		bita DEVICE_SIGNAL,x
 		bne readuart
-		bra task4loop
+		bra sertermloop
 
-readconsole:	ldx task4consoledev
+readconsole:	ldx sertermcondev
 		lbsr sysread
-		beq task4loop
-		ldx task4uartdev
+		beq sertermloop
+		ldx sertermuartdev
 		lbsr syswrite
 		bra readconsole
-readuart:	ldx task4uartdev
+readuart:	ldx sertermuartdev
 		lbsr sysread
-		beq task4loop
-		ldx task4consoledev
+		beq sertermloop
+		ldx sertermcondev
 		lbsr syswrite
 		bra readuart
-
-task5msg:	.asciz '\r\n\r\nAnd hello from TASK FIVE on UART port 1, enter a string: '
-
-task5::		lda #0
-		ldb #B19200
-		ldx #uartname		; we want a console
-		lbsr sysopen
-
-1$:		ldy #task5msg
-		lbsr putstr
-
-		ldy #task5data
-		lbsr getstr
-
-		ldy #youtyped
-		lbsr putstr
-		ldy #task5data
-		lbsr putstr
-
-		bra 1$
-		

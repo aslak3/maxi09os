@@ -13,23 +13,19 @@ drivertable:	.word uartdef
 
 ; inits all drivers
 
-drvprepstart:	.asciz 'driverprepare start\r\n'
-drvprepend:	.asciz 'driverprepare end\r\n'
-doingdriver:	.asciz 'doing driver '
-
-driverprepare::	debug #drvprepstart
+driverprepare::	debug ^'Driver prepare start',DEBUG_DRIVER
 		ldu #drivertable
 1$:		ldy ,u
 		beq 3$
-		debug #doingdriver
-		debugy
+		debug ^'Doing driver prpare for',DEBUG_DRIVER
+		debugy DEBUG_DRIVER
 		ldx DRIVER_PREPARE,y
-		debugx
+		debugx DEBUG_DRIVER
 		beq 2$
 		jsr [DRIVER_PREPARE,y]
 2$:		leau 2,u
 		bra 1$
-3$:		debug #drvprepend
+3$:		debug ^'Driver prpare end',DEBUG_DRIVER
 		rts	
 
 
@@ -48,34 +44,48 @@ sysopen::	ldu #drivertable	; setup table search
 3$:		ldy ,u
 		jmp [DRIVER_OPEN,y]	; this is a jump
 
+; close the default io
+
+sysclosedefio::	ldx defaultio
+
 ; close the device at x
 
 sysclose::	jmp [DEVICE_CLOSE,x]	; this is a jump
+
+; read from the default io, a reg has the result
+
+sysreaddefio::	ldx defaultio
 
 ; read from a device. x is the device struct, a reg has the result
 
 sysread::	jmp [DEVICE_READ,x]	; this is a jump
 
+; write to the default io, a has what to write
+
+syswritedefio::	ldx defaultio
+
 ; write to a evice. x is the device struct, a has what to write
 
 syswrite::	jmp [DEVICE_WRITE,x]	; this is a jump
 
+; generic do anything to the default io
+
+sysctrldefio::	ldx defaultio
+
 ; generic do anything to a device, x is the device struct
 
-syscontrol::	jmp [DEVICE_CONTROL,x]	; this is a jump
+sysctrl::	jmp [DEVICE_CONTROL,x]	; this is a jump
 
 ; helpers
 
 ; signals the task that owns the device in x
 
-driversignalmsg:	.asciz 'driver signalling task\r\n'
-
 driversignal::	pshs a,x
-		debug #driversignalmsg
+		debug ^'Driver signalling task',DEBUG_TASK
 		lda DEVICE_SIGNAL,x	; get interrupt bit
 		ldx DEVICE_TASK,x	; get task that owns port
-		debugx
-		debuga
+		debugx DEBUG_TASK
+		debuga DEBUG_TASK
 		lbsr intsignal		; make it next to run
 		puls a,x
 		rts  

@@ -22,8 +22,6 @@
 reset:		lda #0x02		; map all of the eeprom in
 		sta MUDDYSTATE
 
-		nop
-
 		ldx #RAMSTART
 1$:		clr ,x+
 		cmpx #RAMEND
@@ -40,14 +38,15 @@ reset:		lda #0x02		; map all of the eeprom in
 		sta IRQSOURCESR
 		sta FIRQSOURCESR
 
-		lbsr debuginit
+		debuginit
+		debug ^'Starting debug',DEBUG_GENERAL
 
 		lbsr driverprepare
 
 		lbsr tickerinit		; init the timer
 		lbsr memoryinit		; init the heap
 
-		clr rescheduleflag
+		clr reschedflag
 
 		ldy #readytasks
 		lbsr initlist
@@ -63,45 +62,37 @@ reset:		lda #0x02		; map all of the eeprom in
 		sta LED			; led off
 
 		ldx #idler
-		lbsr createtask
+		lbsr newtask
 		ldy #idlername
 		lbsr settaskname
-		debug #idlecreatmsg
-		debugx
+		debug ^'Idle task created',DEBUG_GENERAL
+		debugx DEBUG_GENERAL
 		stx idletask
 
 		ldx #init
 		ldy #initname
+		ldu #0
 		lbsr createtask
 
-		lbra finishschedule
+		lbra doneschedule
 
-idlecreatmsg:	.asciz "Idle task created "
-
-idlername:	.asciz "idler"
-initname:	.asciz "init"
+idlername:	.asciz 'idler'
+initname:	.asciz 'init'
 
 ; enable interrupts
 
-enablemsg:	.asciz "enable\r\n"
-intsenablemsg:	.asciz "ints now enabled\r\n"
-
-enable::	debug #enablemsg
-		debugint
+enable::	debug ^'Enable',DEBUG_ENDDIS
 		disableinterrupts
 		inc interruptnest
 		bgt 1$			; nest value > 0?
 		rts
 1$:		enableinterrupts
-		debug #intsenablemsg
+		debug ^'Interrupts now enabled',DEBUG_ENDDIS
 		rts
 
 ; disable interrupts
 
-disablemsg:	.asciz "disable\r\n"
-
-disable::	debug #disablemsg
-		debugint
+disable::	debug ^'Disable',DEBUG_ENDDIS
 		disableinterrupts
 		dec interruptnest
 		ble 1$			; nest value <= 0? 
@@ -124,29 +115,26 @@ forbid::	dec permitnest
 
 firqinterrupt:	rti
 
-irqintmsg:	.asciz 'irq int detected\r\n'
-nointmsg:	.asciz 'no interrupt routine found\r\n'
-
-irqinterrupt:	lda ACTIVEIRQ		; get the current state
+irqinterrupt:	debug ^'IRQ int detected',DEBUG_INT
+		lda ACTIVEIRQ		; get the current state
 		ldx #inthandlers	; handler table
 		lsla			; table is in words
 		ldx a,x			; get the handler routine
 		beq 1$			; see if there is no routine
 		jmp ,x			; otherwise jump to the routine
-1$:		debug #nointmsg
+1$:		debug ^'No interrupt routine found, halting',DEBUG_INT
 2$:		bra 2$			; no interrupt handler found
 
-tailmsg:	.asciz 'tail handler\r\n'
-reschedmsg:	.asciz 'rescheduling\r\n'
-
-tailhandler::	debug #tailmsg
-		lda rescheduleflag	; check the reschedule flag
+tailhandler::	debug ^'Tail handler',DEBUG_INT
+		lda reschedflag		; check the reschedule flag
 		bne 1$			; flag? need to reschedule
 		rti			; regular exit
-1$:		clr rescheduleflag	; ensure it wont happen again
-		debug #reschedmsg
+1$:		clr reschedflag		; ensure it wont happen again
+		debug ^'Rescheduling',DEBUG_INT
 		jmp yield		; reschedule the interrupt target
 
-greetingmsg:	.asciz 'MAXI09OS 0.1\r\n'
-
 newlinemsg::	.asciz '\r\n'
+
+		.area DEBUGMSG
+
+; empty placeholder for when debug is disabled

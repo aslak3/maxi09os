@@ -81,11 +81,6 @@ uartclose:	lda UART_UNIT,x		; obtain the port number
 ;		puls y
 ;		rts
 
-pausedmsg:	.asciz 'task paused '
-wakedmsg:	.asciz 'task waked\r\n'
-gotcharmsg:	.asciz 'got char\r\n'
-donereadmsg:	.asciz 'done read\r\n'
-
 uartread:	pshs b
 		lbsr disable
 		ldb UART_RX_COUNT_U,x	; get counter
@@ -97,7 +92,7 @@ uartread:	pshs b
 		andb #63		; wrapping to 32 byte window
 		stb UART_RX_COUNT_U,x	; and save it
 		lbsr enable
-		debug #donereadmsg
+		debug ^'UART done read',DEBUG_SPEC_DRV
 		setnotzero		; got data
 		puls b
 		rts
@@ -121,18 +116,15 @@ uartwrite:	pshs y,b
 
 ; handle receive interrupts - a has the port number
 
-uartrxmsg:	.asciz 'in uart rx handler\r\n'
-uartrxoutmsg:	.asciz 'going out uart rx handler\r\n'
-
 uartrxhandler::	pshs a,b,u
-		debug #uartrxmsg
+		debug ^'Start UART RX handler',DEBUG_INT
 		rola			; two bytes for a pointer
 		ldy #uartdevices	; the open devices table
 		ldx a,y			; get the device for the port
 		ldy UART_BASEADDR,x	; get the base address
 1$:		ldb UART_RX_COUNT_H,x	; get current count of bytes
 		lda LSR16C654,y		; get the current status
-		debuga
+		debuga DEBUG_INT
 		bita #0b0000011		; look for rx state
 		beq 2$			; bit clear? no data, out
 		lda RHR16C654,y		; get the byte from the port
@@ -149,5 +141,5 @@ uartrxhandler::	pshs a,b,u
 		bra 1$
 2$:		lbsr driversignal	; signal the task that owns it
 		puls a,b,u
-		debug #uartrxoutmsg
+		debug ^'End UART RX handler',DEBUG_INT
 		rts

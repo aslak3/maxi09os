@@ -4,33 +4,21 @@
 		.include 'hardware.inc'
 		.include 'debug.inc'
 
+.if DEBUG_MODE
+
 		.area RAM
 
 debugbuffer:	.rmb 100
 
 		.area ROM
 
-startingmsg:	.asciz 'debug starting\r\n'
-
-debuginit::	ldy #BASEPC16C654
-		clra
-		sta IER16C654,y		; ... interrupts
-		lda #0xbf		; bf magic to enhanced feature reg
-		sta LCR16C654,y		; 8n1 and config baud
-		lda #0b00010000
-		sta EFR16C654,y		; enable mcr
-		lda #0b10000011
-		sta LCR16C654,y
-		lda #0b10000000
-		sta MCR16C654,y		; clock select
-		lda #0x01
-		sta DLL16C654,y
-		lda #0x00
-		sta DLM16C654,y		; 115200 baud
-		lda #0b00000011
-		sta LCR16C654,y		; 8n1 and back to normal
-		debug #startingmsg
-		rts
+generalz::	.asciz 'General: '
+tasksz::	.asciz 'Tasks: '
+enddisz::	.asciz 'Enable/Disable: '
+intz::		.asciz 'Interrupt: '
+memoryz::	.asciz 'Memory: '
+driverz::	.asciz 'Drivers: '
+specdrvz::	.asciz 'Low level driver: '
 
 ; write to the debug port the string in x
 
@@ -92,3 +80,5 @@ debugprintb::	pshs a,b,cc,x
 		lbsr debugprint
 		puls a,b,cc,x
 		rts
+
+.endif

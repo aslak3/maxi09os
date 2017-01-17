@@ -32,7 +32,7 @@ CON_CAPSLOCK	.equ DEVICE_SIZE+69	; caps lock on?
 CON_VRAMADDR	.equ DEVICE_SIZE+70	; base vram address for this console
 CON_CURSOR_ROW	.equ DEVICE_SIZE+72	; row position of cursor
 CON_CURSOR_COL	.equ DEVICE_SIZE+73	; column position of cursor
-CON_SCROLL_BIG	.equ DEVICE_SIZE+74
+CON_SCROLL_BIG	.equ DEVICE_SIZE+74	; big jumps when scrolling
 CON_SIZE	.equ DEVICE_SIZE+75
 
 		.area RAM
@@ -93,11 +93,8 @@ consoledef::	.word consoleopen
 ; consoleprepare - open the uart and init the display, this is global to
 ; all consoles
 
-conprepstart:	.asciz 'con prep start\r\n'
-conprepend:	.asciz 'con prep end\r\n'
-
 consoleprep:	pshs a,b,x,y,u
-		debug #conprepstart
+		debug ^'Console prep start',DEBUG_DRIVER
 		lda #PORTKEYBOARD	; open the port attached to...
 		lbsr uartllopen		; the keyboard mcu
 		sty kbdbaseaddr		; save the base address
@@ -135,7 +132,7 @@ consoleprep:	pshs a,b,x,y,u
 		bne 1$			; back to the next row?
 		clr activeconsole	; start on console 0 though not open
 		lbsr showactive		; show this unopen console
-		debug #conprepend
+		debug ^'Console prep end',DEBUG_DRIVER
 		puls a,b,x,y,u
 		rts
 
@@ -388,37 +385,31 @@ scrollupone:	pshs x,y,u
 
 ; handle receive interrupts on consoe uart
 
-conrxmsg:	.asciz 'con in uart rx handler\r\n'
-conrxoutmsg:	.asciz 'con going out uart rx handler\r\n'
-conswitch:	.asciz 'con switching to console ... \r\n'
-consignaling:	.asciz 'con signaling owner task\r\n'
-conowned:	.asciz 'con this console is owned\r\n'
-
-conrxhandler::	debug #conrxmsg
+conrxhandler::	debug ^'Console in UART RX handler',DEBUG_INT
 1$:		ldy kbdbaseaddr		; get the base address
 		lda LSR16C654,y		; get the current status
-		debuga
+		debuga DEBUG_INT
 		bita #0b0000011		; look for rx state
-		beq 4$			; bit clear? no data, out	
+		lbeq 4$			; bit clear? no data, out	
 		lda RHR16C654,y		; get the scancode byte from the port
-		debuga
+		debuga DEBUG_INT
 		ldy #switchtable	; setup table pointer
 2$:		ldb ,y+
 		cmpb #0xff		; end of table marker
 		beq 3$			; end of list, no match
 		cmpa ,y+
 		bne 2$			; back for more
-		debug #conswitch
-		debugb
+		debug ^'Switching to console...',DEBUG_INT
+		debugb DEBUG_INT
 		stb activeconsole	; save new console number
 		lbsr showactive		; show this console on the vdc
-		bra 5$
+		lbra 5$			; finished
 3$:		ldx #condevices		; the open devices table
 		ldb activeconsole	; get this again
 		lslb			; 2 bytes for a pointer
 		ldx b,x			; get the device for the active con
-		beq 5$			; ignore not open consoles
-		debug #conowned
+		lbeq 5$			; ignore not open consoles
+		debug ^'Console is owned',DEBUG_INT
 		lbsr mapscancode	; translate the scancode in a
 		beq 5$			; not a printable char
 		ldb CON_RX_COUNT_H,x	; get current count of bytes
@@ -426,20 +417,20 @@ conrxhandler::	debug #conrxmsg
 		sta b,u			; save the new char in the buffer
 		incb			; we got a char
 		andb #31		; wrap 0->31
-		debugb
+		debugb DEBUG_INT
 		stb CON_RX_COUNT_H,x	; save the buffer write count
 		cmpb CON_RX_COUNT_U,x	; get current user pointer
-		bne 1$			; back for more chars unless overrun
+		lbne 1$			; back for more chars unless overrun
 4$:		ldx #condevices
 		ldb activeconsole	; get this again
 		lslb			; 2 bytes for a pointer
 		ldx b,x			; get the device for the active con
 		beq 5$			; ignore not open consoles
-		debug #consignaling
-		debugx
+		debug ^'Signaling owner of console',DEBUG_INT
+		debugx DEBUG_INT
 		lsrb
-		debugb
+		debugb DEBUG_INT
 		lbsr driversignal	; signal the task that owns it
-		debug #conrxoutmsg
+		debug ^'Leaving console handler',DEBUG_INT
 5$:		rts
 

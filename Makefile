@@ -8,7 +8,7 @@ BIN = main.bin
 MAP = main.map
 INC = main.inc
 
-AREA_BASES = -b VECTORS=0xfff0 -b ROM=0xc000 -b RAM=0x0000
+AREA_BASES = -b VECTORS=0xfff0 -b ROM=0xc000 -b DEBUGMSG=0xf800 -b RAM=0x0000
 
 MAIN_REL = main.rel
 RELS = memory.rel ticker.rel systemvars.rel strings.rel \
@@ -31,7 +31,7 @@ all: $(BIN)
 	as6809 -oxs $@ $<
 
 externs.inc: *.asm
-	for I in *.asm; do \
+	for I in $$(ls -1 *.asm | grep -v debug.asm); do \
 		echo "; $$I"; \
 		echo; \
 		for F in $$(cat $$I | grep :: | cut -d ":" -f 1); do \

@@ -9,12 +9,13 @@
 
 ; task switcher state
 
-currenttask::	.rmb 2
+currenttask::	.rmb 2			; current task pointer
+defaultio::	.rmb 2			; current task's io channel
 
 readytasks::	.rmb LIST_SIZE
 waitingtasks::	.rmb LIST_SIZE
 
-rescheduleflag::	.rmb 1
+reschedflag::	.rmb 1
 
 idletask::	.rmb 2
 

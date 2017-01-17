@@ -1,5 +1,3 @@
-; starts a new task, x is the initial pc
-
 		.include 'system.inc'
 		.include 'debug.inc'
 		.include 'hardware.inc'
@@ -8,18 +6,22 @@
 
 STACK		.equ 256
 
-; createtask - create a task with initial pc in x, name in y and make it
-; ready to run
+; createtask - create a task with initial pc in x, name in y, optional
+; default io channel in u and make it ready to run
 
-createtask::	pshs y
-		lbsr newtask
-		lbsr settaskname
-		ldy #readytasks
-		lbsr addtaskto
-		puls y
-		rts
+createtask::	lbsr newtask		; make a new task, handle in x
+		lbsr settaskname	; set the new tasks name
+		ldy #readytasks		; get the ready list
+		lbsr addtaskto		; add this new task to ready list
+		ldy currenttask		; get the creator task
+		sty TASK_PARENT,x	; set the new tasks parent
+		stu TASK_DEF_IO,x	; move the default io to new task
+		beq 1$			; no default io? exit
+		stx DEVICE_TASK,u	; make the new task the owner
+1$:		rts
 
-; new task - x is the initial pc
+; new task - x is the initial pc - not normally called by tasks directly,
+; but init and the idler are made using this
 
 newtask::	pshs a,y,u
 		tfr x,y			; save initital pc in y
@@ -35,24 +37,64 @@ newtask::	pshs a,y,u
 		leax STACK,x		; this is the start of task struct
 		stu TASK_SP,x		; set stack pointer in task struct
 		sty TASK_PC,x		; save pc in task struct 
-		clra			; for neatness...
-		sta TASK_SIGALLOC,x	; clear this
-		sta TASK_SIGWAIT,x	; and this
-		sta TASK_SIGRECVD,x	; yeap, this too
+		lda SIGNAL_RESERVED	; not available to tasks
+		sta TASK_SIGALLOC,x	; some bits are taken by system
+		clra			; clear the others
+		sta TASK_SIGWAIT,x	; this one
+		sta TASK_SIGRECVD,x	; yeap, this one too
 		lda #1
 		sta TASK_INTNEST,x	; clear interrupt nest
 		sta TASK_PERMITNEST,x	; clear permit nest
 		ldy #0
 		sty TASK_DISPCOUNT,x	; count of scheduled times
+		sty TASK_PARENT,x	; no parent
+		sty TASK_DEF_IO,x	; no default io channel
+		lda #EXIT_UNDEF		; undefined error
+		sta TASK_EXIT_CODE,x	; save exit code
+		leay TASK_DEAD_LIST,x	; get dead list
+		lbsr initlist
 		puls a,y,u
 
+		rts
+
+; exittask - exit code in a. move task to parent's dead children list,
+; then signal the parent, which is responsible for freeing our memory.
+; does not return. the end swi (yield) might be missed if an interrupt
+; happens just after enabling interrupts, but this is harmless.
+
+exittask::	ldx currenttask		; get current task
+		lbsr disable		; enter critical section
+		lbsr remove		; remove it from the ready list
+		ldy TASK_PARENT,x	; get the parent task
+		leay TASK_DEAD_LIST,y	; get the list of dead children
+		lbsr addtail		; add it to the dead list
+		sta TASK_EXIT_CODE,x	; save exit code
+		ldx TASK_PARENT,x	; get its parent
+		lda #SIGNAL_CHILD	; we are indicating a child exit
+		lbsr intsignal		; send it to the parent
+		lbsr enable		; exit critical section
+		swi			; yield to another task
+
+; childexit - free the oldest exited child, if there is one. the (now free)
+; task will be in x, which will be 0 if there are none. the exit code will
+; be in a.
+
+childexit::	pshs y
+		lda #EXIT_ERROR		; general bad exit code			; clear the e
+		ldx currenttask		; get curent task
+		leay TASK_DEAD_LIST,x	; get the list of dead children
+		lbsr remtaskfrom	; get oldest dead child
+		beq 1$			; jump out now if no children
+		lda TASK_EXIT_CODE,x	; get the exit code into a
+		lbsr memoryfree		; we can finally free the task block
+1$:		puls y
 		rts
 
 ; set the task in x's name to y
 
 settaskname::	pshs x
 		leax TASK_NAME,x	; obtain name member
-		lbsr copystr		; copy the string
+		lbsr copystr		; copy the string in y
 		puls x			; get the task pointer back
 		rts
 
@@ -60,6 +102,13 @@ settaskname::	pshs x
 
 addtaskto::	lbsr disable		; enter critical section
 		lbsr addtail		; add to the end
+		lbsr enable		; leave critical section
+		rts
+
+; remove the head of the list in y, disabling as we go
+
+remtaskfrom::	lbsr disable		; enter critical section
+		lbsr remhead		; add to the end
 		lbsr enable		; leave critical section
 		rts
 
@@ -72,9 +121,7 @@ remtask::	lbsr disable		; enter critical section
 
 ; allocate the first avaialble signal bit, returning a bit mask in a
 
-sigallocmsg:	.asciz 'Signal allocation\r\n'
-
-signalalloc::	debug #sigallocmsg
+signalalloc::	debug ^'Allocating signal',DEBUG_TASK
 		pshs x
 		ldx currenttask		; get current task pointer
 		lda #1			; the bit to test
@@ -87,14 +134,11 @@ signalalloc::	debug #sigallocmsg
 2$:		tfr a,b			; we need to copy the bit
 		orb TASK_SIGALLOC,x	; save the combined signals
 		stb TASK_SIGALLOC,x	; ...in the task struct
-3$:		debuga
+3$:		debuga DEBUG_TASK
 		puls x
 		rts			; if no match, a will be 0
 
-waitmsg:	.asciz 'Waiting\r\n'
-donewaitingmsg:	.asciz 'Done waiting\r\n'
-
-wait::		debug #waitmsg
+wait::		debug ^'Start wait',DEBUG_TASK
 		pshs x,y,b
 		ldx currenttask		; obtain the current task
 		lbsr disable		; enter critical section
@@ -111,26 +155,28 @@ wait::		debug #waitmsg
 		lda TASK_SIGRECVD,x	; read the bits which woke us up
 		anda TASK_SIGWAIT,x	; re-mask the waiting bits
 		stb TASK_SIGRECVD,x	; and save the unwaited for ones
-		debug #donewaitingmsg
+		debug ^'End wait',DEBUG_TASK
 		lbsr enable		; leave critical section
 		puls x,y,b
 		rts
 
-signalmsg:	.asciz 'Signaling\r\n'
-
 ; user space signaler - signal the task in x with the signal in a,
-; scheduling the target of the schedule next.
+; scheduling the target of the signal next, assuming its listening
 
-signal::	debug #signalmsg
+signal::	debug ^'Signalling a task with the signal',DEBUG_TASK
+		debugx DEBUG_TASK
+		debuga DEBUG_TASK
 		lbsr disable		; enter criticial section
 		lbsr intsignal		; use the interrupt signal sender
 		swi			; now reschedule, returning later
 		lbsr enable		; leave critial section
 		rts
 
-;;; INTERRUPT
 
-intsignal::	pshs y
+; signal action, only call with interrupts disabled
+
+intsignal::	debug ^'Interrupt signal action',DEBUG_TASK
+		pshs y
 		ora TASK_SIGRECVD,x	; or in the new sigs with current
 		sta TASK_SIGRECVD,x	; and save them in the target task
 		bita TASK_SIGWAIT,x	; mask the current listening set
@@ -140,21 +186,17 @@ intsignal::	pshs y
 		lbsr addtail		; ... the ready queue
 1$:		puls y
 		rts
+
+;;; INTERRUPT
+
 ; ticker
 
-tickmsg:	.asciz 'tick\r\n'
-yieldmsg:	.asciz 'Yield\r\n'
-bobinsmsg:	.asciz 'bobins\r\n'
-idlemsg:	.asciz 'Idle\r\n'
-rrmsg:		.asciz 'RR\r\n'
-finmsg:		.asciz 'Fin\r\n'
-
-tickerhandler::	debug #tickmsg
+tickerhandler::	debug ^'Ticker handler',DEBUG_INT
 		lda T1CL6522		; clear interrupt
 
 		lbsr runtimers		; run all the timer devices
 
-yield::		debug #yieldmsg
+yield::		debug ^'Manual yield entry',DEBUG_TASK
 		tst permitnest		; see if task switch is enabled
 		bgt permitted		; >0, so task switching is enabled
 		rti			; if not, just return now
@@ -172,28 +214,29 @@ permitted:	ldx currenttask		; get the current task struct
 		beq scheduleidle	; no tasks, so idle
 
 		ldy NODE_NEXT,y		; this will become the new first
-		beq finishschedule	; only one task, so done already
+		beq doneschedule	; only one task, so done already
 
 		ldy #readytasks		; get the list of ready tasks
 		lbsr remtail		; remvoe the tail and add ...
 		lbsr addhead		; ... it to the head, rotating it
 
-finishschedule::	debugx
+doneschedule::	debugx,DEBUG_TASK
 		stx currenttask		; set the pointer for current task
 		lds TASK_SP,x		; setup the stack from the task
 		lda TASK_INTNEST,x	; get the int nest count from task
 		sta interruptnest	; restore the interrupt nest count
 		lda TASK_PERMITNEST,x	; get the permit nest count from task
 		sta permitnest		; restore the permit nest count
+		ldy TASK_DEF_IO,x	; get this new tasks def io
+		sty defaultio		; save this in a global for ease
 		ldy TASK_DISPCOUNT,x	; get the dispatch counter
 		leay 1,y		; increment it
 		sty TASK_DISPCOUNT,x	; and save it back
-		debugy
 		rti			; resume next task
 
 scheduleidle:	ldx idletask		; get the idle task handlee
-		debug #idlemsg
-		bra finishschedule	; it will be made the current task
+		debug ^'Scheduling idler',DEBUG_TASK
+		bra doneschedule	; it will be made the current task
 
 ; idler task
 
@@ -213,8 +256,8 @@ idler::		ldx #leddevice		; get the led device name
 
 ;;;;;;;;;;;;;;; DEBUG
 
-taskmsg:	.asciz 'Task: '
-initialpcmsg:	.asciz 'Initial PC: '
+;taskmsg:	.asciz 'Task: '
+;initialpcmsg:	.asciz 'Initial PC: '
 
 ;dumptasks:	lbsr putstr
 ;		ldy TASK_NEXT,y

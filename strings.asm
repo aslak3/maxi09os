@@ -46,16 +46,6 @@ copystr::	pshs a
 		puls a
 		rts
 
-; printableasc - converts non printables to . in a
-
-printableasc::	cmpa #0x20		; compare with space
-		blo printabletodot	; lower? it must be a unprintable
-		cmpa #0x7e		; compare with the end char
-		bhi printabletodot	; higher? it must be unprintable
-		rts			; if not, leave it alone
-printabletodot:	lda #0x2e		; otherwise flatten it to a dot
-		rts
-
 ; strcmp - compare the string at x with the string at y, on exit z is set
 ; if the strings are the same. saves a, x and y
 
@@ -115,6 +105,25 @@ parsestringout:	clr ,y+			; finish the string
 parseinputout:	clr ,y+			; null ender
 		puls y
 		rts
+
+; printableasc - converts non printables to . in a
+
+printableasc::	cmpa #0x20		; compare with space
+		blo 1$			; lower? it must be a unprintable
+		cmpa #0x7e		; compare with the end char
+		bhi 1$			; higher? it must be unprintable
+		rts			; if not, leave it alone
+1$:		lda #0x2e		; otherwise flatten it to a dot
+		rts
+
+; topupper - converts the char in a to uppercase
+
+toupper::	cmpa #'a		; compare with "a"
+		blo 1$			; lower? not a letter
+		cmpa #'z		; compare with "z"
+		bhi 1$			; higher? not a letter
+		suba #'a-'A		; convert to uppercase
+1$:		rts
 
 ;;; private
 
