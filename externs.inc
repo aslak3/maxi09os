@@ -57,6 +57,8 @@
 		.globl forbid
 		.globl tailhandler
 		.globl newlinemsg
+		.globl newlinez
+		.globl spacez
 
 ; memory.asm
 

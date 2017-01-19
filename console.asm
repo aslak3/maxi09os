@@ -388,19 +388,18 @@ scrollupone:	pshs x,y,u
 conrxhandler::	debug ^'Console in UART RX handler',DEBUG_INT
 1$:		ldy kbdbaseaddr		; get the base address
 		lda LSR16C654,y		; get the current status
-		debuga DEBUG_INT
+		debugreg ^'LSR: ',DEBUG_INT,DEBUG_REG_A
 		bita #0b0000011		; look for rx state
 		lbeq 4$			; bit clear? no data, out	
 		lda RHR16C654,y		; get the scancode byte from the port
-		debuga DEBUG_INT
+		debugreg ^'RHR: ',DEBUG_INT,DEBUG_REG_A
 		ldy #switchtable	; setup table pointer
 2$:		ldb ,y+
 		cmpb #0xff		; end of table marker
-		beq 3$			; end of list, no match
+		lbeq 3$			; end of list, no match
 		cmpa ,y+
 		bne 2$			; back for more
-		debug ^'Switching to console...',DEBUG_INT
-		debugb DEBUG_INT
+		debugreg ^'Switching to console: ',DEBUG_INT,DEBUG_REG_B
 		stb activeconsole	; save new console number
 		lbsr showactive		; show this console on the vdc
 		lbra 5$			; finished
@@ -417,7 +416,6 @@ conrxhandler::	debug ^'Console in UART RX handler',DEBUG_INT
 		sta b,u			; save the new char in the buffer
 		incb			; we got a char
 		andb #31		; wrap 0->31
-		debugb DEBUG_INT
 		stb CON_RX_COUNT_H,x	; save the buffer write count
 		cmpb CON_RX_COUNT_U,x	; get current user pointer
 		lbne 1$			; back for more chars unless overrun
@@ -426,10 +424,8 @@ conrxhandler::	debug ^'Console in UART RX handler',DEBUG_INT
 		lslb			; 2 bytes for a pointer
 		ldx b,x			; get the device for the active con
 		beq 5$			; ignore not open consoles
-		debug ^'Signaling owner of console',DEBUG_INT
-		debugx DEBUG_INT
+		debugreg ^'Signaling owner of console: ',DEBUG_INT,DEBUG_REG_X
 		lsrb
-		debugb DEBUG_INT
 		lbsr driversignal	; signal the task that owns it
 		debug ^'Leaving console handler',DEBUG_INT
 5$:		rts

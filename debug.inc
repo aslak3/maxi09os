@@ -38,85 +38,101 @@
 		puls a,y
 .endm
 
-.macro		internaldebug addr
-		pshs x
-		ldx addr
-		lbsr debugprint
-		puls x
-.endm
-
 .macro		debug message,type,?label
-.if DEBUG_MODE & type
+.if type & DEBUG_MODE
+		pshs cc
+		disableinterrupts
 		showdebugmode type
 		.area DEBUGMSG
 label:		.ascii "message"
 		.asciz '\r\n'
 		.area ROM
-		pshs x
-		ldx #label
-		lbsr debugprint
-		puls x
+		emitdebugstr #label
+		puls cc
 .endif
 .endm
 
-.macro		debugx type
-.if DEBUG_MODE & type
+.macro		debugreg message,type,register,?label
+.if type & DEBUG_MODE
+		pshs cc
+		disableinterrupts
 		showdebugmode type
-		lbsr debugprintx
-.endif
-.endm
-
-.macro		debugy type
-.if DEBUG_MODE & type
-		showdebugmode type
-		lbsr debugprinty
-.endif
-.endm
-
-.macro		debuga type
-.if DEBUG_MODE & type
-		showdebugmode type
+		.area DEBUGMSG
+label:		.asciz "message"
+		.area ROM
+		emitdebugstr #label
+.if (register) & DEBUG_REG_A
 		lbsr debugprinta
+		emitdebugstr #spacez
+.endif
+.if (register) & DEBUG_REG_B
+		lbsr debugprintb
+		emitdebugstr #spacez
+.endif
+.if (register) & DEBUG_REG_X
+		lbsr debugprintx
+		emitdebugstr #spacez
+.endif
+.if (register) & DEBUG_REG_Y
+		lbsr debugprinty
+		emitdebugstr #spacez
+.endif
+		emitdebugstr #newlinemsg
+		puls cc
 .endif
 .endm
 
-.macro		debugb type
-.if DEBUG_MODE & type
+.macro		debugxtask message,type,?label
+.if type & DEBUG_MODE
+		pshs cc
+		disableinterrupts
 		showdebugmode type
-		lbsr debugprintb
+		.area DEBUGMSG
+label:		.asciz "message"
+		.area ROM
+		emitdebugstr #label
+		lbsr debugprintx
+		emitdebugstr #spacez
+		pshs x
+		leax TASK_NAME,x
+		lbsr debugprint
+		emitdebugstr #newlinemsg
+		puls x
+		puls cc
 .endif
 .endm
 
 .macro		showdebugmode type
 
 .if DEBUG_GENERAL & type
-		internaldebug #generalz
+		emitdebugstr #generalz
 .endif
 .if DEBUG_TASK & type
-		internaldebug #tasksz
+		emitdebugstr #tasksz
 .endif
 .if DEBUG_ENDDIS & type
-		internaldebug #enddisz
+		emitdebugstr #enddisz
 .endif
 .if DEBUG_INT & type
-		internaldebug #intz
+		emitdebugstr #intz
 .endif
 .if DEBUG_MEMORY & type
-		internalsdebug #memoryz
+		emitdebugstr #memoryz
 .endif
 .if DEBUG_DRIVER & type
-		internaldebug #driverz
+		emitdebugstr #driverz
 .endif
 .if DEBUG_SPEC_DRV & type
-		internaldebug #specdrvz
+		emitdebugstr #specdrvz
 .endif
 
 .endm
 
-.macro		debugmessage label,string
-.if DEBUG_MODE
-label:		.asciz "string"
-.endif
+.macro		emitdebugstr addr
+		pshs x
+		ldx addr
+		lbsr debugprint
+		puls x
 .endm
 
 .else
@@ -124,22 +140,10 @@ label:		.asciz "string"
 .macro		debuginit
 .endm
 
-.macro		debug thing,type
+.macro		debug message,type,?label
 .endm
 
-.macro		debugx type
-.endm
-
-.macro		debugy type
-.endm
-
-.macro		debuga type
-.endm
-
-.macro		debugb type
-.endm
-
-.macro		debugmessage label,string
+.macro		debugreg message,type,register,?label
 .endm
 
 .endif

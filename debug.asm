@@ -41,8 +41,6 @@ debugprintx::	pshs a,b,cc,x
 		clr ,x+
 		ldx #debugbuffer
 		lbsr debugprint
-		ldx #newlinemsg
-		lbsr debugprint
 		puls a,b,cc,x
 		rts
 
@@ -53,8 +51,6 @@ debugprinty::	pshs a,b,cc,x
 		clr ,x+
 		ldx #debugbuffer
 		lbsr debugprint
-		ldx #newlinemsg
-		lbsr debugprint
 		puls a,b,cc,x
 		rts
 
@@ -63,8 +59,6 @@ debugprinta::	pshs a,b,cc,x
 		lbsr bytetoaschex
 		clr ,x+
 		ldx #debugbuffer
-		lbsr debugprint
-		ldx #newlinemsg
 		lbsr debugprint
 		puls a,b,cc,x
 		rts
@@ -75,8 +69,6 @@ debugprintb::	pshs a,b,cc,x
 		lbsr bytetoaschex
 		clr ,x+
 		ldx #debugbuffer
-		lbsr debugprint
-		ldx #newlinemsg
 		lbsr debugprint
 		puls a,b,cc,x
 		rts

@@ -9,12 +9,17 @@
 consolenamez:	.asciz 'console'
 uartnamez:	.asciz 'uart'
 
-taskname:	.asciz 'mytask'
+timertaskname:	.asciz 'timer'
+echo1taskname:	.asciz 'echo1'
+echo2taskname:	.asciz 'echo2'
+sertermtaskname:.asciz 'serterm'
+montaskname:	.asciz 'monitor'
+echo3taskname:	.asciz 'echo3'
 
 init::		debug ^'Init started',DEBUG_GENERAL
 
 		ldx #timertask
-		ldy #taskname
+		ldy #timertaskname
 		ldu #0
 		lbsr createtask
 
@@ -23,7 +28,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		lbsr sysopen
 		tfr x,u
 		ldx #echotask
-		ldy #taskname
+		ldy #echo1taskname
 		lbsr createtask
 
 		ldx #consolenamez
@@ -31,16 +36,16 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		lbsr sysopen
 		tfr x,u
 		ldx #echotask
-		ldy #taskname
+		ldy #echo2taskname
 		lbsr createtask
 
 		ldx #sertermtask
-		ldy #taskname
+		ldy #sertermtaskname
 		ldu #0
 		lbsr createtask
 
 		ldx #monitorstart
-		ldy #taskname
+		ldy #montaskname
 		ldu #0
 		lbsr createtask
 
@@ -50,7 +55,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		lbsr sysopen
 		tfr x,u
 		ldx #echotask
-		ldy #taskname
+		ldy #echo3taskname
 		lbsr createtask
 
 		clra

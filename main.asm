@@ -65,8 +65,7 @@ reset:		lda #0x02		; map all of the eeprom in
 		lbsr newtask
 		ldy #idlername
 		lbsr settaskname
-		debug ^'Idle task created',DEBUG_GENERAL
-		debugx DEBUG_GENERAL
+		debugreg ^'Idle task created: ',DEBUG_GENERAL,DEBUG_REG_X
 		stx idletask
 
 		ldx #init
@@ -134,6 +133,8 @@ tailhandler::	debug ^'Tail handler',DEBUG_INT
 		jmp yield		; reschedule the interrupt target
 
 newlinemsg::	.asciz '\r\n'
+newlinez::	.asciz '\r\n'
+spacez::	.asciz ' '
 
 		.area DEBUGMSG
 

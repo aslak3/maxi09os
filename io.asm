@@ -1,5 +1,6 @@
 		.include 'ascii.inc'
 		.include 'system.inc'
+		.include 'hardware.inc'
 		.include 'debug.inc'
 
 		.area ROM
@@ -53,8 +54,7 @@ getstrbs:	tstb			; see if the char count is 0
 		bra getstrloop		; echo the bs and charry on
 getstrwait:	lda DEVICE_SIGNAL,x	; get the signal mask to wait on
 		lbsr wait		; and wait...
-		debug ^'Get string wait returned',DEBUG_DRIVER
-		debuga DEBUG_DRIVER
+		debugreg ^'Get string wait returned: ',DEBUG_DRIVER,DEBUG_REG_A
 		bra getstrloop		; go and get the new data
 
 ; putnib - convert a low nibble in a and output it via x

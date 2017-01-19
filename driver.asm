@@ -1,6 +1,7 @@
 ; GENERIC DRIVER FUNCTIONS
 
 		.include 'system.inc'
+		.include 'hardware.inc'
 		.include 'debug.inc'
 
 		.area ROM
@@ -17,17 +18,14 @@ driverprepare::	debug ^'Driver prepare start',DEBUG_DRIVER
 		ldu #drivertable
 1$:		ldy ,u
 		beq 3$
-		debug ^'Doing driver prpare for',DEBUG_DRIVER
-		debugy DEBUG_DRIVER
+		debugreg ^'Doing driver prpare for: ',DEBUG_DRIVER,DEBUG_REG_Y
 		ldx DRIVER_PREPARE,y
-		debugx DEBUG_DRIVER
 		beq 2$
 		jsr [DRIVER_PREPARE,y]
 2$:		leau 2,u
 		bra 1$
 3$:		debug ^'Driver prpare end',DEBUG_DRIVER
 		rts	
-
 
 ; open device by string in x, with optional unit number in a
 
@@ -81,11 +79,10 @@ sysctrl::	jmp [DEVICE_CONTROL,x]	; this is a jump
 ; signals the task that owns the device in x
 
 driversignal::	pshs a,x
-		debug ^'Driver signalling task',DEBUG_TASK
+		debugreg ^'Signalling owner of device: ',DEBUG_TASK,DEBUG_REG_X
 		lda DEVICE_SIGNAL,x	; get interrupt bit
 		ldx DEVICE_TASK,x	; get task that owns port
-		debugx DEBUG_TASK
-		debuga DEBUG_TASK
+		debugreg ^'Task and signal: ',DEBUG_TASK,DEBUG_REG_A|DEBUG_REG_X
 		lbsr intsignal		; make it next to run
 		puls a,x
 		rts  

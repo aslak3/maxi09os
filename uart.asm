@@ -124,7 +124,7 @@ uartrxhandler::	pshs a,b,u
 		ldy UART_BASEADDR,x	; get the base address
 1$:		ldb UART_RX_COUNT_H,x	; get current count of bytes
 		lda LSR16C654,y		; get the current status
-		debuga DEBUG_INT
+		debugreg ^'LSR: ',DEBUG_INT,DEBUG_REG_A
 		bita #0b0000011		; look for rx state
 		beq 2$			; bit clear? no data, out
 		lda RHR16C654,y		; get the byte from the port

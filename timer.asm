@@ -91,8 +91,7 @@ runtimers::	pshs x,y,a
 		ldx LIST_HEAD,y		; get first node
 1$:		ldy NODE_NEXT,x		; we need to test for end
 		lbeq runtimersout	; end of list?
-		debug ^'Doing a timer',DEBUG_INT
-		debugx DEBUG_INT
+		debugreg ^'Doing the timer: ',DEBUG_INT,DEBUG_REG_X
 		lda TIMER_RUNNING,x	; see if timer running
 		beq 3$			; not running, so next
 		ldy TIMER_COUNTER,x	; get current value

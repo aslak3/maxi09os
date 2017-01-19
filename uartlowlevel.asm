@@ -35,8 +35,8 @@ uartllopen::	pshs a,b,x
 		sta IER16C654,y		; ... interrupts
 		lda #0b01000001
 		sta FCR16C654,y		; 16 deep fifo
-		ldx #uartllhandler
-		stx inthandlers+(INTPOSUART*2)
+		ldx #uartllhandler	; get uart handler location
+		stx inthandlers+(INTPOSUART*2)	; save it in int table
 		lda #INTMASKUART	; enable the uart interrupt
 		sta IRQSOURCESS		; ... to be routed via disco
 		lbsr enable		; exit critical section
@@ -99,7 +99,6 @@ uartllhandler::	debug ^'In UART LowLevel handler',DEBUG_SPEC_DRV
 		lbsr uartrxhandler	; handle the normal uart
 		bra uarthandlero
 notporta:	ldb BASEPB16C654+ISR16C654
-		debugb DEBUG_SPEC_DRV
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notportb
 		lda #1
@@ -112,7 +111,6 @@ notportb:	ldb BASEPC16C654+ISR16C654
 		lbsr uartrxhandler	; handle the normbal uart
 		bra uarthandlero
 notportc:	ldb BASEPD16C654+ISR16C654
-		debugb DEBUG_SPEC_DRV
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notportd
 		lbsr conrxhandler	; handle the keyboard

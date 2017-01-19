@@ -134,11 +134,13 @@ signalalloc::	debug ^'Allocating signal',DEBUG_TASK
 2$:		tfr a,b			; we need to copy the bit
 		orb TASK_SIGALLOC,x	; save the combined signals
 		stb TASK_SIGALLOC,x	; ...in the task struct
-3$:		debuga DEBUG_TASK
+3$:		debugreg ^'Allocd signal: ',DEBUG_TASK,DEBUG_REG_A
 		puls x
 		rts			; if no match, a will be 0
 
-wait::		debug ^'Start wait',DEBUG_TASK
+; wait - wait on signal mask a
+
+wait::		debugreg ^'Start wait for signal: ',DEBUG_TASK,DEBUG_REG_A
 		pshs x,y,b
 		ldx currenttask		; obtain the current task
 		lbsr disable		; enter critical section
@@ -155,7 +157,7 @@ wait::		debug ^'Start wait',DEBUG_TASK
 		lda TASK_SIGRECVD,x	; read the bits which woke us up
 		anda TASK_SIGWAIT,x	; re-mask the waiting bits
 		stb TASK_SIGRECVD,x	; and save the unwaited for ones
-		debug ^'End wait',DEBUG_TASK
+		debugreg ^'End wait, got signal: ',DEBUG_TASK,DEBUG_REG_A
 		lbsr enable		; leave critical section
 		puls x,y,b
 		rts
@@ -163,9 +165,7 @@ wait::		debug ^'Start wait',DEBUG_TASK
 ; user space signaler - signal the task in x with the signal in a,
 ; scheduling the target of the signal next, assuming its listening
 
-signal::	debug ^'Signalling a task with the signal',DEBUG_TASK
-		debugx DEBUG_TASK
-		debuga DEBUG_TASK
+signal::	debugreg ^'Signalling the task: ',DEBUG_TASK,DEBUG_REG_A|DEBUG_REG_X
 		lbsr disable		; enter criticial section
 		lbsr intsignal		; use the interrupt signal sender
 		swi			; now reschedule, returning later
@@ -175,7 +175,7 @@ signal::	debug ^'Signalling a task with the signal',DEBUG_TASK
 
 ; signal action, only call with interrupts disabled
 
-intsignal::	debug ^'Interrupt signal action',DEBUG_TASK
+intsignal::	debugreg ^'Interrupt signalling the task: ',DEBUG_INT,DEBUG_REG_A|DEBUG_REG_X
 		pshs y
 		ora TASK_SIGRECVD,x	; or in the new sigs with current
 		sta TASK_SIGRECVD,x	; and save them in the target task
@@ -220,7 +220,7 @@ permitted:	ldx currenttask		; get the current task struct
 		lbsr remtail		; remvoe the tail and add ...
 		lbsr addhead		; ... it to the head, rotating it
 
-doneschedule::	debugx,DEBUG_TASK
+doneschedule::	debugxtask ^'Scheduling the task: ',DEBUG_TASK
 		stx currenttask		; set the pointer for current task
 		lds TASK_SP,x		; setup the stack from the task
 		lda TASK_INTNEST,x	; get the int nest count from task

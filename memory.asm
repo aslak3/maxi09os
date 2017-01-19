@@ -1,6 +1,7 @@
 ; memory allocator and deallocator
 
 		.include 'system.inc'
+		.include 'hardware.inc'
 		.include 'debug.inc'
 
 		.area ROM
@@ -55,8 +56,7 @@ memoryinit::	debug ^'Memory init',DEBUG_MEMORY
 ; memoryalloc - size of memory in x, start of allocated memory in x on
 ; return or 0
 
-memoryalloc::	debug ^'Memory alloc',DEBUG_MEMORY
-		debugx DEBUG_MEMORY
+memoryalloc::	debugreg ^'Memory alloc, bytes: ',DEBUG_MEMORY,DEBUG_REG_X
 		pshs a,b,y		; save y
 		leax MEM_SIZE,x		; add the overhead to the request
 		lbsr disable		; critical section
@@ -68,6 +68,7 @@ checknext:	ldy MEM_NEXT_O,y	; get the next pointer
 		ldx #0			; ...if there is more, 
 allocout:	lbsr enable		; end critical section
 		puls a,b,y
+		debugreg ^'Got block: ',DEBUG_MEMORY,DEBUG_REG_X
 		rts			; otherwise no more rams
 
 checkfree:	cmpx MEM_LENGTH_O,y	; see how big this free block is
@@ -99,7 +100,7 @@ blockfitso:	puls y			; return start of previously block
 		
 ; free memory block at x
 
-memoryfree::	debug ^'Memory free',DEBUG_MEMORY
+memoryfree::	debugreg ^'Memory freeing block: ',DEBUG_MEMORY,DEBUG_REG_X
 		lda #1			; we are freeing
 		leax -MEM_SIZE,x	; go back the size of the struct
 		sta MEM_FREE_O,x	; and set free to 1
