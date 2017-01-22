@@ -28,7 +28,8 @@ memoryinit::	debug ^'Memory init',DEBUG_MEMORY
 ; largest single free block, based on the flag in a (MEM_TOTAL, MEM_FREE
 ; or MEM_LARGEST) - result is in d
 
-memoryavail::	pshs y
+memoryavail::	debugreg ^'Memory avail: ',DEBUG_MEMORY,DEBUG_REG_A
+		pshs y
 		clrb			; memory size counter top half
 		ldy #HEAP_START		; start at the start of the heap
 		lbsr disable		; enter critical section

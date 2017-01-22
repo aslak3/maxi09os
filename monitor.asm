@@ -10,7 +10,7 @@ dumpcounter:	.rmb 2
 
 		.area ROM
 
-monstartmsg:	.asciz 'Monitor\r\n\r\n'
+monstartmsg:	.asciz '\r\nMonitor, press enter to pause switching\r\n\r\n'
 promptmsg:	.asciz '> '
 consolename:	.asciz 'console'
 commfailedmsg:	.asciz 'Command failed\r\n'
@@ -21,6 +21,11 @@ nosuchmsg:	.asciz 'No such command\r\n'
 monitorstart::	ldx defaultio
 		ldy #monstartmsg
 		lbsr putstr
+
+		ldy #inputbuffer
+		lbsr getstr
+
+		lbsr forbid
 
 mainloop:	ldx defaultio
 		ldy #promptmsg		; '>' etc
@@ -326,6 +331,9 @@ showmemory:	ldx defaultio
 		clra
 		rts
 
+quit:		lbsr permit
+		lbra monitorstart
+
 ; shows some help text
 
 helpmsg:	.ascii 'Commands:\r\n'
@@ -333,6 +341,7 @@ helpmsg:	.ascii 'Commands:\r\n'
 		.ascii '  w AAAA BB WWWW "STRING" ... : write to AAAA bytes, words, strings\r\n'
 		.ascii '  d AAAA LLLL : dump from AAAA count LLLL bytes in hex\r\n'
 		.ascii '  R MMMM : read the byte at MMMM and display it\r\n'
+		.ascii '  q : quit monitor and resume task switching\r\n'
 		.ascii '  h or ? : this help\r\n'
 		.asciz '\r\n'
 
@@ -360,5 +369,7 @@ commandarray:	.word dumpmemory
 		.ascii 'R'
 		.word showmemory
 		.ascii 'm'
+		.word quit
+		.ascii 'q'
 		.word 0x0000
 		.byte 0x00
