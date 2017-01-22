@@ -44,18 +44,13 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		ldu #0
 		lbsr createtask
 
-		ldx #monitorstart
-		ldy #montaskname
-		ldu #0
-		lbsr createtask
-
 		ldx #uartnamez
 		lda #0
 		ldb #B19200
 		lbsr sysopen
 		tfr x,u
-		ldx #echotask
-		ldy #echo3taskname
+		ldx #monitorstart
+		ldy #montaskname
 		lbsr createtask
 
 		clra

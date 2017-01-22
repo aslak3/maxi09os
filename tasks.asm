@@ -4,21 +4,21 @@
 
 		.area ROM
 
-STACK		.equ 256
+STACK		.equ 128
 
 ; createtask - create a task with initial pc in x, name in y, optional
 ; default io channel in u and make it ready to run
 
 createtask::	lbsr newtask		; make a new task, handle in x
 		lbsr settaskname	; set the new tasks name
-		ldy #readytasks		; get the ready list
-		lbsr addtaskto		; add this new task to ready list
 		ldy currenttask		; get the creator task
 		sty TASK_PARENT,x	; set the new tasks parent
 		stu TASK_DEF_IO,x	; move the default io to new task
-		beq 1$			; no default io? exit
+		beq 1$			; no default io? no move task io
 		stx DEVICE_TASK,u	; make the new task the owner
-1$:		rts
+1$:		ldy #readytasks		; get the ready list
+		lbsr addtaskto		; add this new task to ready list
+		rts
 
 ; new task - x is the initial pc - not normally called by tasks directly,
 ; but init and the idler are made using this

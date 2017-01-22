@@ -63,6 +63,7 @@
 ; memory.asm
 
 		.globl memoryinit
+		.globl memoryavail
 		.globl memoryalloc
 		.globl memoryfree
 

@@ -5,12 +5,12 @@
 
 inputbuffer:	.rmb 80
 parambuffer:	.rmb 100
-iodevice:	.rmb 2
 dumppointer:	.rmb 2
 dumpcounter:	.rmb 2
 
 		.area ROM
 
+monstartmsg:	.asciz 'Monitor\r\n\r\n'
 promptmsg:	.asciz '> '
 consolename:	.asciz 'console'
 commfailedmsg:	.asciz 'Command failed\r\n'
@@ -18,13 +18,11 @@ nosuchmsg:	.asciz 'No such command\r\n'
 
 ; monitor entry point
 
-monitorstart::	ldx #consolename
-		lda #4
-		clrb
-		lbsr sysopen
-		stx iodevice
+monitorstart::	ldx defaultio
+		ldy #monstartmsg
+		lbsr putstr
 
-mainloop:	ldx iodevice
+mainloop:	ldx defaultio
 		ldy #promptmsg		; '>' etc
 		lbsr putstr		; output that
 		
@@ -44,12 +42,12 @@ nextcommand:	ldy ,x++		; get the sub address
 		jsr ,y			; jump to subroutine
 		bne commanderror	; error check for zero
 		bra mainloop		; back to top
-commanderror:	ldx iodevice
+commanderror:	ldx defaultio
 		ldy #commfailedmsg
 		lbsr putstr		; show error
 		bra mainloop
 
-commandarraye:	ldx iodevice
+commandarraye:	ldx defaultio
 		ldy #nosuchmsg
 		lbsr putstr		; show error message
 		bra mainloop
@@ -79,7 +77,7 @@ dumpmemory:	lbsr doparse		; parse hexes, filling out inputbuffer
 		andb #0xf0		; also rounded
 		std dumpcounter		; store it in the variable
 
-		ldx iodevice		; io device for the monitor
+		ldx defaultio		; io device for the monitor
 
 dumpnextrow:	ldd dumppointer		; get address of this row
 		lbsr putword		; print the address into the buffer
@@ -180,7 +178,7 @@ ymsg:		.asciz '  Y: '
 umsg:		.asciz '  U: '
 pcmsg:		.asciz '  PC: '
 
-showregisters:	ldx iodevice
+showregisters:	ldx defaultio
 		ldy #ccmsg		; get the 'C: '
 		lbsr putstr
 		lda 0,u			; get the register value
@@ -235,7 +233,7 @@ stringfoundmsg:	.asciz 'string: '
 
 parsetest:	lbsr doparse
 		tfr y,u
-		ldx iodevice
+		ldx defaultio
 
 parsetestloop:	lda ,u+
 		cmpa #1
@@ -283,11 +281,48 @@ readbyte:	lbsr doparse
 
 		ldy ,y
 
-		ldx iodevice
+		ldx defaultio
 		lda ,y
 		lbsr putbyte
 		ldy #newlinemsg
 		lbsr putstr
+		clra
+		rts
+
+totalmemz:	.asciz 'Total: '
+freememz:	.asciz 'Free: '
+largestmemz:	.asciz 'Largest: '
+
+showmemory:	ldx defaultio
+		ldy #totalmemz
+		lbsr putstr
+		lda #MEM_TOTAL
+		lbsr memoryavail
+		ldx defaultio
+		lbsr putword
+		ldy #newlinemsg
+		lbsr putstr
+
+		ldx defaultio
+		ldy #freememz
+		lbsr putstr
+		lda #MEM_FREE
+		lbsr memoryavail
+		ldx defaultio
+		lbsr putword
+		ldy #newlinemsg
+		lbsr putstr
+
+		ldx defaultio
+		ldy #largestmemz
+		lbsr putstr
+		lda #MEM_LARGEST
+		lbsr memoryavail
+		ldx defaultio
+		lbsr putword
+		ldy #newlinemsg
+		lbsr putstr
+
 		clra
 		rts
 
@@ -301,7 +336,7 @@ helpmsg:	.ascii 'Commands:\r\n'
 		.ascii '  h or ? : this help\r\n'
 		.asciz '\r\n'
 
-showhelp:	ldx iodevice
+showhelp:	ldx defaultio
 		ldy #helpmsg		; and the help text
 		lbsr putstr
 		clra			; we always suceed
@@ -323,5 +358,7 @@ commandarray:	.word dumpmemory
 		.ascii 'z'
 		.word readbyte
 		.ascii 'R'
+		.word showmemory
+		.ascii 'm'
 		.word 0x0000
 		.byte 0x00

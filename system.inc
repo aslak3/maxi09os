@@ -39,6 +39,12 @@ NODE_NEXT	.equ 0
 NODE_PREV	.equ 2
 NODE_SIZE	.equ 4
 
+; flags for memoryavail
+
+MEM_TOTAL	.equ 0
+MEM_FREE	.equ 1
+MEM_LARGEST	.equ 2
+
 ; a record describe a task in the system
 
 TASK_NODE	.equ 0			; a node for this task

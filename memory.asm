@@ -24,50 +24,65 @@ memoryinit::	debug ^'Memory init',DEBUG_MEMORY
 		sta MEM_FREE_O,y	; so set it 
 		rts
 
-; output all the memory blocks
+; memoryavail - returns the total memory available, total amount free, or
+; largest single free block, based on the flag in a (MEM_TOTAL, MEM_FREE
+; or MEM_LARGEST) - result is in d
 
-;startmsg:	.asciz 'Start: '
-;lengthmsg:	.asciz 'Length: '
-;freemsg:	.asciz 'Free: '
+memoryavail::	pshs y
+		clrb			; memory size counter top half
+		ldy #HEAP_START		; start at the start of the heap
+		lbsr disable		; enter critical section
+		cmpa #MEM_TOTAL		; total mode?
+		beq dototal		; run the total loop
+		cmpa #MEM_FREE		; free mode?
+		beq dofree		; run the free loop
+		cmpa #MEM_LARGEST	; largest mode
+		beq dolargest		; run the largest loop
+		clra			; invalid input, clear bottom
 
-;memorydebug:	ldy #HEAP_START
+availout:	lbsr enable		; leave critical section
+		puls y
+		rts
 
-;dumploop:	ldx #startmsg
-;		tfr y,d
-;		lbsr putlabd
+dototal:	clra			; now clear bottom half
+totalloop:	addd MEM_LENGTH_O,y	; add size up
+		ldy MEM_NEXT_O,y	; get the next pointer
+		bne totalloop		; and go back to the top of the loop
+		bra availout
 
-;		ldx #lengthmsg
-;		ldd MEM_LENGTH_O,y
-;		lbsr putlabd
+dofree:		clra			; now clear bottom half
+freeloop:	tst MEM_FREE_O,y	; get the free flag
+		beq freenext		; not free, skip
+		addd MEM_LENGTH_O,y	; add size up
+freenext:	ldy MEM_NEXT_O,y	; get the next pointer
+		bne freeloop		; and go back to the top of the loop
+		bra availout
 
-;		ldx #freemsg
-;		lda MEM_FREE_O,y
-;		lbsr putlaba
-
-;		ldx #newlinemsg
-;		lbsr putstr
-
-;		ldy MEM_NEXT_O,y	; get the next pointer
-;		bne dumploop		; and go back to the top of the loop
-
-;		clra
-;		rts		
+dolargest:	clra			; now clear bottom half
+largestloop:	tst MEM_FREE_O,y	; get the free flag
+		beq largestnext		; not free, skip
+		cmpd MEM_LENGTH_O,y	; compare x with this block len
+		bgt largestnext		; not bigger? then enxt one
+		ldd MEM_LENGTH_O,y	; otherwise copy the block size
+largestnext:	ldy MEM_NEXT_O,y	; get the next pointer
+		bne largestloop		; and go back to the top of the loop
+		bra availout
 
 ; memoryalloc - size of memory in x, start of allocated memory in x on
 ; return or 0
 
 memoryalloc::	debugreg ^'Memory alloc, bytes: ',DEBUG_MEMORY,DEBUG_REG_X
-		pshs a,b,y		; save y
+		pshs a,b,y,u		; save y
 		leax MEM_SIZE,x		; add the overhead to the request
 		lbsr disable		; critical section
 		ldy #HEAP_START		; start at the start of the heap
-allocloop:	lda MEM_FREE_O,y	; get the free flag
+allocloop:	tst MEM_FREE_O,y	; get the free flag
 		bne checkfree		; it's free, now check size
 checknext:	ldy MEM_NEXT_O,y	; get the next pointer
 		bne allocloop		; and go back to the top of the loop
 		ldx #0			; ...if there is more, 
 allocout:	lbsr enable		; end critical section
-		puls a,b,y
+		puls a,b,y,u
 		debugreg ^'Got block: ',DEBUG_MEMORY,DEBUG_REG_X
 		rts			; otherwise no more rams
 
