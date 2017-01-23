@@ -7,13 +7,9 @@
 
 		.globl driverprepare
 		.globl sysopen
-		.globl sysclosedefio
 		.globl sysclose
-		.globl sysreaddefio
 		.globl sysread
-		.globl syswritedefio
 		.globl syswrite
-		.globl sysctrldefio
 		.globl sysctrl
 		.globl driversignal
 

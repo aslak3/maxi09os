@@ -9,7 +9,11 @@
 
 ; puts the string in y to the default io device
 
-putstrdefio::	ldx defaultio
+putstrdefio::	pshs x
+		ldx defaultio		; get default io device
+		lbsr putstr		; lower level call
+		puls x
+		rts
 
 ; puts the string in y to the device at x
 
@@ -21,7 +25,11 @@ putstr::	lda ,y+			; get the next char
 
 ; gets a string, filling it into y from the default io device
 
-getstrdefio::	ldx defaultio
+getstrdefio::	pshs x
+		ldx defaultio		; get default io device
+		lbsr getstr		; lower level call
+		puls x
+		rts
 
 ; gets a string, filling it into y from the device at x
 
@@ -68,7 +76,11 @@ putnib:		anda #0x0f		; mask out the high nibble
 		rts		
 ; putbyte - convert a byte in a to two characters and send them via def io
 
-putbytedefio::	ldx defaultio
+putbytedefio::	pshs x
+		ldx defaultio		; get the default io device
+		lbsr putbyte		; lowerlevel call
+		puls x
+		rts
 
 ; putbyte - convert a byte in a to two characters and send them via x
 	
@@ -85,7 +97,11 @@ putbyte::	pshs a			; save original input byte
 ; putworddefio - convert a word in d to four characters and send them via
 ; default io
 
-putworddefio::	ldx defaultio
+putworddefio::	pshs x
+		ldx defaultio		; get default io device
+		lbsr putword		; lower level call
+		puls x
+		rts
 
 ; putword - convert a word in d to four characters and send them via x
 

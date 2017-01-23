@@ -15,15 +15,15 @@ drivertable:	.word uartdef
 ; inits all drivers
 
 driverprepare::	debug ^'Driver prepare start',DEBUG_DRIVER
-		ldu #drivertable
-1$:		ldy ,u
-		beq 3$
+		ldu #drivertable	; setup table search
+1$:		ldy ,u			; get current driver
+		beq 3$			; last one? exit
 		debugreg ^'Doing driver prpare for: ',DEBUG_DRIVER,DEBUG_REG_Y
-		ldx DRIVER_PREPARE,y
-		beq 2$
-		jsr [DRIVER_PREPARE,y]
-2$:		leau 2,u
-		bra 1$
+		ldx DRIVER_PREPARE,y	; get prepare routine from driver
+		beq 2$			; not one set? exit
+		jsr [DRIVER_PREPARE,y]	; run the prepare routine
+2$:		leau 2,u		; get the next driver
+		bra 1$			; back for more
 3$:		debug ^'Driver prpare end',DEBUG_DRIVER
 		rts	
 
@@ -42,33 +42,17 @@ sysopen::	ldu #drivertable	; setup table search
 3$:		ldy ,u
 		jmp [DRIVER_OPEN,y]	; this is a jump
 
-; close the default io
-
-sysclosedefio::	ldx defaultio
-
 ; close the device at x
 
 sysclose::	jmp [DEVICE_CLOSE,x]	; this is a jump
-
-; read from the default io, a reg has the result
-
-sysreaddefio::	ldx defaultio
 
 ; read from a device. x is the device struct, a reg has the result
 
 sysread::	jmp [DEVICE_READ,x]	; this is a jump
 
-; write to the default io, a has what to write
-
-syswritedefio::	ldx defaultio
-
 ; write to a evice. x is the device struct, a has what to write
 
 syswrite::	jmp [DEVICE_WRITE,x]	; this is a jump
-
-; generic do anything to the default io
-
-sysctrldefio::	ldx defaultio
 
 ; generic do anything to a device, x is the device struct
 
