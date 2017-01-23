@@ -10,16 +10,16 @@ dumpcounter:	.rmb 2
 
 		.area ROM
 
-monstartmsg:	.asciz '\r\nMonitor, press enter to pause switching\r\n\r\n'
-promptmsg:	.asciz '> '
+monstartz:	.asciz '\r\nMonitor, press enter to pause switching\r\n\r\n'
+promptz:	.asciz '> '
 consolename:	.asciz 'console'
-commfailedmsg:	.asciz 'Command failed\r\n'
-nosuchmsg:	.asciz 'No such command\r\n'
+commfailedz:	.asciz 'Command failed\r\n'
+nosuchz:	.asciz 'No such command\r\n'
 
 ; monitor entry point
 
 monitorstart::	ldx defaultio
-		ldy #monstartmsg
+		ldy #monstartz
 		lbsr putstr
 
 		ldy #inputbuffer
@@ -28,13 +28,13 @@ monitorstart::	ldx defaultio
 		lbsr forbid
 
 mainloop:	ldx defaultio
-		ldy #promptmsg		; '>' etc
+		ldy #promptz		; '>' etc
 		lbsr putstr		; output that
 		
 		ldy #inputbuffer	; now we need a command
 		lbsr getstr		; get the command (waiting as needed)
 
-		ldy #newlinemsg
+		ldy #newlinez
 		lbsr putstr
 
 		lda inputbuffer		; get the first char
@@ -48,12 +48,12 @@ nextcommand:	ldy ,x++		; get the sub address
 		bne commanderror	; error check for zero
 		bra mainloop		; back to top
 commanderror:	ldx defaultio
-		ldy #commfailedmsg
+		ldy #commfailedz
 		lbsr putstr		; show error
 		bra mainloop
 
 commandarraye:	ldx defaultio
-		ldy #nosuchmsg
+		ldy #nosuchz
 		lbsr putstr		; show error message
 		bra mainloop
 
@@ -127,7 +127,7 @@ ascbyteloop:	lda b,y			; get the byte from memory
 		lda #0x5d		; closing ]
 		lbsr syswrite		; add it in
 
-		ldy #newlinemsg		; newline
+		ldy #newlinez		; newline
 		lbsr putstr		; output it
 
 ; move onto the the next row
@@ -172,69 +172,11 @@ storestring:	lbsr copystr		; use the concatstr operation
 writememoryout:	clra			; clean exit
 		rts
 
-; shows the registers as they were when the monitor was entered
-
-ccmsg:		.asciz 'CC: '
-amsg:		.asciz '  A: '
-bmsg:		.asciz '  B: '
-dpmsg:		.asciz '  DP: '
-xmsg:		.asciz '  X: '
-ymsg:		.asciz '  Y: '
-umsg:		.asciz '  U: '
-pcmsg:		.asciz '  PC: '
-
-showregisters:	ldx defaultio
-		ldy #ccmsg		; get the 'C: '
-		lbsr putstr
-		lda 0,u			; get the register value
-		lbsr putbyte
-
-		ldy #amsg		; same again
-		lbsr putstr
-		lda 1,u			; ...
-		lbsr putbyte		; ...
-
-		ldy #bmsg
-		lbsr putstr
-		lda 2,u
-		lbsr putbyte
-
-		ldy #dpmsg
-		lbsr putstr
-		lda 3,u
-		lbsr putbyte
-
-		ldy #xmsg
-		lbsr putstr
-		ldd 4,u
-		lbsr putword
-
-		ldy #ymsg
-		lbsr putstr
-		ldd 6,u
-		lbsr putword
-
-		ldy #umsg
-		lbsr putstr
-		ldd 8,u
-		lbsr putword
-
-		ldy #pcmsg
-		lbsr putstr
-		ldd 10,u
-		lbsr putword
-
-		ldy #newlinemsg
-		lbsr putstr
-		clra			; we always succeed
-		rts
-
-
 ; z BB WWWW 'STRING' .... - test the parser by outputting what was parsed
 
-bytefoundmsg:	.asciz 'byte: '
-wordfoundmsg:	.asciz 'word: '
-stringfoundmsg:	.asciz 'string: '
+bytefoundz:	.asciz 'byte: '
+wordfoundz:	.asciz 'word: '
+stringfoundz:	.asciz 'string: '
 
 parsetest:	lbsr doparse
 		tfr y,u
@@ -254,28 +196,28 @@ parsetestloop:	lda ,u+
 parsetestout:	clra
 		rts
 
-bytefound:	ldy #bytefoundmsg
+bytefound:	ldy #bytefoundz
 		lbsr putstr
 		lda ,u+
 		lbsr putbyte
-		ldy #newlinemsg
+		ldy #newlinez
 		lbsr putstr
 		bra parsetestloop
 
-wordfound:	ldy #wordfoundmsg
+wordfound:	ldy #wordfoundz
 		lbsr putstr
 		ldd ,u++
 		lbsr putword
-		ldy #newlinemsg
+		ldy #newlinez
 		lbsr putstr
 		bra parsetestloop
 
-stringfound:	ldy #stringfoundmsg
+stringfound:	ldy #stringfoundz
 		lbsr putstr
 		tfr u,y
 		lbsr putstr
 		tfr y,u
-		ldy #newlinemsg
+		ldy #newlinez
 		lbsr putstr
 		bra parsetestloop		
 
@@ -289,7 +231,7 @@ readbyte:	lbsr doparse
 		ldx defaultio
 		lda ,y
 		lbsr putbyte
-		ldy #newlinemsg
+		ldy #newlinez
 		lbsr putstr
 		clra
 		rts
@@ -299,44 +241,191 @@ freememz:	.asciz 'Free: '
 largestmemz:	.asciz 'Largest: '
 
 showmemory:	ldx defaultio
-		ldy #totalmemz
-		lbsr putstr
+
 		lda #MEM_TOTAL
 		lbsr memoryavail
-		ldx defaultio
-		lbsr putword
-		ldy #newlinemsg
-		lbsr putstr
+		ldy #totalmemz
+		lbsr putlabw
 
-		ldx defaultio
-		ldy #freememz
-		lbsr putstr
 		lda #MEM_FREE
 		lbsr memoryavail
-		ldx defaultio
-		lbsr putword
-		ldy #newlinemsg
-		lbsr putstr
+		ldy #freememz
+		lbsr putlabw
 
-		ldx defaultio
-		ldy #largestmemz
-		lbsr putstr
 		lda #MEM_LARGEST
 		lbsr memoryavail
-		ldx defaultio
-		lbsr putword
-		ldy #newlinemsg
-		lbsr putstr
+		ldy #largestmemz
+		lbsr putlabw
 
 		clra
 		rts
+
+readytasksz:	.asciz 'READY TASKS\r\n'
+waitingtasksz:	.asciz 'WAITING TASKS\r\n'
+
+showtasks:	ldy #readytasksz
+		lbsr putstrdefio
+		ldy #readytasks
+		lbsr showtasklist
+		ldy #newlinez
+		lbsr putstrdefio
+
+		ldy #waitingtasksz
+		lbsr putstrdefio
+		ldy #waitingtasks
+		lbsr showtasklist
+		ldy #newlinez
+		lbsr putstrdefio
+
+		clra
+		rts
+
+showtasklist:	ldx LIST_HEAD,y		; get the first node
+showtaskloop:	ldy NODE_NEXT,x		; get its following node
+                beq endtasklist
+		lbsr showtask		; show info about task x
+		ldx NODE_NEXT,x
+		bra showtaskloop
+endtasklist:	rts
+
+lchevronsz:	.asciz '<<<'
+rchevronsz:	.asciz '>>>'
+taskz:		.asciz 'Task: '
+parentz:	.asciz 'Parent: '
+defaultioz:	.asciz 'Default IO: '
+initialpcz:	.asciz 'Initial PC: '
+savedsz:	.asciz 'Saved S: '
+sigallocz:	.asciz 'Sig Alloc: '
+sigwaitz:	.asciz 'Sig Wait: '
+sigrecvdz:	.asciz 'Sig Rcvd: '
+dispatchcountz:	.asciz 'Dispatch Count: '
+
+
+showtask:	pshs x
+		tfr x,u			; u has the structure pointer
+
+		ldx defaultio
+
+		ldy #lchevronsz
+		lbsr putstr
+		leay TASK_NAME,u
+		lbsr putstr
+		ldy #rchevronsz
+		lbsr putstr
+
+		ldy #newlinez
+		lbsr putstr
+		tfr u,d
+		ldy #taskz
+		lbsr putlabw
+
+		ldd TASK_PARENT,u
+		ldy #parentz
+		lbsr putlabw
+
+		ldd TASK_DISPCOUNT,u
+		ldy #dispatchcountz
+		lbsr putlabw
+
+		ldd TASK_DEF_IO,u
+		ldy #defaultioz
+		lbsr putlabw
+
+		ldd TASK_PC,u
+		ldy #initialpcz
+		lbsr putlabw
+
+		ldd TASK_SP,u
+		ldy #savedsz
+		lbsr putlabw
+
+		lda TASK_SIGALLOC,u
+		ldy #sigallocz
+		lbsr putlabbb
+
+		lda TASK_SIGWAIT,u
+		ldy #sigwaitz
+		lbsr putlabbb
+
+		lda TASK_SIGRECVD,u
+		ldy #sigrecvdz
+		lbsr putlabbb
+
+		ldy TASK_SP,u
+		lbsr taskregisters
+
+		puls x
+		rts
+
+; shows the registers as they were when the monitor was entered
+
+ccz:		.asciz 'CC: '
+az:		.asciz '  A: '
+bz:		.asciz '  B: '
+dpz:		.asciz '  DP: '
+xz:		.asciz '  X: '
+yz:		.asciz '  Y: '
+uz:		.asciz '  U: '
+pcz:		.asciz '  PC: '
+
+taskregisters:	pshs a,u
+
+		tfr y,u
+
+		ldy #ccz		; get the 'C: '
+		lbsr putstr
+		lda 0,u			; get the register value
+		lbsr putbyte
+
+		ldy #az			; same again
+		lbsr putstr
+		lda 1,u			; ...
+		lbsr putbyte		; ...
+
+		ldy #bz
+		lbsr putstr
+		lda 2,u
+		lbsr putbyte
+
+		ldy #dpz
+		lbsr putstr
+		lda 3,u
+		lbsr putbyte
+
+		ldy #xz
+		lbsr putstr
+		ldd 4,u
+		lbsr putword
+
+		ldy #yz
+		lbsr putstr
+		ldd 6,u
+		lbsr putword
+
+		ldy #uz
+		lbsr putstr
+		ldd 8,u
+		lbsr putword
+
+		ldy #pcz
+		lbsr putstr
+		ldd 10,u
+		lbsr putword
+
+		ldy #newlinez
+		lbsr putstr
+
+		puls a,u
+
+		rts
+
 
 quit:		lbsr permit
 		lbra monitorstart
 
 ; shows some help text
 
-helpmsg:	.ascii 'Commands:\r\n'
+helpz:		.ascii 'Commands:\r\n'
 		.ascii '  r : show registers\r\n'
 		.ascii '  w AAAA BB WWWW "STRING" ... : write to AAAA bytes, words, strings\r\n'
 		.ascii '  d AAAA LLLL : dump from AAAA count LLLL bytes in hex\r\n'
@@ -346,7 +435,7 @@ helpmsg:	.ascii 'Commands:\r\n'
 		.asciz '\r\n'
 
 showhelp:	ldx defaultio
-		ldy #helpmsg		; and the help text
+		ldy #helpz		; and the help text
 		lbsr putstr
 		clra			; we always suceed
 		rts
@@ -369,6 +458,8 @@ commandarray:	.word dumpmemory
 		.ascii 'R'
 		.word showmemory
 		.ascii 'm'
+		.word showtasks
+		.ascii 't'
 		.word quit
 		.ascii 'q'
 		.word 0x0000

@@ -29,8 +29,16 @@
 		.globl getstr
 		.globl putbytedefio
 		.globl putbyte
+		.globl putbytebdefio
+		.globl putbyteb
 		.globl putworddefio
 		.globl putword
+		.globl putlabwdefio
+		.globl putlabw
+		.globl putlabbdefio
+		.globl putlabb
+		.globl putlabbbdefio
+		.globl putlabbb
 
 ; led.asm
 
@@ -112,6 +120,7 @@
 		.globl remtaskfrom
 		.globl remtask
 		.globl signalalloc
+		.globl signalfree
 		.globl wait
 		.globl signal
 		.globl intsignal

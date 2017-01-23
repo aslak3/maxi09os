@@ -53,8 +53,8 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		ldy #montaskname
 		lbsr createtask
 
-		clra
-		lbsr wait
+;		clra
+;		lbsr wait
 
 again:		bra again
 

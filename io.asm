@@ -17,11 +17,13 @@ putstrdefio::	pshs x
 
 ; puts the string in y to the device at x
 
-putstr::	lda ,y+			; get the next char
-		beq 1$			; null found, bomb out
+putstr::	pshs a
+1$:		lda ,y+			; get the next char
+		beq 2$			; null found, bomb out
 		lbsr syswrite		; output the character
-		bra putstr		; more chars
-1$:		rts
+		bra 1$			; more chars
+2$:		puls a
+		rts
 
 ; gets a string, filling it into y from the default io device
 
@@ -78,7 +80,7 @@ putnib:		anda #0x0f		; mask out the high nibble
 
 putbytedefio::	pshs x
 		ldx defaultio		; get the default io device
-		lbsr putbyte		; lowerlevel call
+		bsr putbyte		; lowerlevel call
 		puls x
 		rts
 
@@ -94,12 +96,34 @@ putbyte::	pshs a			; save original input byte
 		bsr putnib		; convert the high nibble
 		rts
 
+; putbytebdefio - output the byte in a in binary form to the default device
+
+putbytebdefio::	pshs x
+		ldx defaultio		; get default io device
+		lbsr putbyteb		; lower level call
+		puls x
+		rts
+
+; putbyteb - output the byte in a in binary form to the device in x
+
+putbyteb::	pshs a,b
+		ldb #8			; 8 bits in a byte	
+1$:		lsla			; shift highest bit into cary
+		bcs 2$			; test bit shifted in carry
+		lbsr putzero		; output a zero
+		bra 3$			; skip forward
+2$:		lbsr putone		; output a one
+3$:		decb			; reduce the bit counter
+		bne 1$			; back for more bits
+		puls a,b
+		rts
+
 ; putworddefio - convert a word in d to four characters and send them via
 ; default io
 
 putworddefio::	pshs x
 		ldx defaultio		; get default io device
-		lbsr putword		; lower level call
+		bsr putword		; lower level call
 		puls x
 		rts
 
@@ -109,4 +133,72 @@ putword::	pshs b			; save low byte
 		bsr putbyte		; output high byte
 		puls a			; restore low byte
 		bsr putbyte		; and output low byte
+		rts
+
+; putlabwdefio - output the string in y, then the word in d, followed by
+; a newline to the default device
+
+putlabwdefio::	pshs x
+		ldx defaultio		; get default io device
+		lbsr putlabw		; lower level call
+		puls x
+		rts
+
+; putlabw - output the string in y, then the word in d, followed by a
+; newline to the device in x
+
+putlabw::	lbsr putstr		; output the label
+		lbsr putword		; output the word
+		ldy #newlinemsg		; and also...
+		lbsr putstr		; output a newline
+		rts
+
+; putlabbdefio - output the string in y, then the byte in a, followed by
+; a newline to the default device
+
+putlabbdefio::	pshs x
+		ldx defaultio		; get default io device
+		lbsr putlabb		; lower level call
+		puls x
+		rts
+
+; putlabb - output the string in y, then the byte in a, followed by a
+; newline to the device in x
+
+putlabb::	lbsr putstr		; output the label
+		lbsr putbyte		; output the word
+		ldy #newlinemsg		; and also...
+		lbsr putstr		; output a newline
+		rts
+
+; putlabbbdefio - output the string in y, then the byte in a in binary,
+; followed by a newline to the default device
+
+putlabbbdefio::	pshs x
+		ldx defaultio		; get default io device
+		lbsr putlabbb		; lower level call
+		puls x
+		rts
+
+; putlabbb - output the string in y, then the byte in a in binary, followed
+; by a newline to the device in x
+
+putlabbb::	lbsr putstr		; output the label
+		lbsr putbyteb		; output the byte in binary
+		ldy #newlinemsg		; and also...
+		lbsr putstr		; output a newline
+		rts
+
+; PRIVATE
+
+putzero:	pshs a
+		lda #'0
+		lbsr syswrite
+		puls a
+		rts
+
+putone:		pshs a
+		lda #'1
+		lbsr syswrite
+		puls a
 		rts

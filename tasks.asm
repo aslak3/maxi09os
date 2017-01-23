@@ -9,15 +9,23 @@ STACK		.equ 128
 ; createtask - create a task with initial pc in x, name in y, optional
 ; default io channel in u and make it ready to run
 
-createtask::	lbsr newtask		; make a new task, handle in x
+createtask::	pshs a,y
+		lbsr newtask		; make a new task, handle in x
 		lbsr settaskname	; set the new tasks name
 		ldy currenttask		; get the creator task
 		sty TASK_PARENT,x	; set the new tasks parent
 		stu TASK_DEF_IO,x	; move the default io to new task
 		beq 1$			; no default io? no move task io
+		lda DEVICE_SIGNAL,u	; get the signal used for def io
+		beq 1$			; no signal bits? nothing to move
+		lbsr signalfree		; free that bit
 		stx DEVICE_TASK,u	; make the new task the owner
+		lda #1
+		sta DEVICE_SIGNAL,u
+		sta TASK_SIGALLOC,x
 1$:		ldy #readytasks		; get the ready list
 		lbsr addtaskto		; add this new task to ready list
+		puls a,y
 		rts
 
 ; new task - x is the initial pc - not normally called by tasks directly,
@@ -137,6 +145,16 @@ signalalloc::	debug ^'Allocating signal',DEBUG_TASK
 3$:		debugreg ^'Allocd signal: ',DEBUG_TASK,DEBUG_REG_A
 		puls x
 		rts			; if no match, a will be 0
+
+; signalfree - free the signal at a
+
+signalfree::	pshs x
+		ldx currenttask		; get the current task pointer
+		coma			; invert the unneeded bits
+		anda TASK_SIGALLOC,x	; mask out all but the free bits
+		sta TASK_SIGALLOC,x	; update the allocated bits
+		puls x
+		rts
 
 ; wait - wait on signal mask a
 
