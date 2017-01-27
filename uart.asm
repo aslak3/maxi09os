@@ -81,7 +81,7 @@ uartclose:	lda UART_UNIT,x		; obtain the port number
 ;		puls y
 ;		rts
 
-uartread:	pshs b
+uartread:	pshs b,u
 		lbsr disable
 		ldb UART_RX_COUNT_U,x	; get counter
 		cmpb UART_RX_COUNT_H,x	; compare..,
@@ -94,11 +94,11 @@ uartread:	pshs b
 		lbsr enable
 		debug ^'UART done read',DEBUG_SPEC_DRV
 		setnotzero		; got data
-		puls b
+		puls b,u
 		rts
 1$:		lbsr enable
 		setzero			; got no data
-		puls b
+		puls b,u
 		rts
 
 ; write to the device in x, reg a, waiting until it's been sent

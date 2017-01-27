@@ -146,4 +146,7 @@ label:		.asciz "message"
 .macro		debugreg message,type,register,?label
 .endm
 
+.macro		debugxtask message,type,?label
+.endm
+
 .endif

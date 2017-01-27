@@ -83,19 +83,30 @@ exittask::	ldx currenttask		; get current task
 		lbsr enable		; exit critical section
 		swi			; yield to another task
 
-; childexit - free the oldest exited child, if there is one. the (now free)
-; task will be in x, which will be 0 if there are none. the exit code will
-; be in a.
+; childexit - free the oldest exited child, if there is one. the exit code
+; will be in a. if no tasks were waiting to be expunged, then zero is set.
 
-childexit::	pshs y
-		lda #EXIT_ERROR		; general bad exit code			; clear the e
+childexit::	pshs y,x
+		lda #EXIT_ERROR		; general bad exit code
 		ldx currenttask		; get curent task
 		leay TASK_DEAD_LIST,x	; get the list of dead children
 		lbsr remtaskfrom	; get oldest dead child
 		beq 1$			; jump out now if no children
+		debugreg ^'Freeing task at: ',DEBUG_TASK,DEBUG_REG_X
 		lda TASK_EXIT_CODE,x	; get the exit code into a
+		leax -STACK,x
 		lbsr memoryfree		; we can finally free the task block
-1$:		puls y
+1$:		puls y,x
+		rts
+
+; runchild - run the code in x as a child task, pausing the caller until
+; it exits. y should contain the name of the child task, and u the default
+; io device for that child. on exit, a will contain the exit code.
+
+runchild::	lbsr createtask		; create the task
+		lda #SIGNAL_CHILD	; we need to wait for ...
+		lbsr wait		; ... the child to exit
+		lbsr childexit		; expunge the child
 		rts
 
 ; set the task in x's name to y

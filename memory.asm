@@ -117,7 +117,9 @@ blockfitso:	puls y			; return start of previously block
 ; free memory block at x
 
 memoryfree::	debugreg ^'Memory freeing block: ',DEBUG_MEMORY,DEBUG_REG_X
+		pshs a,x
 		lda #1			; we are freeing
 		leax -MEM_SIZE,x	; go back the size of the struct
 		sta MEM_FREE_O,x	; and set free to 1
+		puls a,x
 		rts

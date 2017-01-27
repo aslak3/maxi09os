@@ -262,6 +262,7 @@ showmemory:	ldx defaultio
 
 readytasksz:	.asciz 'READY TASKS\r\n'
 waitingtasksz:	.asciz 'WAITING TASKS\r\n'
+idlerz:		.asciz 'IDLER\r\n'
 
 showtasks:	ldy #readytasksz
 		lbsr putstrdefio
@@ -276,6 +277,11 @@ showtasks:	ldy #readytasksz
 		lbsr showtasklist
 		ldy #newlinez
 		lbsr putstrdefio
+
+		ldy #idlerz
+		lbsr putstrdefio
+		ldx idletask
+		lbsr showtask
 
 		clra
 		rts

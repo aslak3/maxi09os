@@ -16,6 +16,7 @@ timertestdata:	.rmb 200
 sertermcondev:	.rmb 2
 sertermuartdev:	.rmb 2
 sertermwaitsigs:.rmb 1
+echotestresult:	.rmb 1
 
 		.area ROM
 
@@ -107,27 +108,95 @@ timertask::	lda #0
 		lbsr putstr
 		lbra 1$
 
-echogreetz:	.asciz '\r\n\r\nHello, enter a string: '
+CHILD_TASK	.equ 0
+MESSAGE		.equ 2
+
+echogreetz:	.asciz '\r\nHello, enter a string: '
 youtypedz:	.asciz '\r\nYou typed: '
+childtestz:	.asciz 'test'
+memtestz:	.asciz 'mem'
+startingchildz:	.asciz '\r\nStarting child\r\n'
+echokidz:	.asciz 'echokid'
 
 echotask::	ldx #200
 		lbsr memoryalloc
 		tfr x,u
+		lda #0x42
+		sta echotestresult
 
-		ldx defaultio
+echotestloop:	ldx defaultio
 
-1$:		ldy #echogreetz
+		ldy #echogreetz
 		lbsr putstr
 
-		tfr u,y
+		leay MESSAGE,u
 		lbsr getstr
 
 		ldy #youtypedz
 		lbsr putstr
-		tfr u,y
+		leay MESSAGE,u
+		lbsr putstr
+		ldy #newlinemsg
 		lbsr putstr
 
-		bra 1$
+		leay MESSAGE,u
+
+		ldx #childtestz
+		lbsr strcmp
+		beq childtest
+
+		ldx #memtestz
+		lbsr strcmp
+		beq showmem
+
+		bra echotestloop
+
+exitcodez:	.asciz 'Exit code: '
+
+childtest:	ldx defaultio
+		ldy #startingchildz
+		lbsr putstr
+		lbsr makechild
+
+		ldy #exitcodez
+		lbsr putlabb
+
+		lbra echotestloop
+
+makechild:	pshs x,y,u
+		ldx #echochild
+		ldy #echokidz
+		ldu #0
+		lbsr runchild
+		puls x,y,u
+		rts
+
+echochild:	lda #10
+1$:		ldy #0xffff
+		lbsr delay
+		deca
+		bne 1$
+
+		lda echotestresult
+		inc echotestresult
+		lbsr exittask
+
+freez:		.asciz 'Free: '
+largestz:	.asciz 'Largest: '
+
+showmem:	lda #MEM_FREE
+		lbsr memoryavail
+		ldx defaultio
+		ldy #freez
+		lbsr putlabw
+		
+		lda #MEM_LARGEST
+		lbsr memoryavail
+		ldx defaultio
+		ldy #largestz
+		lbsr putlabw
+		
+		lbra echotestloop
 
 sertermz:	.asciz 'Serial terminal\r\n\r\n'
 

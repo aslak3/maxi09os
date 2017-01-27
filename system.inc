@@ -20,8 +20,7 @@ DEBUG_REG_Y	.equ 0x08
 
 .ifdef DEBUG
 .msg 'Debug is enabled'
-;DEBUG_MODE	.equ DEBUG_GENERAL|DEBUG_TASK|DEBUG_INT
-DEBUG_MODE	.equ DEBUG_ALL
+DEBUG_MODE	.equ DEBUG_MEMORY|DEBUG_TASK
 .else
 DEBUG_MODE	.equ 0
 .endif

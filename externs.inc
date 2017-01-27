@@ -115,6 +115,7 @@
 		.globl newtask
 		.globl exittask
 		.globl childexit
+		.globl runchild
 		.globl settaskname
 		.globl addtaskto
 		.globl remtaskfrom

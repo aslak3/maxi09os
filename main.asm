@@ -80,23 +80,27 @@ initname:	.asciz 'init'
 
 ; enable interrupts
 
-enable::	debug ^'Enable',DEBUG_ENDDIS
+enable::	pshs cc
+		debug ^'Enable',DEBUG_ENDDIS
 		disableinterrupts
 		inc interruptnest
 		bgt 1$			; nest value > 0?
-		rts
+		bra 2$
 1$:		enableinterrupts
 		debug ^'Interrupts now enabled',DEBUG_ENDDIS
+2$:		puls cc
 		rts
 
 ; disable interrupts
 
-disable::	debug ^'Disable',DEBUG_ENDDIS
+disable::	pshs cc
+		debug ^'Disable',DEBUG_ENDDIS
 		disableinterrupts
 		dec interruptnest
 		ble 1$			; nest value <= 0? 
 		enableinterrupts
-1$:		rts
+1$:		puls cc
+		rts
 
 ; enable multitasking
 
