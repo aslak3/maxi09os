@@ -4,10 +4,9 @@
 		.include 'hardware.inc'
 		.include 'debug.inc'
 
-		.area ROM
+.globl		l_RAM
 
-HEAP_START	.equ 0x4000
-HEAP_LEN	.equ 0x2000
+		.area ROM
 
 MEM_NEXT_O	.equ 0
 MEM_LENGTH_O	.equ 2
@@ -15,13 +14,16 @@ MEM_FREE_O	.equ 4
 MEM_SIZE	.equ 5
 
 memoryinit::	debug ^'Memory init',DEBUG_MEMORY
-		ldy #HEAP_START		; only one block to setup
+		pshs a,b,x,y
+		ldy #l_RAM		; only one block to setup
 		ldx #0			; null for end of list
 		stx MEM_NEXT_O,y	; set the next entry to null
-		ldx #HEAP_LEN		; get the total size
-		stx MEM_LENGTH_O,y	; save it
+		ldd #RAMEND		; get the total size
+		subd #l_RAM
+		std MEM_LENGTH_O,y	; save it
 		lda #1			; this block is free
 		sta MEM_FREE_O,y	; so set it 
+		puls a,b,x,y
 		rts
 
 ; memoryavail - returns the total memory available, total amount free, or
@@ -31,7 +33,7 @@ memoryinit::	debug ^'Memory init',DEBUG_MEMORY
 memoryavail::	debugreg ^'Memory avail: ',DEBUG_MEMORY,DEBUG_REG_A
 		pshs y
 		clrb			; memory size counter top half
-		ldy #HEAP_START		; start at the start of the heap
+		ldy #l_RAM		; start at the start of the heap
 		lbsr disable		; enter critical section
 		cmpa #MEM_TOTAL		; total mode?
 		beq dototal		; run the total loop
@@ -76,7 +78,7 @@ memoryalloc::	debugreg ^'Memory alloc, bytes: ',DEBUG_MEMORY,DEBUG_REG_X
 		pshs a,b,y,u		; save y
 		leax MEM_SIZE,x		; add the overhead to the request
 		lbsr disable		; critical section
-		ldy #HEAP_START		; start at the start of the heap
+		ldy #l_RAM		; start at the start of the heap
 allocloop:	tst MEM_FREE_O,y	; get the free flag
 		bne checkfree		; it's free, now check size
 checknext:	ldy MEM_NEXT_O,y	; get the next pointer
