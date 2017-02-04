@@ -2,7 +2,7 @@
 
 ; DEBUG related
 
-.define DEBUG
+;.define DEBUG
 
 DEBUG_GENERAL	.equ 0x01
 DEBUG_TASK	.equ 0x02
@@ -20,7 +20,8 @@ DEBUG_REG_Y	.equ 0x08
 
 .ifdef DEBUG
 .msg 'Debug is enabled'
-DEBUG_MODE	.equ DEBUG_MEMORY|DEBUG_TASK
+;DEBUG_MODE	.equ DEBUG_MEMORY|DEBUG_TASK
+DEBUG_MODE	.equ 0xff
 .else
 DEBUG_MODE	.equ 0
 .endif

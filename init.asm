@@ -37,7 +37,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		lbsr sysopen
 		tfr x,u
 		ldx #echotask
-		ldy #echo3taskname
+		ldy #echo2taskname
 		lbsr createtask
 
 ;		ldx #sertermtask
@@ -45,14 +45,14 @@ init::		debug ^'Init started',DEBUG_GENERAL
 ;		ldu #0
 ;		lbsr createtask
 
-		ldx #consolenamez
-		lda #4
-		clrb
-		lbsr sysopen
-		tfr x,u
-		ldx #monitorstart
-		ldy #montaskname
-		lbsr createtask
+;		ldx #uartnamez
+;		lda #1
+;		ldb #B19200
+;		lbsr sysopen
+;		tfr x,u
+;		ldx #monitorstart
+;		ldy #montaskname
+;		lbsr createtask
 
 		ldx #uartnamez
 		lda #0
@@ -60,7 +60,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		lbsr sysopen
 		tfr x,u
 		ldx #echotask
-		ldy #echo4taskname
+		ldy #echo3taskname
 		lbsr createtask
 
 		ldx #uartnamez
@@ -69,7 +69,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		lbsr sysopen
 		tfr x,u
 		ldx #echotask
-		ldy #echo3taskname
+		ldy #echo4taskname
 		lbsr createtask
 
 		clra

@@ -65,12 +65,13 @@ newtask::	pshs a,y,u
 
 		rts
 
-; exittask - exit code in a. move task to parent's dead children list,
-; then signal the parent, which is responsible for freeing our memory.
-; does not return. the end swi (yield) might be missed if an interrupt
+; exittask - exit code in a. move running task to parent's dead children
+; list, then signal the parent, which is responsible for freeing our memory. 
+; does not return.  the end swi (yield) might be missed if an interrupt
 ; happens just after enabling interrupts, but this is harmless.
 
-exittask::	ldx currenttask		; get current task
+exittask::	debugreg ^'Task exiting: ',DEBUG_TASK,DEBUG_REG_A
+		ldx currenttask		; get current task
 		lbsr disable		; enter critical section
 		lbsr remove		; remove it from the ready list
 		ldy TASK_PARENT,x	; get the parent task
@@ -81,6 +82,7 @@ exittask::	ldx currenttask		; get current task
 		lda #SIGNAL_CHILD	; we are indicating a child exit
 		lbsr intsignal		; send it to the parent
 		lbsr enable		; exit critical section
+		debugreg ^'Done exiting for task: ',DEBUG_TASK,DEBUG_REG_X
 		swi			; yield to another task
 
 ; childexit - free the oldest exited child, if there is one. the exit code
@@ -210,10 +212,12 @@ intsignal::	debugreg ^'Interrupt signalling the task: ',DEBUG_INT,DEBUG_REG_A|DE
 		sta TASK_SIGRECVD,x	; and save them in the target task
 		bita TASK_SIGWAIT,x	; mask the current listening set
 		beq 1$			; other end not listening; no wakey
+		debug ^'Task is waiting for the signal',DEBUG_TASK
 		lbsr remove		; remove from whatever queue
 		ldy #readytasks		; and put it on
 		lbsr addtail		; ... the ready queue
-1$:		puls y
+1$:		debug ^'Done in initsignal',DEBUG_TASK
+		puls y
 		rts
 
 ;;; INTERRUPT

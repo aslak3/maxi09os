@@ -147,7 +147,7 @@ echotestloop:	ldx defaultio
 
 		ldx #memtestz
 		lbsr strcmp
-		beq showmem
+		lbeq showmem
 
 		bra echotestloop
 
@@ -171,7 +171,7 @@ makechild:	pshs x,y,u
 		puls x,y,u
 		rts
 
-echochild:	lda #10
+echochild:	lda #3
 1$:		ldy #0xffff
 		lbsr delay
 		deca
@@ -179,12 +179,20 @@ echochild:	lda #10
 
 		lda echotestresult
 		inc echotestresult
+		debugreg ^'Echo child exiting: ',DEBUG_TASK,DEBUG_REG_A
 		lbsr exittask
 
+totalz:		.asciz 'Total: '
 freez:		.asciz 'Free: '
 largestz:	.asciz 'Largest: '
 
-showmem:	lda #MEM_FREE
+showmem:	lda #MEM_TOTAL
+		lbsr memoryavail
+		ldx defaultio
+		ldy #totalz
+		lbsr putlabw
+
+		lda #MEM_FREE
 		lbsr memoryavail
 		ldx defaultio
 		ldy #freez
