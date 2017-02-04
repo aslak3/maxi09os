@@ -12,64 +12,73 @@ dumpcounter:	.rmb 2
 
 monstartz:	.asciz '\r\nMonitor, press enter to pause switching\r\n\r\n'
 promptz:	.asciz '> '
-consolename:	.asciz 'console'
 commfailedz:	.asciz 'Command failed\r\n'
 nosuchz:	.asciz 'No such command\r\n'
 
 ; monitor entry point
 
 monitorstart::	ldx defaultio
+
 		ldy #monstartz
 		lbsr putstr
-
 		ldy #inputbuffer
 		lbsr getstr
 
 		lbsr forbid
 
-mainloop:	ldx defaultio
+mainloop:	ldx defaultio		; get io device
+
 		ldy #promptz		; '>' etc
 		lbsr putstr		; output that
-		
 		ldy #inputbuffer	; now we need a command
 		lbsr getstr		; get the command (waiting as needed)
 
-		ldy #newlinez
-		lbsr putstr
+		ldy #newlinez		; clear up the screen by ...
+		lbsr putstr		; ... outputting a newline
 
-		lda inputbuffer		; get the first char
-		ldx #commandarray	; setup the command pointer
-nextcommand:	ldy ,x++		; get the sub address
-		ldb ,x			; get the command letter
-		beq commandarraye	; end of command list?
-		cmpa ,x+		; compare input letter with array item
-		bne nextcommand		; no match? check next one
-		jsr ,y			; jump to subroutine
+		; parambuffer contains:
+		;   command followed by null
+		;   followed by 01 (byte) 02 (word) 03 (string with null)
+		;   followed by a null
+
+		ldx #inputbuffer	; now parse the input buffer
+		ldy #parambuffer	; into the parameter buffer
+		lbsr parseinput		; do the parse to extract stuff
+
+startarray:	ldu #commandarray	; setup the command pointer
+nextcommand:	ldx ,u++		; get the command name
+		beq nosuchcommand	; end of command list?
+		lbsr strcmp		; compare the command with the list
+		bne nomatch		; no match? check next one
+skipcommand:	tst ,y+			; advance through the parambuffer
+		bne skipcommand		; until we reach end of command
+		jsr [,u]		; jump to subroutine
 		bne commanderror	; error check for zero
 		bra mainloop		; back to top
-commanderror:	ldx defaultio
-		ldy #commfailedz
-		lbsr putstr		; show error
+
+nomatch:	ldx ,u++		; need to advance past sub pointer
+		bra nextcommand		; before checking next command
+
+commanderror:	ldy #commfailedz	; command failed error message
+		lbsr putstrdefio	; show error
 		bra mainloop
 
-commandarraye:	ldx defaultio
-		ldy #nosuchz
-		lbsr putstr		; show error message
+nosuchcommand:	ldy #nosuchz		; no such command
+		lbsr putstrdefio	; show error
 		bra mainloop
 
 ; general error handler branch for commands that fail
 
-generalerror:	lda #1
-		rts
+generalerror:	lda #1			; set error state
+		rts			; exit command sub
 
 ;;; COMMANDS ;;;
 
-; dumpmemory - 'd AAAA BBBB' - dumps from AAAA, BBBB bytes
+; dump AAAA LLLL - dumps from AAAA, LLLLbytes
 ;
 ; C000  48 65 6C 6C 6F 2C 20 74  68 69 73 20 69 73 20 61  [Hello, this is a]
 
-dumpmemory:	lbsr doparse		; parse hexes, filling out inputbuffer
-		lda ,y+			; get the type
+dump:		lda ,y+			; get the type
 		cmpa #2			; is it a word?
 		lbne generalerror	; validation error
 		ldd ,y++		; start address
@@ -143,8 +152,9 @@ ascbyteloop:	lda b,y			; get the byte from memory
 		clra			; no error
 		rts
 
-writememory:	lbsr doparse		; parse hexes, filling out inputbuffer
-		lda ,y+			; get the type
+; write AAAA BB WWWW "STRING" - write bytes, words or strings
+
+write:		lda ,y+			; get the type
 		cmpa #2			; is it a word?
 		lbne generalerror	; validation error
 		ldx ,y++		; start address
@@ -172,14 +182,13 @@ storestring:	lbsr copystr		; use the concatstr operation
 writememoryout:	clra			; clean exit
 		rts
 
-; z BB WWWW 'STRING' .... - test the parser by outputting what was parsed
+; parsetest BB WWWW "STRING" .... - test the parser by outputting what was parsed
 
 bytefoundz:	.asciz 'byte: '
 wordfoundz:	.asciz 'word: '
 stringfoundz:	.asciz 'string: '
 
-parsetest:	lbsr doparse
-		tfr y,u
+parsetest:	tfr y,u
 		ldx defaultio
 
 parsetestloop:	lda ,u+
@@ -221,78 +230,82 @@ stringfound:	ldy #stringfoundz
 		lbsr putstr
 		bra parsetestloop		
 
-readbyte:	lbsr doparse
-		lda ,y+
+; readbyte AAAA - reads the byte at AAAA and displays it
+
+readbyte:	lda ,y+
 		cmpa #2			; is it a word?
 		lbne generalerror	; validation error
 
-		ldy ,y
+		ldy ,y			; get the address
 
-		ldx defaultio
-		lda ,y
-		lbsr putbyte
-		ldy #newlinez
-		lbsr putstr
-		clra
+		ldx defaultio		; some things to write to default io
+
+		lda ,y			; get the byte from the address
+		lbsr putbyte		; output the byte
+		ldy #newlinez		; and we need a newline
+		lbsr putstr		; to tidy things up
+		clra			; success
 		rts
+; memory - show the memory info
 
 totalmemz:	.asciz 'Total: '
 freememz:	.asciz 'Free: '
 largestmemz:	.asciz 'Largest: '
 
-showmemory:	ldx defaultio
+memory:		ldx defaultio		; everything outputs on default io
 
-		lda #MEM_TOTAL
-		lbsr memoryavail
-		ldy #totalmemz
-		lbsr putlabw
+		lda #MEM_TOTAL		; get the total memory
+		lbsr memoryavail	; it will go in d
+		ldy #totalmemz		; we will print a label too
+		lbsr putlabw		; which also adds a newline
 
-		lda #MEM_FREE
-		lbsr memoryavail
-		ldy #freememz
-		lbsr putlabw
+		lda #MEM_FREE		; get the free memory
+		lbsr memoryavail	; ...
+		ldy #freememz		; ...
+		lbsr putlabw		; ,,,
 
-		lda #MEM_LARGEST
-		lbsr memoryavail
-		ldy #largestmemz
-		lbsr putlabw
+		lda #MEM_LARGEST	; and the largest memory block
+		lbsr memoryavail	; ...
+		ldy #largestmemz	; ...
+		lbsr putlabw		; ...
 
 		clra
 		rts
+
+; tasks - shows all kinds of info about all the tasks in the system
 
 readytasksz:	.asciz 'READY TASKS\r\n'
 waitingtasksz:	.asciz 'WAITING TASKS\r\n'
 idlerz:		.asciz 'IDLER\r\n'
 
-showtasks:	ldy #readytasksz
-		lbsr putstrdefio
-		ldy #readytasks
-		lbsr showtasklist
-		ldy #newlinez
-		lbsr putstrdefio
+tasks:		ldy #readytasksz	; the heading for ready tasks
+		lbsr putstrdefio	; show this heading in default io
+		ldy #readytasks		; get the ready tasks list
+		lbsr showtasklist	; show this list
 
-		ldy #waitingtasksz
-		lbsr putstrdefio
-		ldy #waitingtasks
-		lbsr showtasklist
-		ldy #newlinez
-		lbsr putstrdefio
+		ldy #waitingtasksz	; the heading for the waiting tasks
+		lbsr putstrdefio	; ...
+		ldy #waitingtasks	; ...
+		lbsr showtasklist	; ...
 
-		ldy #idlerz
-		lbsr putstrdefio
-		ldx idletask
-		lbsr showtask
+		ldy #idlerz		; the heading for the idle task
+		lbsr putstrdefio	; output it
+		ldx idletask		; get the idle task handle
+		lbsr showtask		; show info about that task
 
 		clra
 		rts
 
 showtasklist:	ldx LIST_HEAD,y		; get the first node
 showtaskloop:	ldy NODE_NEXT,x		; get its following node
-                beq endtasklist
+                beq endtasklist		; last node?
 		lbsr showtask		; show info about task x
-		ldx NODE_NEXT,x
-		bra showtaskloop
-endtasklist:	rts
+		ldx NODE_NEXT,x		; get the next one
+		bra showtaskloop	; and back for more tasks
+endtasklist:	ldy #newlinez		; tidy up...
+		lbsr putstrdefio	; ... with a new line
+
+		rts
 
 lchevronsz:	.asciz '<<<'
 rchevronsz:	.asciz '>>>'
@@ -425,48 +438,69 @@ taskregisters:	pshs a,u
 
 		rts
 
+; quit - quit - leave the monitor. renemable multitasking and go back to
+; waiting for the user to want to enter it again
 
-quit:		lbsr permit
-		lbra monitorstart
+quit:		lbsr permit		; multitask once more
+		lbra monitorstart	; back to the start
 
-; shows some help text
+; help or ? - shows some help text
 
 helpz:		.ascii 'Commands:\r\n'
-		.ascii '  r : show registers\r\n'
-		.ascii '  w AAAA BB WWWW "STRING" ... : write to AAAA bytes, words, strings\r\n'
-		.ascii '  d AAAA LLLL : dump from AAAA count LLLL bytes in hex\r\n'
-		.ascii '  R MMMM : read the byte at MMMM and display it\r\n'
-		.ascii '  q : quit monitor and resume task switching\r\n'
-		.ascii '  h or ? : this help\r\n'
+		.ascii '  help or ? : this help\r\n'
+		.ascii '  dump AAAA LLLL : dump from AAAA count LLLL bytes in hex\r\n'
+		.ascii '  write AAAA BB WWWW "STRING" ... : write to AAAA bytes, words, strings\r\n'
+		.ascii '  readbyte MMMM : read the byte at MMMM and display it\r\n'
+		.ascii '  memory : show memory information\r\n'
+		.ascii '  tasks : show tasks\r\n'
+		.ascii '  quit : quit monitor and resume task switching\r\n'
 		.asciz '\r\n'
 
-showhelp:	ldx defaultio
+help:		ldx defaultio
 		ldy #helpz		; and the help text
-		lbsr putstr
+		lbsr putstr		; output the message
 		clra			; we always suceed
 		rts
 
+; command names
 
-doparse:	ldx #inputbuffer+1
-		ldy #parambuffer
-		lbsr parseinput
-		rts
+helpcomz:	.asciz 'help'
+questioncomz:	.asciz '?'
+dumpcomz:	.asciz 'dump'
+writecomz:	.asciz 'write'
+parsetestcomz:	.asciz 'parsetest'
+readbytecomz:	.asciz 'readbyte'
+memorycomz:	.asciz 'memory'
+taskscomz:	.asciz 'tasks'
+quitcomz:	.asciz 'quit'
 
-commandarray:	.word dumpmemory
-		.ascii 'd'
-		.word writememory
-		.ascii 'w'
-		.word showhelp
-		.ascii '?'			; same command different letter
+; command array - a list of command name and subroutine addresses, ending
+; in a null word
+
+commandarray:	.word helpcomz
+		.word help
+		.word questioncomz
+		.word help
+
+		.word dumpcomz
+		.word dump
+
+		.word writecomz
+		.word write
+
+		.word parsetestcomz
 		.word parsetest
-		.ascii 'z'
+
+		.word readbytecomz
 		.word readbyte
-		.ascii 'R'
-		.word showmemory
-		.ascii 'm'
-		.word showtasks
-		.ascii 't'
+
+		.word memorycomz
+		.word memory
+
+		.word taskscomz
+		.word tasks
+
+		.word quitcomz
 		.word quit
-		.ascii 'q'
+
 		.word 0x0000
-		.byte 0x00

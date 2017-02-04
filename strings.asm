@@ -1,6 +1,7 @@
 		;;; STRINGS ;;;
 
 		.include 'hardware.inc'
+		.include 'ascii.inc'
 
 		.area ROM
 
@@ -65,11 +66,18 @@ strcmpout:	puls a,x,y
 
 ; parse a stream of ascii hex into the y stack
 
-parseinput::	pshs y
-nextparseinput:	lda ,x			; check for an initiial null
+parseinput::	pshs a,y
+commandinput:	lda ,x+			; get the char from command name
 		beq parseinputout	; null? out we go
-		bsr skipspaces		; skip spaces
+		cmpa #ASC_SP		; space?
+		bne notspace		; no? then skip null insertion
+		clr ,y+			; set char to null
+		bra nextparseinput	; now the params...
+notspace:	sta ,y+			; save it
+		bra commandinput	; back for from the command
+nextparseinput:	lbsr skipspaces
 		lda ,x			; get the char under the new pos
+		beq parseinputout
 		cmpa #0x22		; double quote
 		beq parsestring		; if so it is a string
 		lda 2,x			; get the next but one char
@@ -84,12 +92,12 @@ nextparseinput:	lda ,x			; check for an initiial null
 parsebyte:	lda #1			; code 1 for bytes
 		sta ,y+			; add it into the stream
 		bsr aschextobyte	; yes? this pair must be a byte
-		sta ,y+			; save it in u
+		sta ,y+			; save it in y
 		bra nextparseinput	; look for more
 parseword:	lda #2			; code 2 for words
 		sta ,y+			; add it in to the stream
 		bsr aschextoword	; if we get here it must be a word
-		std ,y++		; save the word in u
+		std ,y++		; save the word in y
 		bra nextparseinput
 parsestring:	lda #3			; type 3 for strings
 		sta ,y+			; save the type
@@ -103,7 +111,7 @@ stringloop:	lda ,x+			; get the string data
 parsestringout:	clr ,y+			; finish the string
 		bra nextparseinput	; back for more elements
 parseinputout:	clr ,y+			; null ender
-		puls y
+		puls a,y
 		rts
 
 ; printableasc - converts non printables to . in a
