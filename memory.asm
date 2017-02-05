@@ -19,7 +19,7 @@ memoryinit::	debug ^'Memory init',DEBUG_MEMORY
 		ldx #0			; null for end of list
 		stx MEM_NEXT_O,y	; set the next entry to null
 		ldd #RAMEND		; get the total size
-		subd #l_RAM
+		subd #l_RAM		; subtract space used for vars
 		std MEM_LENGTH_O,y	; save it
 		lda #1			; this block is free
 		sta MEM_FREE_O,y	; so set it 
