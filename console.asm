@@ -163,6 +163,9 @@ consoleopen:	ldx #CON_SIZE		; allocate the device struct
 		sty DEVICE_READ,x	; ... in the device struct
 		ldy #consolewrite	; save the write pointer
 		sty DEVICE_WRITE,x	; ... in the device struct
+		ldy #devicenotimpl	; not implemented ,,,
+		sty DEVICE_SEEK,x	; seek
+		sty DEVICE_CONTROL,x	; and control
 		lbsr signalalloc	; get a signal bit
 		sta DEVICE_SIGNAL,x	; save it in the device struct
 		lbsr clearconsole	; clear the newly opened console
@@ -190,11 +193,11 @@ consoleread:	pshs b
 		andb #31		; wrapping to 32 byte window
 		stb CON_RX_COUNT_U,x	; and save it
 		lbsr enable		; out of critical section
-		setnotzero		; got data
+		setzero			; got data
 		puls b
 		rts
 1$:		lbsr enable		; out of critical section
-		setzero			; got no data
+		setnotzero		; got no data
 		puls b
 		rts
 
@@ -229,6 +232,7 @@ handleregular:	lbsr seekcursor		; otherwise, move to the current pos
 		beq newline		; if so, we need to wrap the line
 consolewriteo:	lbsr permit		; end of vdc critical section
 		puls a,x,y,u
+		setzero
 		rts
 		
 handlecr:	lbsr blankcursor	; blank current cursor position

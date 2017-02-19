@@ -37,7 +37,7 @@ getstrdefio::	pshs x
 
 getstr::	clrb			; set the length to 0
 getstrloop:	lbsr sysread		; get a char in a
-		beq getstrwait		; need to wait
+		bne getstrwait		; need to wait
 		cmpa #ASC_CR		; cr?
 		beq getstrout		; if it is, then out
 		cmpa #ASC_LF		; lf?

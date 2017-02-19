@@ -83,7 +83,7 @@ timertask::	lda #0
 4$:		ldx consoledev
 		lbsr sysread
 		tfr a,b
-		beq 1$
+		bne 1$
 		ldy #keypressedz
 		lbsr putstr
 		tfr b,a
@@ -241,13 +241,13 @@ sertermloop:	ldx sertermcondev
 
 readconsole:	ldx sertermcondev
 		lbsr sysread
-		beq sertermloop
+		bne sertermloop
 		ldx sertermuartdev
 		lbsr syswrite
 		bra readconsole
 readuart:	ldx sertermuartdev
 		lbsr sysread
-		beq sertermloop
+		bne sertermloop
 		ldx sertermcondev
 		lbsr syswrite
 		bra readuart

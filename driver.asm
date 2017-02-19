@@ -10,6 +10,7 @@ drivertable:	.word uartdef
 		.word consoledef
 		.word leddef
 		.word timerdef
+		.word idedef
 		.word 0x0000
 
 ; inits all drivers
@@ -46,13 +47,17 @@ sysopen::	ldu #drivertable	; setup table search
 
 sysclose::	jmp [DEVICE_CLOSE,x]	; this is a jump
 
-; read from a device. x is the device struct, a reg has the result
+; read from a device. x is the device struct, a or y has the result
 
 sysread::	jmp [DEVICE_READ,x]	; this is a jump
 
-; write to a evice. x is the device struct, a has what to write
+; write to a device. x is the device struct, a or y has what to write
 
 syswrite::	jmp [DEVICE_WRITE,x]	; this is a jump
+
+; seek to position y. x is the device struct
+
+sysseek::	jmp [DEVICE_SEEK,x]	; this is a jump
 
 ; generic do anything to a device, x is the device struct
 
@@ -70,3 +75,8 @@ driversignal::	pshs a,x
 		lbsr intsignal		; make it next to run
 		puls a,x
 		rts  
+
+; devicenotimpl - dummy for not implemented sys funciton
+
+devicenotimpl::	debug ^'Not implemented'
+		rts

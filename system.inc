@@ -87,10 +87,11 @@ DEVICE_NODE	.equ 0			; list node (unused currently)
 DEVICE_CLOSE	.equ NODE_SIZE+0	; device close routine
 DEVICE_READ	.equ NODE_SIZE+2	; read a byte into a
 DEVICE_WRITE	.equ NODE_SIZE+4	; write a byte from a
-DEVICE_CONTROL	.equ NODE_SIZE+6	; generic control method
-DEVICE_TASK	.equ NODE_SIZE+8	; the task that opened the device
-DEVICE_SIGNAL	.equ NODE_SIZE+10	; the signal bit for the device
-DEVICE_SIZE	.equ NODE_SIZE+11
+DEVICE_SEEK	.equ NODE_SIZE+6	; seek to position y
+DEVICE_CONTROL	.equ NODE_SIZE+8	; generic control method
+DEVICE_TASK	.equ NODE_SIZE+10	; the task that opened the device
+DEVICE_SIGNAL	.equ NODE_SIZE+12	; the signal bit for the device
+DEVICE_SIZE	.equ NODE_SIZE+13
 
 ; stack frame offsets
 
@@ -116,3 +117,7 @@ TIMERCMD_STOP	.equ 1
 TIMERCTRL_REP	.equ 0			; repeating?
 TIMERCTRL_END	.equ 1
 TIMERCTRL_SIZE	.equ 3
+
+; ide device control (a register)
+
+IDECMD_IDENTIFY	.equ 0

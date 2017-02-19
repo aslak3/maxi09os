@@ -46,31 +46,31 @@ init::		debug ^'Init started',DEBUG_GENERAL
 ;		lbsr createtask
 
 ;		ldx #uartnamez
-;		lda #1
+;		lda #0
 ;		ldb #B19200
 ;		lbsr sysopen
 ;		tfr x,u
-;		ldx #monitorstart
-;		ldy #montaskname
+;		ldx #echotask
+;		ldy #echo3taskname
 ;		lbsr createtask
-
-		ldx #uartnamez
-		lda #0
-		ldb #B19200
-		lbsr sysopen
-		tfr x,u
-		ldx #echotask
-		ldy #echo3taskname
-		lbsr createtask
 
 		ldx #uartnamez
 		lda #1
 		ldb #B19200
 		lbsr sysopen
 		tfr x,u
-		ldx #echotask
-		ldy #echo4taskname
+		ldx #monitorstart
+		ldy #montaskname
 		lbsr createtask
+
+;		ldx #uartnamez
+;		lda #1
+;		ldb #B19200
+;		lbsr sysopen
+;		tfr x,u
+;		ldx #echotask
+;		ldy #echo4taskname
+;		lbsr createtask
 
 		clra
 		lbsr wait

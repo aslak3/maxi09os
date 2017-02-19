@@ -54,6 +54,9 @@ uartopen:	lbsr uartllopen		; y has base address
 		sty DEVICE_READ,x		; ... in the device struct
 		ldy #uartwrite		; save the write pointer
 		sty DEVICE_WRITE,x	; ... in the device struct
+		ldy #devicenotimpl	; not implemented sub
+		sty DEVICE_SEEK,x	; for seek
+		sty DEVICE_CONTROL,x	; and for control
 		lbsr signalalloc	; get a signal bit
 		sta DEVICE_SIGNAL,x	; save it in the device struct
 		setzero
@@ -93,11 +96,11 @@ uartread:	pshs b,u
 		stb UART_RX_COUNT_U,x	; and save it
 		lbsr enable
 		debug ^'UART done read',DEBUG_SPEC_DRV
-		setnotzero		; got data
+		setzero			; got data
 		puls b,u
 		rts
 1$:		lbsr enable
-		setzero			; got no data
+		setnotzero		; got no data
 		puls b,u
 		rts
 
@@ -110,6 +113,7 @@ uartwrite:	pshs y,b
 		beq 1$			; wait for port to be idle
 		sta THR16C654,y		; output the char
 		puls y,b
+		setzero
 		rts
 
 ;;; INTERRUPT

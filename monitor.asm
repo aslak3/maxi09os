@@ -14,6 +14,7 @@ monstartz:	.asciz '\r\nMonitor, press enter to pause switching\r\n\r\n'
 promptz:	.asciz '> '
 commfailedz:	.asciz 'Command failed\r\n'
 nosuchz:	.asciz 'No such command\r\n'
+resultz:	.asciz 'Result: '
 
 ; monitor entry point
 
@@ -235,7 +236,6 @@ stringfound:	ldy #stringfoundz
 readbyte:	lda ,y+
 		cmpa #2			; is it a word?
 		lbne generalerror	; validation error
-
 		ldy ,y			; get the address
 
 		ldx defaultio		; some things to write to default io
@@ -438,6 +438,132 @@ taskregisters:	pshs a,u
 
 		rts
 
+; sysopen "DEVICE" [AA [BB]] - open the DEVICE, unit AA extra param BB
+
+dosysopen:	ldb ,y+			; get the type
+		cmpb #3			; is it a string?
+		lbne generalerror	; validation error
+
+		tfr y,x			; save the device name
+
+1$:		tst ,y+			; testing for nulls
+		bne 1$			; keep advancing y to the end
+
+		ldb ,y+			; get the type
+		cmpb #1			; byte?
+		bne 2$			; no unit, skip ahead
+		lda, y+			; get the unit
+
+		ldb ,y+			; get the type
+		cmpb #1			; byte?
+		bne 2$			; no extra param, skip ahead
+		ldb, y+			; get the extra param (baud rate?)
+
+2$:		lbsr sysopen		; do the oepn call
+
+		tfr x,d			; we are printing x
+		ldy #resultz		; print a nice label
+		lbsr putlabwdefio	; print the device handle
+
+		clra
+		rts		
+
+; sysclose HHHH - close the device at HHHH
+
+dosysclose:	ldb ,y+			; get the type
+		cmpb #2			; is it a string?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the device handle
+
+		lbsr sysclose		; close it
+
+		rts			; propogate the cc
+
+; sysread HHHH [MMMM] - read a byte or a block
+
+dosysread:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the device handle
+
+		lda ,y+			; get the type
+		cmpa #2			; word?
+		beq sysreadblock	; yes, reading a block
+
+		lbsr sysread		; do the read
+		tfr cc,b		; save the conditions
+
+		ldy #resultz		; get the label
+		lbsr putlabbdefio	; print the byte read with label
+
+		tfr b,cc		; get the sysread conditions
+		rts			; return with them
+
+sysreadblock:	ldy ,y++		; get the block address
+		lbsr sysread		; read the block
+
+		rts			; propogate the conditions
+
+; syswrite HHHH BB | MMMM - write a byte or a block
+
+dosyswrite:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the device handle
+
+		lda ,y+			; get the type
+		cmpa #1			; byte?
+		beq syswritebyte	; found one
+		cmpa #2			; word?
+		lbne generalerror	; not either, so error
+
+		ldy ,y++		; get the word (memory address)
+		lbsr syswrite		; do the write
+
+		rts			; propogate control code
+
+syswritebyte:	lda ,y+			; get the byte we are writing into a
+		lbsr syswrite		; do the write
+		rts			; propogate the conditions
+
+; sysseek HHHH PPPP - seek to PPPP
+
+dosysseek:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the device handle
+
+		lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldy ,y++		; get the offset
+
+		lbsr sysseek		; do the read
+		rts			; return with the conditions
+
+; sysctrl HHHH AA MMMM : do a control operation of device HHHH, command AA
+; with block y
+
+dosysctrl:	ldb ,y+			; get the type
+		cmpb #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the device handle
+
+		ldb ,y+			; get the type
+		cmpb #1			; byte?
+		lbne generalerror
+		lda ,y+			; get the command
+
+		ldb ,y+			; get the type
+		cmpb #2			; word?
+		lbne generalerror	; validation error
+		ldy ,y++		; get the control block
+
+		lbsr sysctrl		; do the write
+
+		rts			; propogate control code
+
+
 ; quit - quit - leave the monitor. renemable multitasking and go back to
 ; waiting for the user to want to enter it again
 
@@ -446,13 +572,23 @@ quit:		lbsr permit		; multitask once more
 
 ; help or ? - shows some help text
 
-helpz:		.ascii 'Commands:\r\n'
-		.ascii '  help or ? : this help\r\n'
+helpz:		.ascii 'Low-level commands:\r\n'
 		.ascii '  dump AAAA LLLL : dump from AAAA count LLLL bytes in hex\r\n'
 		.ascii '  write AAAA BB WWWW "STRING" ... : write to AAAA bytes, words, strings\r\n'
 		.ascii '  readbyte MMMM : read the byte at MMMM and display it\r\n'
 		.ascii '  memory : show memory information\r\n'
+		.ascii 'System info commands:\r\n'
 		.ascii '  tasks : show tasks\r\n'
+		.ascii '  memory : show memory status\r\n'
+		.ascii 'Driver commands:\r\n'
+		.ascii '  sysopen "DEVICE" [AA [BB]] : open DEVICE with optional params\r\n'
+		.ascii '  sysclose HHHH : close the device at handle HHHH\r\n'
+		.ascii '  sysread HHHH [MMMM] : read a byte, or block into MMMM\r\n'
+		.ascii '  syswrite HHHH [BB | MMMM] : write a byte BB, or block from MMMM\r\n'
+		.ascii '  sysseek HHHH AAAA : seek to position AAAA\r\n'
+		.ascii '  sysctrl HHHH CC MMMM : perform command CC with param block at MMMM\r\n'
+		.ascii 'Other commands:\r\n'
+		.ascii '  help or ? : this help\r\n'
 		.ascii '  quit : quit monitor and resume task switching\r\n'
 		.asciz '\r\n'
 
@@ -473,6 +609,13 @@ readbytecomz:	.asciz 'readbyte'
 memorycomz:	.asciz 'memory'
 taskscomz:	.asciz 'tasks'
 quitcomz:	.asciz 'quit'
+
+dosysopencomz:	.asciz 'sysopen'
+dosysclosecomz:	.asciz 'sysclose'
+dosysreadcomz:	.asciz 'sysread'
+dosyswritecomz:	.asciz 'syswrite'
+dosysseekcomz:	.asciz 'sysseek'
+dosysctrlcomz:	.asciz 'sysctrl'
 
 ; command array - a list of command name and subroutine addresses, ending
 ; in a null word
@@ -502,5 +645,23 @@ commandarray:	.word helpcomz
 
 		.word quitcomz
 		.word quit
+
+		.word dosysopencomz
+		.word dosysopen
+
+		.word dosysclosecomz
+		.word dosysclose
+
+		.word dosysreadcomz
+		.word dosysread
+
+		.word dosyswritecomz
+		.word dosyswrite
+
+		.word dosysseekcomz
+		.word dosysseek
+
+		.word dosysctrlcomz
+		.word dosysctrl
 
 		.word 0x0000

@@ -49,7 +49,7 @@ timeropen:	ldx #TIMER_SIZE		; allocate the device struct
 		lbsr disable
 		lbsr addtail
 		lbsr enable
-		setnotzero
+		setzero
 		rts
 
 ; timer close - give it the device in x
@@ -65,7 +65,8 @@ timercontrol:	debug ^'Timer control',DEBUG_SPEC_DRV
 		beq starttimer
 		cmpa #TIMERCMD_STOP
 		beq stoptimer
-timercontrolo:	rts
+timercontrolo:	setzero
+		rts
 
 starttimer:	lbsr disable
 		lda TIMERCTRL_REP,y
@@ -78,11 +79,11 @@ starttimer:	lbsr disable
 		sta TIMER_RUNNING,x
 		debug ^'Timer start',DEBUG_SPEC_DRV
 		lbsr enable
-		rts
+		bra timercontrolo
 stoptimer:	lbsr disable
 		clr TIMER_RUNNING,x
 		lbsr enable
-		rts
+		bra timercontrolo
 
 ;;; INTERUPT
 

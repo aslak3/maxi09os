@@ -26,6 +26,9 @@ ledopen:	lbsr disable		; enter critical section
 		sty DEVICE_CLOSE,x	; ... in the device struct
 		ldy #ledwrite		; save the write pointer
 		sty DEVICE_WRITE,x	; ... in the device struct
+		ldy #devicenotimpl	; not implemented
+		sty DEVICE_SEEK,x	; seek
+		sty DEVICE_CONTROL,x	; and control
 		lbsr enable		; exit critical section
 		setnotzero
 		rts
@@ -45,4 +48,5 @@ ledclose:	lbsr disable
 ; write to the device in x, reg a
 
 ledwrite:	sta LED			; on or off, it's in a
+		setzero
 		rts

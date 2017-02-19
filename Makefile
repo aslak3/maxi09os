@@ -12,9 +12,10 @@ AREA_BASES = -b VECTORS=0xfff0 -b ROM=0xc000 -b DEBUGMSG=0xf800 -b RAM=0x0000
 
 MAIN_REL = main.rel
 RELS = memory.rel ticker.rel systemvars.rel strings.rel \
-	tasks.rel testtasks.rel init.rel driver.rel io.rel uart.rel \
-	debug.rel lists.rel led.rel timer.rel uartlowlevel.rel \
-	console.rel scancodes.rel misc.rel v99lowlevel.rel fontdata.rel \
+	tasks.rel testtasks.rel init.rel driver.rel io.rel \
+	uart.rel led.rel timer.rel console.rel ide.rel \
+	debug.rel lists.rel uartlowlevel.rel \
+	scancodes.rel misc.rel v99lowlevel.rel fontdata.rel \
 	monitor.rel
 
 INCS = hardware.inc v99lowlevel.inc system.inc debug.inc

@@ -10,12 +10,18 @@
 		.globl sysclose
 		.globl sysread
 		.globl syswrite
+		.globl sysseek
 		.globl sysctrl
 		.globl driversignal
+		.globl devicenotimpl
 
 ; fontdata.asm
 
 		.globl fontdata
+
+; ide.asm
+
+		.globl idedef
 
 ; init.asm
 
