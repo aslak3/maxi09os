@@ -37,6 +37,13 @@ ideopen:	lbsr disable		; enter critical section
 		sty DEVICE_CONTROL,x	; control
 		ldy #0			; reset ...
 		sty IDE_CUR_POS,x	; ... current position
+
+		lda #IDEFEATURE8BIT	; 8 bit enable
+		sta IDEFEATURES
+		lda #IDECOMFEATURES	; set features
+		lbsr simpleidecomm
+		lbsr idewaitnotbusy
+
 		lbsr enable		; exit critical section
 		setzero
 		rts
@@ -93,7 +100,7 @@ idecontrol:	cmpa #IDECMD_IDENTIFY	; identify command?
 
 ; ideidentify - get info about the device into y
 
-ideidentify:	lda #IDECOMIDENTIFY	; this is the identify command
+
 		lbsr simpleidecomm	; send it
 
 		lbsr idellread		; 512 reads into y
@@ -161,21 +168,21 @@ idewaitfordata:	lda IDESTATUS
 
 idellread:	lbsr idewaitnotbusy
 		lbsr idewaitfordata
-		ldx #512
+		ldx #256
 1$:		ldb IDEDATA
 		lda IDEDATA
 		std ,y++
-		leax -2,x
+		leax -1,x
 		bne 1$
 		rts
 
 ; write 512 bytes to the ide from y
 
 idellwrite:	lbsr idewaitnotbusy
-		ldx #512
+		ldx #256
 1$:		ldd ,y++
 		stb IDEDATA
 		sta IDEDATA
-		leax -2,x
+		leax -1,x
 		bne 1$
 		rts
