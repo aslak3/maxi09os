@@ -1,8 +1,8 @@
 ; timer driver
 
-		.include 'system.inc'
-		.include 'hardware.inc'
-		.include 'debug.inc'
+		.include '../include/system.inc'
+		.include '../include/hardware.inc'
+		.include '../include/debug.inc'
 
 		.area RAM
 

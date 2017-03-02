@@ -5,49 +5,49 @@ PROG_SERIAL = /dev/ttyUSB0
 6809_SERIAL = /dev/ttyS0
 
 BIN = main.bin
-MAP = main.map
-INC = main.inc
 
 AREA_BASES = -b VECTORS=0xfff0 -b ROM=0xc000 -b DEBUGMSG=0xf800 -b RAM=0x0000
 
-MAIN_REL = main.rel
-RELS = memory.rel ticker.rel systemvars.rel strings.rel \
-	tasks.rel testtasks.rel init.rel driver.rel io.rel \
-	uart.rel led.rel timer.rel console.rel ide.rel \
-	debug.rel lists.rel uartlowlevel.rel \
-	scancodes.rel misc.rel v99lowlevel.rel fontdata.rel \
-	monitor.rel
+DIRS = drivers executive lib misc tasks
 
-INCS = hardware.inc v99lowlevel.inc system.inc debug.inc
+CLEANDIRS = $(addsuffix .clean, $(DIRS))
+
+JOINEDS = $(addsuffix /all.rel, $(DIRS))
+
+.PHONY: $(DIRS) $(CLEANDIRS)
 
 all: $(BIN)
 
-%.bin: %.ihx
+clean: $(CLEANDIRS)
+	rm -f $(JOINEDS) $(BIN) $(INC) *.ihx *.map *.sym include/externs.inc
+	
+main.bin: main.ihx
 	hex2bin -out $@ $<
 
-%.ihx: $(MAIN_REL) $(RELS)
-	aslink $(AREA_BASES) -nmwi $< $(MAIN_REL) $(RELS)
-	
-%.rel: %.asm $(INCS)
-	as6809 -oxs $@ $<
+main.ihx: $(DIRS)
+	aslink $(AREA_BASES) -nmwi main.ihx $(JOINEDS)
 
-externs.inc: *.asm
-	for I in $$(ls -1 *.asm | grep -v debug.asm); do \
-		echo "; $$I"; \
+$(DIRS):
+	make -C $@
+
+$(CLEANDIRS):
+	make -C $(basename $@) clean
+
+include/externs.inc:
+	for I in $$(find -name "*.asm" | grep -v debug.asm); do \
+		echo -n  "; " ; \
+		echo $$I | cut -c 3- ; \
 		echo; \
 		for F in $$(cat $$I | grep :: | cut -d ":" -f 1); do \
 			echo "\t\t.globl $$F"; \
 		done; \
 		echo; \
 	 done \
-	 > externs.inc
+	 > $@
 
-clean:
-	rm -f $(BIN) $(INC) *.rel *.ihx *.map *.sym externs.inc
 
 doupload:
 	$(UPLOAD) -f $(BIN) -s $(PROG_SERIAL)
 
 doflasher:
 	$(FLASHER) -f $(BIN) -s $(6809_SERIAL)
-	

@@ -1,7 +1,7 @@
-		.include 'ascii.inc'
-		.include 'system.inc'
-		.include 'hardware.inc'
-		.include 'debug.inc'
+		.include '../include/ascii.inc'
+		.include '../include/system.inc'
+		.include '../include/hardware.inc'
+		.include '../include/debug.inc'
 
 		.area ROM
 

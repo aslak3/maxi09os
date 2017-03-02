@@ -1,7 +1,7 @@
 ; ide low level driver
 
-		.include 'system.inc'
-		.include 'hardware.inc'
+		.include '../include/system.inc'
+		.include '../include/hardware.inc'
 
 IDE_CUR_POS	.equ DEVICE_SIZE+0	; ide current position (sector)
 IDE_SIZE	.equ DEVICE_SIZE+2
@@ -100,7 +100,7 @@ idecontrol:	cmpa #IDECMD_IDENTIFY	; identify command?
 
 ; ideidentify - get info about the device into y
 
-
+ideidentify:	lda #IDECOMIDENTIFY	; the identify command
 		lbsr simpleidecomm	; send it
 
 		lbsr idellread		; 512 reads into y

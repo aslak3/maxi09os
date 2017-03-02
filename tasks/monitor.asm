@@ -1,5 +1,4 @@
-		.include 'system.inc'
-		.include 'externs.inc'
+		.include '../include/system.inc'
 
 		.area RAM
 

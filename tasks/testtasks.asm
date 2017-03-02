@@ -1,9 +1,9 @@
 ; our two tasks
 
-		.include 'system.inc'
-		.include 'debug.inc'
-		.include 'hardware.inc'
-		.include 'ascii.inc'
+		.include '../include/system.inc'
+		.include '../include/debug.inc'
+		.include '../include/hardware.inc'
+		.include '../include/ascii.inc'
 
 		.area RAM
 

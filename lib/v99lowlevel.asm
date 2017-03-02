@@ -1,9 +1,9 @@
 ; v99(58) low level routines
 
-		.include 'system.inc'
-		.include 'hardware.inc'
-		.include 'v99lowlevel.inc'
-		.include 'debug.inc'
+		.include '../include/system.inc'
+		.include '../include/hardware.inc'
+		.include '../include/v99lowlevel.inc'
+		.include '../include/debug.inc'
 
 		.area ROM
 

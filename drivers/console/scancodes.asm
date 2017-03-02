@@ -1,9 +1,9 @@
 ; scancode translation
 
-		.include 'system.inc'
-		.include 'ascii.inc'
-		.include 'scancodes.inc'
-		.include 'hardware.inc'
+		.include '../../include/system.inc'
+		.include '../../include/ascii.inc'
+		.include '../../include/scancodes.inc'
+		.include '../../include/hardware.inc'
 
 		.area RAM
 

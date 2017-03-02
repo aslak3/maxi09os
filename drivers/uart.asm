@@ -1,8 +1,8 @@
 ; uart driver - for the 16C654
 
-		.include 'system.inc'
-		.include 'hardware.inc'
-		.include 'debug.inc'
+		.include '../include/system.inc'
+		.include '../include/hardware.inc'
+		.include '../include/debug.inc'
 
 PORTCOUNT	.equ 4
 

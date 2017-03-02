@@ -1,8 +1,8 @@
 ; our init task
 
-		.include 'system.inc'
-		.include 'debug.inc'
-		.include 'hardware.inc'
+		.include '../include/system.inc'
+		.include '../include/debug.inc'
+		.include '../include/hardware.inc'
 
 		.area ROM
 

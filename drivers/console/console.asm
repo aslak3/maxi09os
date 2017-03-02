@@ -7,12 +7,12 @@
 ; 0x9000 - console 1 text data
 ; etc upto console 5
 
-		.include 'hardware.inc'
-		.include 'v99lowlevel.inc'
-		.include 'system.inc'
-		.include 'scancodes.inc'
-		.include 'ascii.inc'
-		.include 'debug.inc'
+		.include '../../include/hardware.inc'
+		.include '../../include/v99lowlevel.inc'
+		.include '../../include/system.inc'
+		.include '../../include/scancodes.inc'
+		.include '../../include/ascii.inc'
+		.include '../../include/debug.inc'
 
 CONSOLECOUNT	.equ 6			; the number of virtual consoles
 PORTKEYBOARD	.equ PORTD		; the uart port attached to keybard
