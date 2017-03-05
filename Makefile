@@ -1,7 +1,7 @@
-UPLOAD = $(HOME)/8bitcomputer/eepromprogrammer/upload/upload
-FLASHER = ../6809/flasher/flasher
+export PATH := $(shell pwd)/tools:$(PATH)
 
-PROG_SERIAL = /dev/ttyUSB0
+FLASHER = flasher
+
 6809_SERIAL = /dev/ttyS0
 
 BIN = main.bin
@@ -44,9 +44,5 @@ include/externs.inc:
 	 done \
 	 > $@
 
-
-doupload:
-	$(UPLOAD) -f $(BIN) -s $(PROG_SERIAL)
-
-doflasher:
+flasher:
 	$(FLASHER) -f $(BIN) -s $(6809_SERIAL)
