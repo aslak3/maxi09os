@@ -1,18 +1,29 @@
 CLEANDIRS = $(addsuffix .clean, $(DIRS))
+DIRSALL = $(addsuffix /all.rel, $(DIRS))
+DEPS = $(addsuffix .dep, $(basename $(RELS)))
 
-%.rel: %.asm
-	as6809 -oxs $@ $<
+MAKEDEP = makedep.pl
+AS = as6809 -oxs
+
+%.rel: %.asm %.d
+	$(MAKEDEP) $< $@ > $(addsuffix .dep, $(basename $<))
+	$(AS) $@ $<
+
+%.d: ;
+.PRECIOUS: %.d
 
 .PHONY: $(DIRS) $(CLEANDIRS)
 
-all.rel: $(RELS) $(DIRS)
-	cat $(addsuffix /all.rel, $(DIRS)) $(RELS) > all.rel
+all.rel: $(DIRSALL) $(RELS)
+	cat $(DIRSALL) $(RELS) > all.rel
 
-$(DIRS):
-	$(MAKE) -C $@
+$(DIRSALL): $(DIRS)
+	$(MAKE) -C $(dir $@)
 
 $(CLEANDIRS):
 	$(MAKE) -C $(basename $@) clean
 
 clean: $(CLEANDIRS)
-	rm -f $(RELS) all.rel *.sym *.joined
+	rm -f $(RELS) $(DEPS) all.rel *.sym
+
+-include $(DEPS)

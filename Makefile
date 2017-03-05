@@ -11,24 +11,23 @@ AREA_BASES = -b VECTORS=0xfff0 -b ROM=0xc000 -b DEBUGMSG=0xf800 -b RAM=0x0000
 DIRS = drivers executive lib misc tasks
 
 CLEANDIRS = $(addsuffix .clean, $(DIRS))
-
-JOINEDS = $(addsuffix /all.rel, $(DIRS))
+DIRSALL = $(addsuffix /all.rel, $(DIRS))
 
 .PHONY: $(DIRS) $(CLEANDIRS)
 
 all: $(BIN)
 
 clean: $(CLEANDIRS)
-	rm -f $(JOINEDS) $(BIN) $(INC) *.ihx *.map *.sym include/externs.inc
+	rm -f $(DIRSALL) $(BIN) *.ihx *.map *.sym include/externs.inc
 	
 main.bin: main.ihx
 	hex2bin -out $@ $<
 
-main.ihx: $(DIRS)
-	aslink $(AREA_BASES) -nmwi main.ihx $(JOINEDS)
+main.ihx: $(DIRSALL)
+	aslink $(AREA_BASES) -nmwi main.ihx $(DIRSALL)
 
-$(DIRS):
-	make -C $@
+$(DIRSALL): $(DIRS)
+	make -C $(dir $@)
 
 $(CLEANDIRS):
 	make -C $(basename $@) clean
