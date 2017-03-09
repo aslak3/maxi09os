@@ -45,17 +45,17 @@ init::		debug ^'Init started',DEBUG_GENERAL
 ;		ldu #0
 ;		lbsr createtask
 
-;		ldx #uartnamez
-;		lda #0
-;		ldb #B19200
-;		lbsr sysopen
-;		tfr x,u
-;		ldx #echotask
-;		ldy #echo3taskname
-;		lbsr createtask
-
 		ldx #uartnamez
 		lda #1
+		ldb #B19200
+		lbsr sysopen
+		tfr x,u
+		ldx #echotask
+		ldy #echo3taskname
+		lbsr createtask
+
+		ldx #uartnamez
+		lda #0
 		ldb #B19200
 		lbsr sysopen
 		tfr x,u

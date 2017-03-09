@@ -3,12 +3,25 @@
 		.include '../include/system.inc'
 		.include '../include/hardware.inc'
 
+PARTS		.equ 5			; number of partitions
+
+PART_DEVICE	.equ 0			; pointer to handle
+PART_START	.equ 2
+PART_LENGTH	.equ 4
+PART_FLAGS	.equ 6
+PART_DUMMY	.equ 7
+PART_SIZE	.equ 8
+
 IDE_CUR_POS	.equ DEVICE_SIZE+0	; ide current position (sector)
-IDE_SIZE	.equ DEVICE_SIZE+2
+IDE_SECT_COUNT	.equ DEVICE_SIZE+2
+IDE_OPEN_COUNT	.equ DEVICE_SIZE+3
+IDE_PART	.equ DEVICE_SIZE+4	; pointer to oart
+IDE_PART_START	.equ DEVICE_SIZE+6
+IDE_SIZE	.equ DEVICE_SIZE+8
 
 		.area RAM
 
-ideinuse:	.rmb 1			; 1 for open, 0 for closed
+parttable:	.rmb PART_SIZE*PARTS
 
 		.area ROM
 
@@ -19,10 +32,13 @@ idedef::	.word ideopen
 ; ide open
 
 ideopen:	lbsr disable		; enter critical section
-		lda ideinuse
-		bne 1$			; in use?
-		lda #1			; mark it as being in use
-		sta ideinuse		; ...
+		ldy #parttable
+		lsla
+		lsla
+		lsla
+		leau a,y
+		ldx PART_DEVICE,u
+		bne 1$			; in use already? return it now
 		ldx #IDE_SIZE		; allocate the device struct
 		lbsr memoryalloc	; get the memory for the struct
 		ldy #ideclose		; save the close pointer
@@ -37,30 +53,32 @@ ideopen:	lbsr disable		; enter critical section
 		sty DEVICE_CONTROL,x	; control
 		ldy #0			; reset ...
 		sty IDE_CUR_POS,x	; ... current position
+		ldy PART_START,u	; get partition offset
+		sty IDE_PART_START	; save it in device
 
 		lda #IDEFEATURE8BIT	; 8 bit enable
 		sta IDEFEATURES
 		lda #IDECOMFEATURES	; set features
 		lbsr simpleidecomm
-		lbsr idewaitnotbusy
-
+		stx PART_DEVICE,u	; save open handle
+1$:		inc IDE_OPEN_COUNT,x	; and incrmenet open counter
 		lbsr enable		; exit critical section
 		setzero
 		rts
-1$:		lbsr enable		; exit critical section
-		ldx #0			; return 0
-		setnotzero		; port is in use
-		rts
 
-; ide close - give it the device in x
+; ide close - give it the device in x - if open elsewhere it will not free
+; the handle but will always decrement the inuse counter
 
 ideclose:	lbsr disable
-		clr ideinuse		; mark it unused
+		dec IDE_OPEN_COUNT,x	; mark it unused
+		bne 1$			; still open? don't free yet
 		lbsr memoryfree		; free the open device handle
-		lbsr enable
+		ldu IDE_PART,x
+		ldx #0
+		stx PART_DEVICE,u	; zero out the handle
+1$:		lbsr enable
 		setzero
 		rts
-
 
 ; ideread - read 1 sector into y
 
@@ -71,7 +89,7 @@ ideread:	lbsr seekcurpos		; seek to the current position
 
 		lbsr idellread		; read into y
 
-		lbsr advancecurpos	; move on one sector
+		lbsr advancecurpos	; move on
 
 		setzero
 		rts
@@ -85,7 +103,7 @@ idewrite:	lbsr seekcurpos		; seek to the current position
 
 		lbsr idellwrite		; write into x
 
-		lbsr advancecurpos	; move on one sector
+		lbsr advancecurpos	; move on
 
 		setzero
 		rts
@@ -118,30 +136,25 @@ ideseek:	sty IDE_CUR_POS,x	; set the current position
 ; setlba - sets the lba registers up for the disk block at the current
 ; position
 
-seekcurpos:	pshs a,b		; transfer lba block number from y
+seekcurpos:	sta IDECOUNT		; how many sectors?
+		sta IDE_SECT_COUNT,x	; save the sector count
 
 		ldd IDE_CUR_POS,x	; get current position
-
+		addd IDE_PART_START,x	; offset partitiion start
 		stb IDELBA0		; this is the lowest byte in lba
 		sta IDELBA1		; this is the 2nd lowestbyte in lba
-
 		clr IDELBA2		; other two lba are zero
 		clr IDELBA3
-
-		lda #1			; we are reading or writing ...
-		sta IDECOUNT		; ... one sector
-
-		puls a,b
 
 		rts
 
 ; move the current position on one sector
 
-advancecurpos:	pshs a,b
-		ldd IDE_CUR_POS,x
-		addd #1
-		std IDE_CUR_POS,x
-		puls a,b
+advancecurpos:	lda IDELBA1		; get the new position
+		ldb IDELBA0
+		addd #1			; when done, need to move to next
+		subd IDE_PART_START,x
+		std IDE_CUR_POS,x	; save the new position
 
 		rts
 
@@ -152,11 +165,9 @@ advancecurpos:	pshs a,b
 simpleidecomm:	ldb #0b11100000		; lba mode
 		stb IDEHEADS
 		sta IDECOMMAND
-		rts
-
-idewaitnotbusy:	lda IDESTATUS
+1$:		lda IDESTATUS
 		anda #IDESTATUSBSY
-		bne idewaitnotbusy
+		bne 1$
 		rts
 
 idewaitfordata:	lda IDESTATUS
@@ -164,22 +175,36 @@ idewaitfordata:	lda IDESTATUS
 		beq idewaitfordata
 		rts
 
-; read 512 bytes from the ide and store it in y
+; read from the ide and store it in y
 
-idellread:	lbsr idewaitnotbusy
-		lbsr idewaitfordata
-		ldx #256
-1$:		ldb IDEDATA
-		lda IDEDATA
-		std ,y++
-		leax -1,x
+idellread:	lbsr idewaitfordata
+1$:		lbsr idellreadsect
+		dec IDE_SECT_COUNT,x
 		bne 1$
 		rts
 
-; write 512 bytes to the ide from y
+; read one sector into y
 
-idellwrite:	lbsr idewaitnotbusy
+idellreadsect:	pshs x
 		ldx #256
+1$:		lda IDEDATA
+		ldb IDEDATA
+		std ,y++
+		leax -1,x
+		bne 1$
+		puls x
+		rts
+
+; write to the ide from y
+
+idellwrite:	lbsr idellwrite
+		dec IDE_SECT_COUNT,x
+		bne idellwrite
+		rts
+
+; write a sector from y
+
+idellwritesect:	ldx #256
 1$:		ldd ,y++
 		stb IDEDATA
 		sta IDEDATA

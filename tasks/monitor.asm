@@ -318,7 +318,6 @@ sigwaitz:	.asciz 'Sig Wait: '
 sigrecvdz:	.asciz 'Sig Rcvd: '
 dispatchcountz:	.asciz 'Dispatch Count: '
 
-
 showtask:	pshs x
 		tfr x,u			; u has the structure pointer
 
@@ -437,6 +436,17 @@ taskregisters:	pshs a,u
 
 		rts
 
+; task TTTT - show task TTTT
+
+task:		lda ,y+			; get the type
+		cmpa #2			; is it a word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the task hanlde
+
+		lbsr showtask		; show that task
+
+		rts
+
 ; sysopen "DEVICE" [AA [BB]] - open the DEVICE, unit AA extra param BB
 
 dosysopen:	ldb ,y+			; get the type
@@ -478,16 +488,12 @@ dosysclose:	ldb ,y+			; get the type
 
 		rts			; propogate the cc
 
-; sysread HHHH [MMMM] - read a byte or a block
+; sysread HHHH - read a byte
 
 dosysread:	lda ,y+			; get the type
 		cmpa #2			; word?
 		lbne generalerror	; validation error
 		ldx ,y++		; get the device handle
-
-		lda ,y+			; get the type
-		cmpa #2			; word?
-		beq sysreadblock	; yes, reading a block
 
 		lbsr sysread		; do the read
 		tfr cc,b		; save the conditions
@@ -498,12 +504,28 @@ dosysread:	lda ,y+			; get the type
 		tfr b,cc		; get the sysread conditions
 		rts			; return with them
 
-sysreadblock:	ldy ,y++		; get the block address
-		lbsr sysread		; read the block
+; sysreadblock HHHH CC MMMM - read a block
 
-		rts			; propogate the conditions
+dosysreadblk:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the device handle
 
-; syswrite HHHH BB | MMMM - write a byte or a block
+		lda ,y+			; get the type
+		cmpa #1			; byte?
+		lbne generalerror	; validation error
+		lda ,y+			; get the count
+
+		ldb ,y+			; get the type
+		cmpb #2			; word?
+		lbne generalerror	; validation error
+		ldy ,y++		; get the mmory address
+
+		lbsr sysread
+
+		rts
+
+; syswrite HHHH BB - write a byte
 
 dosyswrite:	lda ,y+			; get the type
 		cmpa #2			; word?
@@ -511,19 +533,34 @@ dosyswrite:	lda ,y+			; get the type
 		ldx ,y++		; get the device handle
 
 		lda ,y+			; get the type
-		cmpa #1			; byte?
-		beq syswritebyte	; found one
-		cmpa #2			; word?
+		cmpa #1			; word?
 		lbne generalerror	; not either, so error
+		lda ,y+			; get the byte to write
 
-		ldy ,y++		; get the word (memory address)
 		lbsr syswrite		; do the write
 
 		rts			; propogate control code
 
-syswritebyte:	lda ,y+			; get the byte we are writing into a
-		lbsr syswrite		; do the write
-		rts			; propogate the conditions
+; syswriteblock HHHH CC MMMM - write a block
+
+dosyswriteblk:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the device handle
+
+		lda ,y+			; get the type
+		cmpa #1			; byte?
+		lbne generalerror	; validation error
+		lda ,y+			; get the count
+
+		ldb ,y+			; get the type
+		cmpb #2			; word?
+		lbne generalerror	; validation error
+		ldy ,y++		; get the mmory address
+
+		lbsr syswrite
+
+		rts
 
 ; sysseek HHHH PPPP - seek to PPPP
 
@@ -575,15 +612,17 @@ helpz:		.ascii 'Low-level commands:\r\n'
 		.ascii '  dump AAAA LLLL : dump from AAAA count LLLL bytes in hex\r\n'
 		.ascii '  write AAAA BB WWWW "STRING" ... : write to AAAA bytes, words, strings\r\n'
 		.ascii '  readbyte MMMM : read the byte at MMMM and display it\r\n'
-		.ascii '  memory : show memory information\r\n'
 		.ascii 'System info commands:\r\n'
 		.ascii '  tasks : show tasks\r\n'
+		.ascii '  task TTTT : show the task TTTT\r\n'
 		.ascii '  memory : show memory status\r\n'
 		.ascii 'Driver commands:\r\n'
 		.ascii '  sysopen "DEVICE" [AA [BB]] : open DEVICE with optional params\r\n'
 		.ascii '  sysclose HHHH : close the device at handle HHHH\r\n'
-		.ascii '  sysread HHHH [MMMM] : read a byte, or block into MMMM\r\n'
-		.ascii '  syswrite HHHH [BB | MMMM] : write a byte BB, or block from MMMM\r\n'
+		.ascii '  sysread HHHH : read a byte from device HHHH\r\n'
+		.ascii '  syswrite HHHH BB : write a byte BB to device HHHH\r\n'
+		.ascii '  sysreadblock HHHH CC MMMM : read CC sectors to MMMM from device HHHH\r\n'
+		.ascii '  syswriteblock HHHH CC MMMM : write CC sectors from MMMM to device HHHH\r\n'
 		.ascii '  sysseek HHHH AAAA : seek to position AAAA\r\n'
 		.ascii '  sysctrl HHHH CC MMMM : perform command CC with param block at MMMM\r\n'
 		.ascii 'Other commands:\r\n'
@@ -607,12 +646,15 @@ parsetestcomz:	.asciz 'parsetest'
 readbytecomz:	.asciz 'readbyte'
 memorycomz:	.asciz 'memory'
 taskscomz:	.asciz 'tasks'
+taskcomz:	.asciz 'task'
 quitcomz:	.asciz 'quit'
 
 dosysopencomz:	.asciz 'sysopen'
 dosysclosecomz:	.asciz 'sysclose'
 dosysreadcomz:	.asciz 'sysread'
 dosyswritecomz:	.asciz 'syswrite'
+dosysreadbcomz:	.asciz 'sysreadblock'
+dosyswritebcomz:.asciz 'syswriteblock'
 dosysseekcomz:	.asciz 'sysseek'
 dosysctrlcomz:	.asciz 'sysctrl'
 
@@ -642,6 +684,9 @@ commandarray:	.word helpcomz
 		.word taskscomz
 		.word tasks
 
+		.word taskcomz
+		.word task
+
 		.word quitcomz
 		.word quit
 
@@ -656,6 +701,12 @@ commandarray:	.word helpcomz
 
 		.word dosyswritecomz
 		.word dosyswrite
+
+		.word dosysreadbcomz
+		.word dosysreadblk
+
+		.word dosyswritebcomz
+		.word dosyswriteblk
 
 		.word dosysseekcomz
 		.word dosysseek
