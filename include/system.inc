@@ -121,3 +121,4 @@ TIMERCTRL_SIZE	.equ 3
 ; ide device control (a register)
 
 IDECMD_IDENTIFY	.equ 0
+IDECMD_READ_MBR	.equ 1

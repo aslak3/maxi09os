@@ -5,23 +5,31 @@
 
 PARTS		.equ 5			; number of partitions
 
-PART_DEVICE	.equ 0			; pointer to handle
+MBR_PARTS_START	.equ 0x01be		; start of parition entries in mbr
+
+MBR_PART_STATUS	.equ 0			; offset into status byte
+MBR_PART_START	.equ 8
+MBR_PART_LENGTH	.equ 12
+MBR_PART_SIZE	.equ 16
+
+PART_DEVICE	.equ 0			; device handle
 PART_START	.equ 2
 PART_LENGTH	.equ 4
 PART_FLAGS	.equ 6
 PART_DUMMY	.equ 7
 PART_SIZE	.equ 8
 
-IDE_CUR_POS	.equ DEVICE_SIZE+0	; ide current position (sector)
-IDE_SECT_COUNT	.equ DEVICE_SIZE+2
-IDE_OPEN_COUNT	.equ DEVICE_SIZE+3
-IDE_PART	.equ DEVICE_SIZE+4	; pointer to oart
-IDE_PART_START	.equ DEVICE_SIZE+6
-IDE_SIZE	.equ DEVICE_SIZE+8
+IDE_SECT_COUNT	.equ DEVICE_SIZE+0	; number of sectors we are ioing
+IDE_OPEN_COUNT	.equ DEVICE_SIZE+1	; number of times open this device
+IDE_PART	.equ DEVICE_SIZE+2	; pointer to part 
+IDE_PART_START	.equ DEVICE_SIZE+4	; the offset into the partition
+IDE_SECTOR	.equ DEVICE_SIZE+6	; a disk sector
+IDE_SIZE	.equ DEVICE_SIZE+6+512
 
 		.area RAM
 
-parttable:	.rmb PART_SIZE*PARTS
+parttable::	.rmb PART_SIZE
+parttableone:	.rmb PART_SIZE*(PARTS-1)
 
 		.area ROM
 
@@ -47,14 +55,12 @@ ideopen:	lbsr disable		; enter critical section
 		sty DEVICE_READ,x	; ... in the device struct
 		ldy #idewrite
 		sty DEVICE_WRITE,x	; read
-		ldy #ideseek
-		sty DEVICE_SEEK,x	; and seek
+		ldy #devicenotimpl
+		sty DEVICE_SEEK,x
 		ldy #idecontrol
 		sty DEVICE_CONTROL,x	; control
-		ldy #0			; reset ...
-		sty IDE_CUR_POS,x	; ... current position
 		ldy PART_START,u	; get partition offset
-		sty IDE_PART_START	; save it in device
+		sty IDE_PART_START,x	; save it in device
 
 		lda #IDEFEATURE8BIT	; 8 bit enable
 		sta IDEFEATURES
@@ -80,40 +86,40 @@ ideclose:	lbsr disable
 		setzero
 		rts
 
-; ideread - read 1 sector into y
+; ideread - read to memory y from sectors in u, count in a sectors
 
-ideread:	lbsr seekcurpos		; seek to the current position
+ideread:	lbsr seeknewpos		; seek to the current position
 
 		lda #IDECOMREADSEC	; this is read sector
 		lbsr simpleidecomm	; send the command
 
 		lbsr idellread		; read into y
 
-		lbsr advancecurpos	; move on
-
 		setzero
 		rts
 
-; idewrite - write to the seeked sector
+; idewrite - write from memory y to sectors in u, count in a sectors
 
-idewrite:	lbsr seekcurpos		; seek to the current position
+idewrite:	lbsr seeknewpos		; seek to the current position
 
 		lda #IDECOMWRITESEC	; this is write sector
 		lbsr simpleidecomm	; send the command
 
 		lbsr idellwrite		; write into x
 
-		lbsr advancecurpos	; move on
-
 		setzero
 		rts
 
 ; sysctrl function - command in a, block in y
 
-idecontrol:	cmpa #IDECMD_IDENTIFY	; identify command?
+idecontrol:	pshs x,y
+		cmpa #IDECMD_IDENTIFY	; identify command?
 		beq ideidentify		; do the identify
+		cmpa #IDECMD_READ_MBR	; read mbr command
+		beq idereadmbr		; do the read mbr
 
 		setnotzero		; error
+idecontrolout:	puls x,y
 		rts
 
 ; ideidentify - get info about the device into y
@@ -121,25 +127,61 @@ idecontrol:	cmpa #IDECMD_IDENTIFY	; identify command?
 ideidentify:	lda #IDECOMIDENTIFY	; the identify command
 		lbsr simpleidecomm	; send it
 
+		lda #1			; read 1 sector for identity block
+		sta IDE_SECT_COUNT,x	; save the sector count
 		lbsr idellread		; 512 reads into y
 
 		setzero			; no error
-		rts
+		bra idecontrolout
 
-; ideseek - set the current sector number
+; read the mbr. read from sector 0, and fill out the partition table
 
-ideseek:	sty IDE_CUR_POS,x	; set the current position
+idereadmbr:	leay IDE_SECTOR,x	; get the start of the sector
+		ldu #0			; sector 0
+		lda #1			; only 1 sector in an mbr
+
+		lbsr ideread		; read it in
+
+		leay IDE_SECTOR,x	; rewind back to start of mbr
+
+		leay MBR_PARTS_START,y	; first partition
+		lda #4			; four physical partitions
+		ldx #parttableone	; this is the drive-wide stored	table
+
+1$:		lbsr parsembrpart	; parse this entry advancing y and x
+		deca			; one less to go
+		bne 1$			; more?
 
 		setzero
+		bra idecontrolout
+
+parsembrpart:	pshs a,b
+
+		lda MBR_PART_STATUS,y	; bootable etc
+		sta PART_FLAGS,x	; save the flags
+
+		ldd MBR_PART_START,y	; lowest word first
+		exg a,b			; byte swap to big endian
+		std PART_START,x	; save the starting offset
+
+		ldd MBR_PART_LENGTH,y	; lowest word first
+		exg a,b			; byte swap to big endian
+		std PART_LENGTH,x	; save the starting offset
+
+		leay MBR_PART_SIZE,y	; move along mbr sector
+		leax PART_SIZE,x	; move to next partition
+
+		puls a,b
 		rts
 
-; setlba - sets the lba registers up for the disk block at the current
-; position
+;;; IDE LOW LEVEL
 
-seekcurpos:	sta IDECOUNT		; how many sectors?
+; seeknewpos - sets the lba registers up for the disk block at the sector u
+
+seeknewpos:	sta IDECOUNT		; how many sectors?
 		sta IDE_SECT_COUNT,x	; save the sector count
 
-		ldd IDE_CUR_POS,x	; get current position
+		tfr u,d			; get current position
 		addd IDE_PART_START,x	; offset partitiion start
 		stb IDELBA0		; this is the lowest byte in lba
 		sta IDELBA1		; this is the 2nd lowestbyte in lba
@@ -147,18 +189,6 @@ seekcurpos:	sta IDECOUNT		; how many sectors?
 		clr IDELBA3
 
 		rts
-
-; move the current position on one sector
-
-advancecurpos:	lda IDELBA1		; get the new position
-		ldb IDELBA0
-		addd #1			; when done, need to move to next
-		subd IDE_PART_START,x
-		std IDE_CUR_POS,x	; save the new position
-
-		rts
-
-;;; IDE LOW LEVEL
 
 ; run the trivial command in 'a', assuming other params are setup
 

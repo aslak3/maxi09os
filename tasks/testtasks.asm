@@ -53,7 +53,7 @@ timertask::	lda #0
 
 		ldy #timerctrlblk
 		lda #TIMERCMD_START
-		lbsr sysctrl
+		lbsr syscontrol
 
 1$:		ldx consoledev
 		ldy #abouttowaitz
@@ -102,7 +102,7 @@ timertask::	lda #0
 5$:		ldx timerdev
 		ldy #bumpblk
 		lda #TIMERCMD_START
-		lbsr sysctrl
+		lbsr syscontrol
 		ldx consoledev
 		ldy #startingtimerz
 		lbsr putstr

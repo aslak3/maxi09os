@@ -504,7 +504,8 @@ dosysread:	lda ,y+			; get the type
 		tfr b,cc		; get the sysread conditions
 		rts			; return with them
 
-; sysreadblock HHHH CC MMMM - read a block
+; sysreadblock HHHH SSSS CC MMMM - read a block from sector SSS count CC
+;into memory MMMM
 
 dosysreadblk:	lda ,y+			; get the type
 		cmpa #2			; word?
@@ -512,9 +513,14 @@ dosysreadblk:	lda ,y+			; get the type
 		ldx ,y++		; get the device handle
 
 		lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldu ,y++		; get the sector offset
+
+		lda ,y+			; get the type
 		cmpa #1			; byte?
 		lbne generalerror	; validation error
-		lda ,y+			; get the count
+		lda ,y+			; get the count (a)
 
 		ldb ,y+			; get the type
 		cmpb #2			; word?
@@ -541,12 +547,17 @@ dosyswrite:	lda ,y+			; get the type
 
 		rts			; propogate control code
 
-; syswriteblock HHHH CC MMMM - write a block
+; syswriteblock HHHH SSSS CC MMMM - write a block
 
 dosyswriteblk:	lda ,y+			; get the type
 		cmpa #2			; word?
 		lbne generalerror	; validation error
 		ldx ,y++		; get the device handle
+
+		lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldu ,y++		; get the sector offset
 
 		lda ,y+			; get the type
 		cmpa #1			; byte?
@@ -577,10 +588,10 @@ dosysseek:	lda ,y+			; get the type
 		lbsr sysseek		; do the read
 		rts			; return with the conditions
 
-; sysctrl HHHH AA MMMM : do a control operation of device HHHH, command AA
+; syscontrol HHHH AA [MMMM] : do a control operation of device HHHH, command AA
 ; with block y
 
-dosysctrl:	ldb ,y+			; get the type
+dosyscontrol:	ldb ,y+			; get the type
 		cmpb #2			; word?
 		lbne generalerror	; validation error
 		ldx ,y++		; get the device handle
@@ -591,14 +602,14 @@ dosysctrl:	ldb ,y+			; get the type
 		lda ,y+			; get the command
 
 		ldb ,y+			; get the type
+		beq 1$			; end of stream, no address
 		cmpb #2			; word?
 		lbne generalerror	; validation error
 		ldy ,y++		; get the control block
 
-		lbsr sysctrl		; do the write
+1$:		lbsr syscontrol		; do the write
 
 		rts			; propogate control code
-
 
 ; quit - quit - leave the monitor. renemable multitasking and go back to
 ; waiting for the user to want to enter it again
@@ -621,10 +632,10 @@ helpz:		.ascii 'Low-level commands:\r\n'
 		.ascii '  sysclose HHHH : close the device at handle HHHH\r\n'
 		.ascii '  sysread HHHH : read a byte from device HHHH\r\n'
 		.ascii '  syswrite HHHH BB : write a byte BB to device HHHH\r\n'
-		.ascii '  sysreadblock HHHH CC MMMM : read CC sectors to MMMM from device HHHH\r\n'
-		.ascii '  syswriteblock HHHH CC MMMM : write CC sectors from MMMM to device HHHH\r\n'
+		.ascii '  sysreadblock HHHH SSSS CC MMMM : read at SSSS, CC sectors to MMMM\r\n'
+		.ascii '  syswriteblock HHHH SSSS CC MMMM : write at SSSS, CC sectors from MMMM\r\n'
 		.ascii '  sysseek HHHH AAAA : seek to position AAAA\r\n'
-		.ascii '  sysctrl HHHH CC MMMM : perform command CC with param block at MMMM\r\n'
+		.ascii '  syscontrol HHHH CC [MMMM] : perform command CC with param block at MMMM\r\n'
 		.ascii 'Other commands:\r\n'
 		.ascii '  help or ? : this help\r\n'
 		.ascii '  quit : quit monitor and resume task switching\r\n'
@@ -656,7 +667,7 @@ dosyswritecomz:	.asciz 'syswrite'
 dosysreadbcomz:	.asciz 'sysreadblock'
 dosyswritebcomz:.asciz 'syswriteblock'
 dosysseekcomz:	.asciz 'sysseek'
-dosysctrlcomz:	.asciz 'sysctrl'
+dosysctrlcomz:	.asciz 'syscontrol'
 
 ; command array - a list of command name and subroutine addresses, ending
 ; in a null word
@@ -712,6 +723,6 @@ commandarray:	.word helpcomz
 		.word dosysseek
 
 		.word dosysctrlcomz
-		.word dosysctrl
+		.word dosyscontrol
 
 		.word 0x0000

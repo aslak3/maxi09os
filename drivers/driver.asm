@@ -61,7 +61,7 @@ sysseek::	jmp [DEVICE_SEEK,x]	; this is a jump
 
 ; generic do anything to a device, x is the device struct
 
-sysctrl::	jmp [DEVICE_CONTROL,x]	; this is a jump
+syscontrol::	jmp [DEVICE_CONTROL,x]	; this is a jump
 
 ; helpers
 
