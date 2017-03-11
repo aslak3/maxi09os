@@ -254,8 +254,8 @@ idellwrite:	lbsr idellwritesect	; write a single 512 byte sector
 idellwritesect:	pshs x			; save x because it's the device
 		ldx #256		; setup the number words per sector
 1$:		ldd ,y++		; read both bytes from memory
-		stb IDEDATA		; save the low byte first
-		sta IDEDATA		; save the high byte second
+		sta IDEDATA		; save the high byte first
+		stb IDEDATA		; save the low byte second
 		leax -1,x		; dec word coounter
 		bne 1$			; go back for more?
 		puls x			; pull out the device handle
