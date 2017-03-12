@@ -242,6 +242,9 @@ IDESTATUSERR	.equ 0x01
 
 IDEFEATURE8BIT	.equ 0x01
 
+; misc ide
+IDESECTORSIZE	.equ 512
+
 ; MuDdy
 
 MUDDYBASE	.equ 0x8f00

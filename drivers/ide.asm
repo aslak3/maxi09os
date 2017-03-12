@@ -139,7 +139,7 @@ ideidentify:	lda #IDECOMIDENTIFY	; the identify command
 
 		lda #1			; read 1 sector for identity block
 		sta IDE_SECT_COUNT,x	; save the sector count
-		lbsr idellread		; 512 reads into y
+		lbsr idellreadswap	; 512 reads into y, swapped
 
 		setzero			; no error
 		bra idecontrolout
@@ -221,10 +221,12 @@ idewaitfordata:	lda IDESTATUS		; get the status byte
 
 ; read from all the wanted sectors from the disk
 
-idellread:	lbsr idewaitfordata	; need to wait for data, as reading
+idellread:	pshs y			; save the start of memory
+		lbsr idewaitfordata	; need to wait for data, as reading
 1$:		lbsr idellreadsect	; read a single 512 byte sector
 		dec IDE_SECT_COUNT,x	; decrement sectors remaining
 		bne 1$			; more? go and get it
+		psys y			; restore the start of memory
 		rts
 
 ; read one sector into y - no need to byte swap as we are in 8 bit mode
@@ -240,12 +242,15 @@ idellreadsect:	pshs x			; save x because it;s the device
 		puls x			; pull out the device handle
 		rts
 
+
 ; write to all the wanted sectors to the disk - no need to wait for data cos
 ; we have it ourselves
 
-idellwrite:	lbsr idellwritesect	; write a single 512 byte sector
+idellwrite:	pshs y			; save the start of memory
+		lbsr idellwritesect	; write a single 512 byte sector
 		dec IDE_SECT_COUNT,x	; dectrement sectors remaining
 		bne idellwrite		; more? go and write it
+		puls y			; restore the start of memory
 		rts
 
 ; write a sector from y - no need to byte swap because we are in 8 bit
@@ -259,4 +264,17 @@ idellwritesect:	pshs x			; save x because it's the device
 		leax -1,x		; dec word coounter
 		bne 1$			; go back for more?
 		puls x			; pull out the device handle
+		rts
+
+; read one sector into y - swapping bytes as identify (and possibly other)
+; commands return little endian data even when in 8 bit mode
+
+idellreadswap:	pshs x,y		; save x because it's the device
+		ldx #256		; setup the number words per sector
+1$:		ldb IDEDATA		; get the high byte first
+		lda IDEDATA		; get the low byte second
+		std ,y++		; write both bytes together
+		leax -1,x		; dec word counter
+		bne 1$			; go back for more?
+		puls x,y		; pull out the device handle
 		rts

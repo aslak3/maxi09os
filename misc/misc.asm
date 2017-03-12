@@ -44,3 +44,13 @@ mul32::		lslb
 		lslb
 		rola			; * 32
 		rts
+
+; memory copy - x is source, y is destination, a is length
+
+memcpy256::	pshs b,x,y
+1$:		ldb ,x+			; get the source byte
+		stb ,y+			; save it
+		deca			; dec the number of bytes to copy
+		bne 1$			; back for more?
+		puls b,x,y
+		rts

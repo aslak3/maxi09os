@@ -611,6 +611,31 @@ dosyscontrol:	ldb ,y+			; get the type
 
 		rts			; propogate control code
 
+mntminix:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the device handle
+
+		lbsr mountminix		; mount the device
+
+		tfr y,d			; we are printing y
+		ldy #resultz		; print a nice label
+		lbsr putlabwdefio	; print the device handle
+
+		clra
+
+		rts
+
+unmntminix:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the device handle
+
+		lbsr unmountminix	; unmount the device
+
+		rts
+
+
 ; quit - quit - leave the monitor. renemable multitasking and go back to
 ; waiting for the user to want to enter it again
 
@@ -669,6 +694,9 @@ dosyswritebcomz:.asciz 'syswriteblock'
 dosysseekcomz:	.asciz 'sysseek'
 dosysctrlcomz:	.asciz 'syscontrol'
 
+mntminixcomz:	.asciz 'mountminix'
+unmntminixcomz:	.asciz 'unmountminix'
+
 ; command array - a list of command name and subroutine addresses, ending
 ; in a null word
 
@@ -724,5 +752,11 @@ commandarray:	.word helpcomz
 
 		.word dosysctrlcomz
 		.word dosyscontrol
+
+		.word mntminixcomz
+		.word mntminix
+
+		.word unmntminixcomz
+		.word unmntminix
 
 		.word 0x0000

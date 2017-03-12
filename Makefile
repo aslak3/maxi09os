@@ -8,7 +8,7 @@ BIN = main.bin
 
 AREA_BASES = -b VECTORS=0xfff0 -b ROM=0xc000 -b DEBUGMSG=0xf800 -b RAM=0x0000
 
-DIRS = main drivers executive lib misc tasks
+DIRS = main drivers executive lib misc tasks fs
 
 CLEANDIRS = $(addsuffix .clean, $(DIRS))
 DIRSALL = $(addsuffix /all.rel, $(DIRS))
