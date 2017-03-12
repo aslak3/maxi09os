@@ -18,7 +18,7 @@ minixopen::
 
 ; LOW LEVEL
 
-; getblock - get the 1024 byte block in sector d, from the block device at
+; getblock - get the 1024 byte block in sector d, from the file device at
 ; x, into the memory at y
 
 getfsblock:	pshs x			; save the file handle

@@ -226,7 +226,7 @@ idellread:	pshs y			; save the start of memory
 1$:		lbsr idellreadsect	; read a single 512 byte sector
 		dec IDE_SECT_COUNT,x	; decrement sectors remaining
 		bne 1$			; more? go and get it
-		psys y			; restore the start of memory
+		puls y			; restore the start of memory
 		rts
 
 ; read one sector into y - no need to byte swap as we are in 8 bit mode
@@ -241,7 +241,6 @@ idellreadsect:	pshs x			; save x because it;s the device
 		bne 1$			; go back for more?
 		puls x			; pull out the device handle
 		rts
-
 
 ; write to all the wanted sectors to the disk - no need to wait for data cos
 ; we have it ourselves

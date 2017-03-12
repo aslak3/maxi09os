@@ -635,6 +635,26 @@ unmntminix:	lda ,y+			; get the type
 
 		rts
 
+dogetinode:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the device handle
+
+		lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldu ,y++		; get the inode number
+
+		lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldy ,y++		; get the memory address
+
+		tfr u,d			; set the inode number
+
+		lbsr getinode
+
+		rts
 
 ; quit - quit - leave the monitor. renemable multitasking and go back to
 ; waiting for the user to want to enter it again
@@ -697,6 +717,8 @@ dosysctrlcomz:	.asciz 'syscontrol'
 mntminixcomz:	.asciz 'mountminix'
 unmntminixcomz:	.asciz 'unmountminix'
 
+dogetinodecomz:	.asciz 'getinode'
+
 ; command array - a list of command name and subroutine addresses, ending
 ; in a null word
 
@@ -758,5 +780,8 @@ commandarray:	.word helpcomz
 
 		.word unmntminixcomz
 		.word unmntminix
+
+		.word dogetinodecomz
+		.word dogetinode
 
 		.word 0x0000
