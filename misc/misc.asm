@@ -8,25 +8,26 @@ delay::		leay -1,y		; decrement y
 		bne delay		; not zero? do it again
 		rts
 
-; swapword - swap the bytes in the word at x, does not save a or b
+; swapword - swap the bytes in the word at x
 
-swapword:: 	ldd ,x			; grab the word that we wills wap
+swapword:: 	pshs a,b
+		ldd ,x			; grab the word that we wills wap
 		exg a,b			; swap the bytes
 		std ,x			; save what's swapped
+		puls a,b
 		rts
 
 ; swaplong - swap the words in the long x, does not save a or b
 
-swaplong::	pshs u
-		ldu ,x			; get the low word
-		ldd 2,x			; get the high word
-		exg u,d			; d is now the high word
-		exg a,b			; swap the high word bytes
-		std ,x			; save the high word, swapped
-		tfr u,d			; get the low word
+swaplong::	pshs a,b,u
+		ldu 2,x			; get the high word
+		ldd ,x			; get the low word
 		exg a,b			; swap the low word bytes
 		std 2,x			; save the low word, swapped
-		puls u
+		tfr u,d			; get the high word
+		exg a,b			; swap the high word bytes
+		std ,x			; save the high word, swapped
+		puls a,b,u
 		rts
 
 ; div32 - divide d by 32

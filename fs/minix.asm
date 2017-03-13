@@ -75,11 +75,12 @@ unmountminix::	pshs x
 
 getinode::	pshs a,b,x
 		subd #1			; inodes start at 1
-		tfr d,u			; save original inode number
+		tfr d,u			; save inode number
 		lbsr div32		; find the inode block
 		cmpd MINIXSB_INBASE,x	; compare it with the cache base
 		bne 3$			; not got this inode
 1$:		tfr u,d			; get inode back
+		clra			; clear high byte
 		andb #0b00011111	; mask off the inode position in block
 		lbsr mul32		; d now has byte offset start of inode
 		leax MINIXSB_INCACHE,x	; move x to the start of the cache
@@ -90,7 +91,7 @@ getinode::	pshs a,b,x
 		lbsr swapword
 		leax MINIXIN_UID,y	; swap the uid
 		lbsr swapword
-		leax MINIXIN_SIZE,y	; swap the filesize
+		leax MINIXIN_LENGTH,y	; swap the filesize
 		lbsr swaplong
 		leax MINIXIN_TIME,y	; swap the timestamp
 		lbsr swaplong
@@ -98,14 +99,14 @@ getinode::	pshs a,b,x
 		lda #9
 2$:		lbsr swapword		; swap the zone (block) pointer
 		leax 2,x		; advance to next zone
-		deca
-		bne 2$
+		deca			; next zone (block)
+		bne 2$			; more zones?
 		puls a,b,x
 		rts
 3$:		lbsr redoinodecache	; read the inode block
 		bra 1$
 
-; read in the inodes from inode block in d and update the cache
+; read in the inodes from inode block (inode div 32) in d and update the cache
 
 redoinodecache:	pshs y
 		std MINIXSB_INBASE,x	; now save the new base
@@ -115,10 +116,10 @@ redoinodecache:	pshs y
 		puls y
 		rts
 
-; getblock - read the 1024 byte block in sector d, from the mounted fs 
-; at x, into the memory at y
+; getblock - read the 1024 byte block in block d, from the mounted fs at x,
+; into the memory at y
 
-readfsblock:	pshs a,b,x,u			; save the file handle
+readfsblock:	pshs a,b,x,u		; save the file handle
 		ldx MINIXSB_DEVICE,x	; get the block device
 		lslb			; rotate low byte to left
 		rola			; and rotate the high byte, multiply d by 2
