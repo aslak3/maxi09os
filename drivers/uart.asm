@@ -6,15 +6,16 @@
 
 PORTCOUNT	.equ 4
 
-UART_RX_BUF	.equ DEVICE_SIZE+0	; receive circular bufrer
-UART_TX_BUF	.equ DEVICE_SIZE+32	; transmit circular buffer
-UART_RX_COUNT_H	.equ DEVICE_SIZE+64	; handler receive counter
-UART_TX_COUNT_H	.equ DEVICE_SIZE+65	; handler transmit counter
-UART_RX_COUNT_U	.equ DEVICE_SIZE+66	; user receive counter
-UART_TX_COUNT_U	.equ DEVICE_SIZE+67	; user transmit counter
-UART_BASEADDR	.equ DEVICE_SIZE+68	; base address of port
-UART_UNIT	.equ DEVICE_SIZE+70	; port number
-UART_SIZE	.equ DEVICE_SIZE+71
+structrunning=	DEVICE_SIZE
+member		UART_RX_BUF,32		; rx buffer
+member		UART_TX_BUF,32		; tx buffer
+member		UART_RX_COUNT_H,2	; rx buffer offset for the handler
+member		UART_TX_COUNT_H,2	; unused
+member		UART_RX_COUNT_U,2	; rx buffer offset for user code
+member		UART_TX_COUNT_U,2	; unused
+member		UART_BASEADDR,2		; base hardware address
+member		UART_UNIT,1		; unit number for opend uart
+structend	UART_SIZE
 
 		.area RAM
 

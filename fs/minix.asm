@@ -119,7 +119,7 @@ redoinodecache:	pshs y
 ; getblock - read the 1024 byte block in block d, from the mounted fs at x,
 ; into the memory at y
 
-readfsblock:	pshs a,b,x,u		; save the file handle
+readfsblock::	pshs a,b,x,u		; save the file handle
 		ldx MINIXSB_DEVICE,x	; get the block device
 		lslb			; rotate low byte to left
 		rola			; and rotate the high byte, multiply d by 2

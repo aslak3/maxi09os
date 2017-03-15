@@ -25,19 +25,36 @@ DEBUG_MODE	.equ 0xff
 .else
 DEBUG_MODE	.equ 0
 .endif
+
+; structure macros
+
+.macro structstart offset
+structrunning=offset
+.endm
+
+.macro member lab,offset
+lab .equ structrunning
+structrunning=structrunning+offset
+.endm
+
+.macro structend lab
+lab .equ structrunning
+.endm
 		
 ; list struct offsets
 
-LIST_HEAD	.equ 0
-LIST_TAIL	.equ 2
-LIST_TAILPREV	.equ 4
-LIST_SIZE	.equ 6
+structstart	0
+member		LIST_HEAD,2
+member		LIST_TAIL,2
+member		LIST_TAILPREV,2
+structend	LIST_SIZE
 
 ; node struct offsets
 
-NODE_NEXT	.equ 0
-NODE_PREV	.equ 2
-NODE_SIZE	.equ 4
+structstart 	0
+member		NODE_NEXT,2
+member		NODE_PREV,2
+structend	NODE_SIZE
 
 ; flags for memoryavail
 
@@ -47,21 +64,21 @@ MEM_LARGEST	.equ 2
 
 ; a record describe a task in the system
 
-TASK_NODE	.equ 0			; a node for this task
-TASK_PC		.equ NODE_SIZE+0	; the initial program counter
-TASK_SP		.equ NODE_SIZE+2	; the current stack pointer
-TASK_SIGALLOC	.equ NODE_SIZE+4	; signal bits in use
-TASK_SIGWAIT	.equ NODE_SIZE+5	; signal bits being waited on
-TASK_SIGRECVD	.equ NODE_SIZE+6	; signal bits recieved
-TASK_INTNEST	.equ NODE_SIZE+7	; interrupt nest count
-TASK_PERMITNEST	.equ NODE_SIZE+8	; permit nest count
-TASK_DISPCOUNT	.equ NODE_SIZE+9	; dispatch counter
-TASK_NAME	.equ NODE_SIZE+11	; task name ("my task\0")
-TASK_DEF_IO	.equ NODE_SIZE+19	; the default io device
-TASK_PARENT	.equ NODE_SIZE+21	; the parent task
-TASK_EXIT_CODE	.equ NODE_SIZE+23	; the exit code of this task
-TASK_DEAD_LIST	.equ NODE_SIZE+24	; the list of dead children
-TASK_SIZE	.equ NODE_SIZE+24+LIST_SIZE
+structstart	NODE_SIZE		; a node for this task
+member		TASK_PC,2		; the initial program counter
+member		TASK_SP,2		; the current stack pointer
+member		TASK_SIGALLOC,1		; signal bits in use
+member		TASK_SIGWAIT,1		; signal bits being waited on
+member		TASK_SIGRECVD,1		; signal bits recieved
+member		TASK_INTNEST,1		; interrupt nest count
+member		TASK_PERMITNEST,1	; permit nest count
+member		TASK_DISPCOUNT,2	; dispatch counter
+member		TASK_NAME,8		; task name ("my task\0")
+member		TASK_DEF_IO,2		; the default io device
+member		TASK_PARENT,2		; the parent task
+member		TASK_EXIT_CODE,1	; the exit code of this task
+member		TASK_DEAD_LIST,LIST_SIZE; the list of dead children
+structend	TASK_SIZE
 
 ; reserved signal masks
 
@@ -76,38 +93,41 @@ EXIT_UNDEF	.equ 0xff		; task not exited yet
 
 ; a record describing an available driver
 
-DRIVER_OPEN	.equ 0			; device open routine
-DRIVER_PREPARE	.equ 2			; prepare a driver
-DRIVER_NAME	.equ 4			; driver name ("uart\0")
-DRIVER_SIZE	.equ 12
+structstart	0
+member		DRIVER_OPEN,2		; device open routine
+member		DRIVER_PREPARE,2	; prepare a driver
+member		DRIVER_NAME,8		; driver name ("uart\0")
+structend	DRIVER_SIZE
 
 ; an open device
 
-DEVICE_NODE	.equ 0			; list node (unused currently)
-DEVICE_CLOSE	.equ NODE_SIZE+0	; device close routine
-DEVICE_READ	.equ NODE_SIZE+2	; read a byte into a
-DEVICE_WRITE	.equ NODE_SIZE+4	; write a byte from a
-DEVICE_SEEK	.equ NODE_SIZE+6	; seek to position y
-DEVICE_CONTROL	.equ NODE_SIZE+8	; generic control method
-DEVICE_TASK	.equ NODE_SIZE+10	; the task that opened the device
-DEVICE_SIGNAL	.equ NODE_SIZE+12	; the signal bit for the device
-DEVICE_SIZE	.equ NODE_SIZE+13
+structstart	NODE_SIZE		; list node (unused currently)
+member		DEVICE_CLOSE,2		; device close routine
+member		DEVICE_READ,2		; read a byte into a
+member		DEVICE_WRITE,2		; write a byte from a
+member		DEVICE_SEEK,2		; seek to position y
+member		DEVICE_CONTROL,2	; generic control method
+member		DEVICE_TASK,2		; the task that opened the device
+member		DEVICE_SIGNAL,1		; the signal bit for the device
+structend	DEVICE_SIZE
 
 ; stack frame offsets
 
-STACK_CC	.equ 0
-STACK_A		.equ 1
-STACK_B		.equ 2
-STACK_DP	.equ 3
-STACK_X		.equ 4
-STACK_Y		.equ 6
-STACK_U		.equ 8
-STACK_PC	.equ 10
+structstart	0
+member		STACK_CC,1
+member		STACK_A,1
+member		STACK_B,1
+member		STACK_DP,1
+member		STACK_X,2
+member		STACK_Y,2
+member		STACK_U,2
+member		STACK_PC,2
 
 ; firq stack frame offsets
 
-FSTACK_CC	.equ 0
-FSTACK_PC	.equ 1
+structstart	0
+member		FSTACK_CC,1
+member		FSTACK_PC,2
 
 ; timer device control (a register)
 
@@ -122,3 +142,27 @@ TIMERCTRL_SIZE	.equ 3
 
 IDECMD_IDENTIFY	.equ 0
 IDECMD_READ_MBR	.equ 1
+
+; macros for twiddling with condition code
+
+.macro		enableinterrupts
+		andcc #0xaf
+.endm
+.macro		disableinterrupts
+		orcc #0x50
+.endm
+
+.macro		setnotzero
+		andcc #0xfb
+.endm
+.macro		setzero
+		orcc #0x04
+.endm
+
+.macro		setnotcarry
+		andcc #0xfe
+.endm
+
+.macro		setcarry
+		orcc #0x01
+.endm

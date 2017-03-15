@@ -272,27 +272,3 @@ LOADERCOPYEND	.equ 0x40ff
 STACKEND	.equ RAMEND
 
 PCOFFSET	.equ 10
-
-; macros for twiddling with condition code
-
-.macro		enableinterrupts
-		andcc #0xaf
-.endm
-.macro		disableinterrupts
-		orcc #0x50
-.endm
-
-.macro		setnotzero
-		andcc #0xfb
-.endm
-.macro		setzero
-		orcc #0x04
-.endm
-
-.macro		setnotcarry
-		andcc #0xfe
-.endm
-
-.macro		setcarry
-		orcc #0x01
-.endm

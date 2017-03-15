@@ -18,11 +18,12 @@ timerprepare:	pshs y
 
 ; timer device instance struct
 
-TIMER_COUNTER	.equ DEVICE_SIZE+0
-TIMER_END	.equ DEVICE_SIZE+2
-TIMER_RUNNING	.equ DEVICE_SIZE+4
-TIMER_REPEAT	.equ DEVICE_SIZE+5
-TIMER_SIZE	.equ DEVICE_SIZE+6
+structstart	DEVICE_SIZE
+member		TIMER_COUNTER,2		; counter for this timer
+member		TIMER_END,2		; counter limit value
+member		TIMER_RUNNING,1		; is the timer running
+member		TIMER_REPEAT,1		; counter is of the repeating type
+structend	TIMER_SIZE
 
 timerdef::	.word timeropen
 		.word timerprepare

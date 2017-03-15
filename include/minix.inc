@@ -8,37 +8,73 @@ MINIX_MAGIC	.equ 0x138f
 
 ; superblock
 
-MINIXSB_NINODES	.equ 0		; number of inodes
-MINIXSB_NZONES	.equ 2		; number of zones
-MINIXSB_IMAPBLK	.equ 4		; number of inode bitmap blocks
-MINIXSB_ZMAPBLK	.equ 6		; number of zone bitmap blocks
-MINIXSB_FIRSTDZ	.equ 8		; first data zone
-MINIXSB_LZSIZE	.equ 10
-MINIXSB_MAXSIZE	.equ 12		; maximum file size
-MINIXSB_MAGIC	.equ 16		; magic!
-MINIXSB_STATE	.equ 18		; clean/dirty state?
-MINIXSB_ZONES	.equ 20		; number of zones? (long)
-MINIXSB_SBSIZE	.equ 24		; the size on disk (not a struct field)
-; below here is memory only, not on the disk
-MINIXSB_DEVICE	.equ 24		; the underlying device
-MINIXSB_INOFF	.equ 26		; the block number the inodes start at
-MINIXSB_INBASE	.equ 28		; first inode div32 number in cache
-MINIXSB_INCACHE	.equ 30 	; inodes currently available
-MINIXSB_SIZE	.equ 30+1024	; the in-memory size
+structstart	0
+member 		MINIXSB_NINODES,2	; number of inodes
+member 		MINIXSB_NZONES,2	; number of zones
+member 		MINIXSB_IMAPBLK,2	; number of inode bitmap blocks
+member 		MINIXSB_ZMAPBLK,2	; number of zone bitmap blocks
+member 		MINIXSB_FIRSTDZ,2	; first data zone
+member 		MINIXSB_LZSIZE,2
+member 		MINIXSB_MAXSIZE,4	; maximum file size
+member 		MINIXSB_MAGIC,2		; magic!
+member 		MINIXSB_STATE,2		; clean/dirty state?
+member 		MINIXSB_ZONES,4		; number of zones? (long)
+structend 	MINIXSB_SBSIZE		; size on disk (not a struct field)
+; below  here is memory only, not on the disk
+member 		MINIXSB_DEVICE,2	; the underlying device
+member 		MINIXSB_INOFF,2		; block number the inodes start at
+member 		MINIXSB_INBASE,2	; first inode div32 number in cache
+member 		MINIXSB_INCACHE,1024 	; inodes currently available
+structend	MINIXSB_SIZE		; the in-memory size
 
 ; inode
 
-MINIXIN_MODE	.equ 0		; type (socket, file, directory) and perms
-MINIXIN_UID	.equ 2		; user id
-MINIXIN_LENGTH	.equ 4		; file size (long)
-MINIXIN_TIME	.equ 8		; timestamp (long)
-MINIXIN_GID	.equ 12		; group id (byte!)
-MINIXIN_NLINKS	.equ 13		; number of links (byte)
-MINIXIN_ZONES	.equ 14		; seven zone (block) pointers
-MINIXIN_SIZE	.equ 14+(2*9)	; 32 bytes
+structstart	0
+member		MINIXIN_MODE,2		; type: socket, file; perms
+member		MINIXIN_UID,2		; user id
+member		MINIXIN_LENGTH,4	; file size (long)
+member		MINIXIN_TIME,4		; timestamp (long)
+member		MINIXIN_GID,1		; group id (byte!)
+member		MINIXIN_NLINKS,1	; number of links (byte)
+member		MINIXIN_ZONES,9*2	; 9 zone (block) pointers
+structend	MINIXIN_SIZE		; 32 bytes
+
+; mode and perms
+
+; file types
+MODE_SOCKET	.equ 0140000		; unix socket
+MODE_LINK	.equ 0120000		; symbolic link
+MODE_REGULAR	.equ 0100000		; regular file
+MODE_BLOCK_DEV	.equ 0060000		; block device node
+MODE_DIR	.equ 0040000		; directory
+MODE_CHAR_DEV	.equ 0020000		; character device node
+MODE_FIFO	.equ 0010000		; named pipe
+
+; special bits
+MODE_SETUID	.equ 0004000		; set user id
+MODE_SETGID	.equ 0002000		; set group id
+MODE_STICKY	.equ 0001000		; sticky bit
+
+; user
+MODE_IRWXU	.equ 00700		; all user perm set
+MODE_IRUSR	.equ 00400		; user read
+MODE_IWUSR	.equ 00200		; user write
+MODE_IXUSR	.equ 00100		; user execute
+
+; group
+MODE_IRWXG	.equ 00070		; all group perm set
+MODE_IRGRP	.equ 00040		; group read
+MODE_IWGRP	.equ 00020		; group write
+MODE_IXGRP	.equ 00010		; group execute
+
+; other
+MODE_IRWXO	.equ 00007		; all other perm set
+MODE_IROTH	.equ 00004		; other read
+MODE_IWOTH	.equ 00002		; other write
+MODE_IXOTH	.equ 00001		; other execute
 
 ; directory entry (dirent)
 
-MINIXDE_INODE	.equ 0		; inode number
-MINIXDE_NAME	.equ 2		; null padded filename
-MINIXDE_SIZE	.equ 2+30	; 32 bytes
+MINIXDE_INODE	.equ 0			; inode number
+MINIXDE_NAME	.equ 2			; null padded filename
+MINIXDE_SIZE	.equ 2+30		; 32 bytes

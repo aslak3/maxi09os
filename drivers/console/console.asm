@@ -21,19 +21,20 @@ ROWS		.equ 24
 HALF		.equ 12			; for scrolling half
 CURSORVAL	.equ 127		; the cursor pattern number
 
-CON_RX_BUF	.equ DEVICE_SIZE+0	; receive circular bufrer
-CON_TX_BUF	.equ DEVICE_SIZE+32	; transmit circular buffer
-CON_RX_COUNT_H	.equ DEVICE_SIZE+64	; handler receive counter
-CON_TX_COUNT_H	.equ DEVICE_SIZE+65	; handler transmit counter
-CON_RX_COUNT_U	.equ DEVICE_SIZE+66	; user receive counter
-CON_TX_COUNT_U	.equ DEVICE_SIZE+67	; user transmit counter
-CON_UNIT	.equ DEVICE_SIZE+68	; unit number
-CON_CAPSLOCK	.equ DEVICE_SIZE+69	; caps lock on?
-CON_VRAMADDR	.equ DEVICE_SIZE+70	; base vram address for this console
-CON_CURSOR_ROW	.equ DEVICE_SIZE+72	; row position of cursor
-CON_CURSOR_COL	.equ DEVICE_SIZE+73	; column position of cursor
-CON_SCROLL_BIG	.equ DEVICE_SIZE+74	; big jumps when scrolling
-CON_SIZE	.equ DEVICE_SIZE+75
+structstart	DEVICE_SIZE
+member		CON_RX_BUF,32		; receive circular bufrer
+member		CON_TX_BUF,32		; transmit circular buffer
+member		CON_RX_COUNT_H,1	; handler receive counter
+member		CON_TX_COUNT_H,1	; handler transmit counter
+member		CON_RX_COUNT_U,1	; user receive counter
+member		CON_TX_COUNT_U,1	; user transmit counter
+member		CON_UNIT,1		; unit number
+member		CON_CAPSLOCK,1		; caps lock on?
+member		CON_VRAMADDR,2		; base vram address for this console
+member		CON_CURSOR_ROW,1	; row position of cursor
+member		CON_CURSOR_COL,1	; column position of cursor
+member		CON_SCROLL_BIG,1	; big jumps when scrolling
+structend	CON_SIZE
 
 		.area RAM
 
