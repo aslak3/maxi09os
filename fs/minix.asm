@@ -122,7 +122,7 @@ redoinodecache:	pshs y
 readfsblock::	pshs a,b,x,u		; save the file handle
 		ldx MINIXSB_DEVICE,x	; get the block device
 		lslb			; rotate low byte to left
-		rola			; and rotate the high byte, multiply d by 2
+		rola			; rotate high byte, multiply d by 2
 		tfr d,u			; save the sector number
 		lda #2			; 2 sectors per filesystem block
 		lbsr sysread		; get the fs block into y

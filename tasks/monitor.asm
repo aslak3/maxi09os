@@ -477,6 +477,32 @@ dosysopen:	ldb ,y+			; get the type
 		clra
 		rts		
 
+minixcomz:	.asciz 'minix'
+
+; dominixopen IIII MMMM open the file, inode IIII in mounted fs MMMM
+
+dominixopen:	ldx #minixcomz		; always minix
+
+		lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; oh dear
+		ldu ,y++		; get the inode number
+
+		lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; oops
+		ldy ,y++		; get the mounted superblock
+
+		lbsr sysopen		; do the oepn call
+
+		tfr x,d			; we are printing x
+		ldy #resultz		; print a nice label
+		lbsr putlabwdefio	; print the device handle
+
+		clra
+		rts		
+
+
 ; sysclose HHHH - close the device at HHHH
 
 dosysclose:	ldb ,y+			; get the type
@@ -635,6 +661,8 @@ unmntminix:	lda ,y+			; get the type
 
 		rts
 
+; getinode DDDD IIII YYYY
+
 dogetinode:	lda ,y+			; get the type
 		cmpa #2			; word?
 		lbne generalerror	; validation error
@@ -656,6 +684,27 @@ dogetinode:	lda ,y+			; get the type
 
 		rts
 
+; getbytes DDDD LLLL MMMM
+
+dogetbytes:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the device handle
+
+		lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldu ,y++		; get the length
+
+		lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldy ,y++		; get the memory address
+
+		lbsr getbytes
+
+		rts
+
 ; quit - quit - leave the monitor. renemable multitasking and go back to
 ; waiting for the user to want to enter it again
 
@@ -672,7 +721,7 @@ helpz:		.ascii 'Low-level commands:\r\n'
 		.ascii '  tasks : show tasks\r\n'
 		.ascii '  task TTTT : show the task TTTT\r\n'
 		.ascii '  memory : show memory status\r\n'
-		.ascii 'Driver commands:\r\n'
+		.ascii 'Device commands:\r\n'
 		.ascii '  sysopen "DEVICE" [AA [BB]] : open DEVICE with optional params\r\n'
 		.ascii '  sysclose HHHH : close the device at handle HHHH\r\n'
 		.ascii '  sysread HHHH : read a byte from device HHHH\r\n'
@@ -714,10 +763,13 @@ dosyswritebcomz:.asciz 'syswriteblock'
 dosysseekcomz:	.asciz 'sysseek'
 dosysctrlcomz:	.asciz 'syscontrol'
 
+dominixopencomz:.asciz 'minixopen'
+
 mntminixcomz:	.asciz 'mountminix'
 unmntminixcomz:	.asciz 'unmountminix'
 
 dogetinodecomz:	.asciz 'getinode'
+dogetbytescomz:	.asciz 'getbytes'
 
 ; command array - a list of command name and subroutine addresses, ending
 ; in a null word
@@ -783,5 +835,11 @@ commandarray:	.word helpcomz
 
 		.word dogetinodecomz
 		.word dogetinode
+
+		.word dominixopencomz
+		.word dominixopen
+
+		.word dogetbytescomz
+		.word dogetbytes
 
 		.word 0x0000

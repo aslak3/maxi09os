@@ -11,6 +11,7 @@ drivertable:	.word uartdef
 		.word leddef
 		.word timerdef
 		.word idedef
+		.word minixdef
 		.word 0x0000
 
 ; inits all drivers
@@ -30,7 +31,8 @@ driverprepare::	debug ^'Driver prepare start',DEBUG_DRIVER
 
 ; open device by string in x, with optional unit number in a
 
-sysopen::	ldu #drivertable	; setup table search
+sysopen::	pshs y,u
+		ldu #drivertable	; setup table search
 1$:		ldy ,u			; get the def pointer
 		beq 2$			; end of list? exit with null
 		leay DRIVER_NAME,y	; get the device name
@@ -40,8 +42,9 @@ sysopen::	ldu #drivertable	; setup table search
 		bra 1$			; back to top
 2$:		ldx #0			; return a null in x
 		rts
-3$:		ldy ,u
-		jmp [DRIVER_OPEN,y]	; this is a jump
+3$:		ldx ,u
+		puls y,u
+		jmp [DRIVER_OPEN,x]	; this is a jump
 
 ; close the device at x
 

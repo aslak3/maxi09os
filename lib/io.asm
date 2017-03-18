@@ -7,6 +7,19 @@
 
 ;;;;; IO
 
+; gets a buffer from device at x, memory in y, length in u
+
+getbytes::	pshs a,y,u
+		exg u,y			; y has no zero bit on leaty
+1$:		lbsr sysread		; get byte in a
+		; todo check for wait
+		sta ,u+			; save in callers memory
+		leay -1,y		; dec byte counter
+		bne 1$			; back for more
+		puls a,y,u
+		rts
+		
+
 ; puts the string in y to the default io device
 
 putstrdefio::	pshs x
