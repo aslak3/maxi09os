@@ -69,6 +69,19 @@ unmountminix::	pshs x
 		puls x
 		rts
 
+; readfsblock - read the 1024 byte block in block d, from the mounted fs at
+; x, into the memory at y
+
+readfsblock::	pshs a,b,x,u		; save the file handle
+		ldx MINIXSB_DEVICE,x	; get the block device
+		lslb			; rotate low byte to left
+		rola			; rotate high byte, multiply d by 2
+		tfr d,u			; save the sector number
+		lda #2			; 2 sectors per filesystem block
+		lbsr sysread		; get the fs block into y
+		puls a,b,x,u		; leave with the file handle in x
+		rts
+
 ; getinode - get the inode d from the superblock fs in x, writing it into y
 ; consult the "cache" as we go - if it's in the block of inodes we already
 ; have then use that copy
@@ -106,7 +119,7 @@ getinode::	pshs a,b,x
 3$:		lbsr redoinodecache	; read the inode block
 		bra 1$
 
-; read in the inodes from inode block (inode div 32) in d and update the cache
+; read in the inodes from inode block (inode div32) in d and update the cache
 
 redoinodecache:	pshs y
 		std MINIXSB_INBASE,x	; now save the new base
@@ -114,17 +127,4 @@ redoinodecache:	pshs y
 		leay MINIXSB_INCACHE,x	; read to the 32 element inode cache
 		lbsr readfsblock	; do the actual block read
 		puls y
-		rts
-
-; getblock - read the 1024 byte block in block d, from the mounted fs at x,
-; into the memory at y
-
-readfsblock::	pshs a,b,x,u		; save the file handle
-		ldx MINIXSB_DEVICE,x	; get the block device
-		lslb			; rotate low byte to left
-		rola			; rotate high byte, multiply d by 2
-		tfr d,u			; save the sector number
-		lda #2			; 2 sectors per filesystem block
-		lbsr sysread		; get the fs block into y
-		puls a,b,x,u		; leave with the file handle in x
 		rts

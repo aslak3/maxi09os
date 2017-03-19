@@ -479,19 +479,22 @@ dosysopen:	ldb ,y+			; get the type
 
 minixcomz:	.asciz 'minix'
 
-; dominixopen IIII MMMM open the file, inode IIII in mounted fs MMMM
+; dominixopen MMMM IIII open the file, inode IIII in mounted fs MMMM
 
-dominixopen:	ldx #minixcomz		; always minix
-
+dominixopen:	
 		lda ,y+			; get the type
 		cmpa #2			; word?
 		lbne generalerror	; oh dear
-		ldu ,y++		; get the inode number
+		ldx ,y++		; get the mounted superblock
 
 		lda ,y+			; get the type
 		cmpa #2			; word?
 		lbne generalerror	; oops
-		ldy ,y++		; get the mounted superblock
+		ldy ,y++		; get the inode number
+
+		tfr y,u			; inode number inu
+		tfr x,y			; device in y
+		ldx #minixcomz		; always minix
 
 		lbsr sysopen		; do the oepn call
 
@@ -705,7 +708,77 @@ dogetbytes:	lda ,y+			; get the type
 
 		rts
 
-; quit - quit - leave the monitor. renemable multitasking and go back to
+; findinode DDDD "filename"
+
+dofindinode:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the dir handle
+
+		lda ,y+			; get the type
+		cmpa #3			; word?
+		lbne generalerror	; validation error
+
+		tfr y,u			; filename in u
+
+		lbsr findinode
+
+		ldy #resultz		; print a nice label
+		lbsr putlabwdefio	; print the device handle
+
+		clra
+
+		rts
+
+; openfile DDDD "filename"
+
+doopenfile:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the dir handle
+
+		lda ,y+			; get the type
+		cmpa #3			; word?
+		lbne generalerror	; validation error
+
+		tfr y,u			; filename needs to be in u
+
+		lbsr openfile
+
+		tfr x,d
+
+		ldy #resultz		; print a nice label
+		lbsr putlabwdefio	; print the device handle
+
+		clra
+
+		rts
+
+; statfile DDDD "filename" MMMM
+
+dostatfile:	lda ,y+			; get the type
+		cmpa #2			; word?
+		lbne generalerror	; validation error
+		ldx ,y++		; get the dir handle
+
+		lda ,y+			; get the type
+		cmpa #3			; word?
+		lbne generalerror	; validation error
+		tfr y,u			; filename needs to be in u
+
+1$:		tst ,y+			; testing for nulls
+		bne 1$			; keep advancing y to the end
+
+		lda ,y+			; get the type
+		cmpa #2			; byte?
+		lbne generalerror	; validation error
+		ldy, y++		; get the memory
+		
+		lbsr statfile
+
+		rts
+
+; quit - leave the monitor. renemable multitasking and go back to
 ; waiting for the user to want to enter it again
 
 quit:		lbsr permit		; multitask once more
@@ -770,6 +843,9 @@ unmntminixcomz:	.asciz 'unmountminix'
 
 dogetinodecomz:	.asciz 'getinode'
 dogetbytescomz:	.asciz 'getbytes'
+dofindinodecomz:.asciz 'findinode'
+doopenfilecomz:	.asciz 'openfile'
+dostatfilecomz:	.asciz 'statfile'
 
 ; command array - a list of command name and subroutine addresses, ending
 ; in a null word
@@ -841,5 +917,14 @@ commandarray:	.word helpcomz
 
 		.word dogetbytescomz
 		.word dogetbytes
+
+		.word dofindinodecomz
+		.word dofindinode
+
+		.word doopenfilecomz
+		.word doopenfile
+
+		.word dostatfilecomz
+		.word dostatfile
 
 		.word 0x0000

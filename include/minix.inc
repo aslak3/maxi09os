@@ -75,6 +75,7 @@ MODE_IXOTH	.equ 00001		; other execute
 
 ; directory entry (dirent)
 
-MINIXDE_INODE	.equ 0			; inode number
-MINIXDE_NAME	.equ 2			; null padded filename
-MINIXDE_SIZE	.equ 2+30		; 32 bytes
+structstart 	0
+member		MINIXDE_INODE,2			; inode number
+member		MINIXDE_NAME,30			; null padded filename
+structend	MINIXDE_SIZE			; 32 bytes
