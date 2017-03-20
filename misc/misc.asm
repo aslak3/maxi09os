@@ -17,7 +17,7 @@ swapword:: 	pshs a,b
 		puls a,b
 		rts
 
-; swaplong - swap the words in the long x, does not save a or b
+; swaplong - swap the words in the long x
 
 swaplong::	pshs a,b,u
 		ldu 2,x			; get the high word

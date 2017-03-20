@@ -8,30 +8,34 @@ PARTS		.equ 4			; 4 disk partitions
 ; mbr sector offsets
 
 MBR_PARTS_TABLE	.equ 0x01be		; start of parition entries in mbr
-MBR_SIGNATURE	.equ 0x1fe		; 55 aa boot signature
+MBR_SIGNATURE	.equ 0x01fe		; 55 aa boot signature
 
 ; mbr partition table entry offsets
 
-MBR_PART_STATUS	.equ 0			; offset into status/boot byte
-MBR_PART_START	.equ 8			; long word lba offset
-MBR_PART_LENGTH	.equ 12			; long word lba count
-MBR_PART_SIZE	.equ 16
+structstart	0
+member		MBR_PART_STATUS,1	; offset into status/boot byte
+member		MBR_CHS,7		; chs values, not used
+member		MBR_PART_START,4	; long word lba offset
+member		MBR_PART_LENGTH,4	; long word lba count
+structend	MBR_PART_SIZE		; 16 bytes
 
 ; partition entry for this driver's parttable
 
-PART_DEVICE	.equ 0			; device handle
-PART_START	.equ 2			; lba offset
-PART_LENGTH	.equ 4			; lba count
-PART_FLAGS	.equ 6			; copy of status/boot byte
-PART_DUMMY	.equ 7			; unused
-PART_SIZE	.equ 8
+structstart	0
+member		PART_DEVICE,2		; device handle
+member		PART_START,2		; lba offset
+member		PART_LENGTH,2		; lba count
+member		PART_FLAGS,1		; copy of status/boot byte
+member		PART_DUMMY,1		; unused
+structend	PART_SIZE		; 8 bytes
 
-IDE_SECT_COUNT	.equ DEVICE_SIZE+0	; number of sectors we are ioing
-IDE_OPEN_COUNT	.equ DEVICE_SIZE+1	; number of times open this device
-IDE_PART	.equ DEVICE_SIZE+2	; pointer to part structure
-IDE_PART_START	.equ DEVICE_SIZE+4	; the offset into the partition
-IDE_SECTOR	.equ DEVICE_SIZE+6	; a disk sector
-IDE_SIZE	.equ DEVICE_SIZE+6+512
+structstart	DEVICE_SIZE
+member		IDE_SECT_COUNT,1	; number of sectors we are ioing
+member		IDE_OPEN_COUNT,1	; number of times open this device
+member		IDE_PART,2		; pointer to part structure
+member		IDE_PART_START,2	; the offset into the partition
+member		IDE_SECTOR,512		; a disk sector
+structend	IDE_SIZE
 
 		.area RAM
 
@@ -74,7 +78,8 @@ ideopen:	lbsr disable		; enter critical section
 		sta IDEFEATURES		; save it in features register
 		lda #IDECOMFEATURES	; set features
 		lbsr simpleidecomm	; run the features command
-		stx PART_DEVICE,u	; save open handle
+		stx PART_DEVICE,u	; save pointer to device in part
+		stu IDE_PART,x		; save pointer to part in device
 
 1$:		inc IDE_OPEN_COUNT,x	; and incrmenet open counter
 		lbsr enable		; exit critical section
@@ -88,8 +93,8 @@ ideopen:	lbsr disable		; enter critical section
 ideclose:	lbsr disable		; enter critical section
 		dec IDE_OPEN_COUNT,x	; mark it unused
 		bne 1$			; still open? don't free yet
-		lbsr memoryfree		; free the open device handle
 		ldu IDE_PART,x		; get the parttable pointer
+		lbsr memoryfree		; free the open device handle
 		ldx #0	
 		stx PART_DEVICE,u	; zero out the handle
 1$:		lbsr enable		; leave critical section

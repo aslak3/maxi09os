@@ -10,7 +10,7 @@
 ; gets a buffer from device at x, memory in y, length in u
 
 getbytes::	pshs a,y,u
-		exg u,y			; y has no zero bit on leaty
+		exg u,y			; y has no zero bit on leay
 1$:		lbsr sysread		; get byte in a
 		; todo check for wait
 		sta ,u+			; save in callers memory

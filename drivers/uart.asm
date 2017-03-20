@@ -6,7 +6,7 @@
 
 PORTCOUNT	.equ 4
 
-structrunning=	DEVICE_SIZE
+structstart	DEVICE_SIZE
 member		UART_RX_BUF,32		; rx buffer
 member		UART_TX_BUF,32		; tx buffer
 member		UART_RX_COUNT_H,2	; rx buffer offset for the handler

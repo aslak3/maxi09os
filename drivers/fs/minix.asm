@@ -163,8 +163,13 @@ openfile::	pshs a,b,y,u
 		setzero
 		bra 2$			; out now
 1$:		setnotzero		; failure
+		ldx #0			; return nothing
 2$:		puls a,b,y,u
 		rts
+
+; just a convience alias
+
+closefile::	lbra minixclose		; this is a branch
 
 ; stats a file by name, x is the directory and u is the name, and y is
 ; is where to put the inode
@@ -179,7 +184,4 @@ statfile::	pshs a,b,x
 1$:		setnotzero		; failure
 2$:		puls a,b,x
 		rts
-		
-; just a convience alias
 
-closefile::	lbra minixclose		; this is a branch
