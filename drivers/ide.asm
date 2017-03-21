@@ -39,7 +39,7 @@ structend	IDE_SIZE
 
 		.area RAM
 
-parttable::	.rmb PART_SIZE		; the whole disk partition
+parttable:	.rmb PART_SIZE		; the whole disk partition
 parttableone:	.rmb PART_SIZE*PARTS	; the actual partition
 
 		.area ROM
@@ -50,7 +50,8 @@ idedef::	.word ideopen
 
 ; ide open - a is the unit/partition number, 0 for the whole disk
 
-ideopen:	lbsr disable		; enter critical section
+ideopen:	pshs a,y,u
+		lbsr disable		; enter critical section
 		ldy #parttable		; get the local partition table
 		lsla			; x2
 		lsla			; x2
@@ -85,12 +86,14 @@ ideopen:	lbsr disable		; enter critical section
 		lbsr enable		; exit critical section
 
 		setzero			; success
+		puls a,y,u
 		rts
 
 ; ide close - give it the device in x - if open elsewhere it will not free
 ; the handle but will always decrement the inuse counter
 
-ideclose:	lbsr disable		; enter critical section
+ideclose:	pshs u
+		lbsr disable		; enter critical section
 		dec IDE_OPEN_COUNT,x	; mark it unused
 		bne 1$			; still open? don't free yet
 		ldu IDE_PART,x		; get the parttable pointer
@@ -99,6 +102,7 @@ ideclose:	lbsr disable		; enter critical section
 		stx PART_DEVICE,u	; zero out the handle
 1$:		lbsr enable		; leave critical section
 		setzero
+		puls u
 		rts
 
 ; ideread - read to memory y from sectors in u, count in a sectors

@@ -5,8 +5,6 @@
 
 		.area RAM
 
-; interrupt handler table
-
 ; task switcher state
 
 currenttask::	.rmb 2			; current task pointer
