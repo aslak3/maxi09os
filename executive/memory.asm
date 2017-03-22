@@ -34,7 +34,7 @@ memoryavail::	debugreg ^'Memory avail: ',DEBUG_MEMORY,DEBUG_REG_A
 		pshs y
 		clrb			; memory size counter top half
 		ldy #l_RAM		; start at the start of the heap
-		lbsr disable		; enter critical section
+		lbsr forbid		; enter critical section
 		cmpa #MEM_TOTAL		; total mode?
 		beq dototal		; run the total loop
 		cmpa #MEM_FREE		; free mode?
@@ -43,7 +43,7 @@ memoryavail::	debugreg ^'Memory avail: ',DEBUG_MEMORY,DEBUG_REG_A
 		beq dolargest		; run the largest loop
 		clra			; invalid input, clear bottom
 
-availout:	lbsr enable		; leave critical section
+availout:	lbsr permit		; leave critical section
 		puls y
 		rts
 
@@ -77,14 +77,14 @@ largestnext:	ldy MEM_NEXT_O,y	; get the next pointer
 memoryalloc::	debugreg ^'Memory alloc, bytes: ',DEBUG_MEMORY,DEBUG_REG_X
 		pshs a,b,y,u		; save y
 		leax MEM_SIZE,x		; add the overhead to the request
-		lbsr disable		; critical section
+		lbsr forbid		; critical section
 		ldy #l_RAM		; start at the start of the heap
 allocloop:	tst MEM_FREE_O,y	; get the free flag
 		bne checkfree		; it's free, now check size
 checknext:	ldy MEM_NEXT_O,y	; get the next pointer
 		bne allocloop		; and go back to the top of the loop
 		ldx #0			; ...if there is more, 
-allocout:	lbsr enable		; end critical section
+allocout:	lbsr permit		; end critical section
 		puls a,b,y,u
 		debugreg ^'Got block: ',DEBUG_MEMORY,DEBUG_REG_X
 		rts			; otherwise no more rams

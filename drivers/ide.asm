@@ -51,7 +51,7 @@ idedef::	.word ideopen
 ; ide open - a is the unit/partition number, 0 for the whole disk
 
 ideopen:	pshs a,y,u
-		lbsr disable		; enter critical section
+		lbsr forbid		; enter critical section
 		ldy #parttable		; get the local partition table
 		lsla			; x2
 		lsla			; x2
@@ -83,7 +83,7 @@ ideopen:	pshs a,y,u
 		stu IDE_PART,x		; save pointer to part in device
 
 1$:		inc IDE_OPEN_COUNT,x	; and incrmenet open counter
-		lbsr enable		; exit critical section
+		lbsr permit		; exit critical section
 
 		setzero			; success
 		puls a,y,u
@@ -93,14 +93,14 @@ ideopen:	pshs a,y,u
 ; the handle but will always decrement the inuse counter
 
 ideclose:	pshs u
-		lbsr disable		; enter critical section
+		lbsr forbid		; enter critical section
 		dec IDE_OPEN_COUNT,x	; mark it unused
 		bne 1$			; still open? don't free yet
 		ldu IDE_PART,x		; get the parttable pointer
 		lbsr memoryfree		; free the open device handle
 		ldx #0	
 		stx PART_DEVICE,u	; zero out the handle
-1$:		lbsr enable		; leave critical section
+1$:		lbsr permit		; leave critical section
 		setzero
 		puls u
 		rts

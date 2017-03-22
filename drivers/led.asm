@@ -15,7 +15,7 @@ leddef::	.word ledopen
 
 ; led open
 
-ledopen:	lbsr disable		; enter critical section
+ledopen:	lbsr forbid		; enter critical section
 		lda ledinuse
 		bne 1$			; in use?
 		lda #1			; mark it as being in use
@@ -29,20 +29,20 @@ ledopen:	lbsr disable		; enter critical section
 		ldy #devicenotimpl	; not implemented
 		sty DEVICE_SEEK,x	; seek
 		sty DEVICE_CONTROL,x	; and control
-		lbsr enable		; exit critical section
+		lbsr permit		; exit critical section
 		setnotzero
 		rts
-1$:		lbsr enable		; exit critical section
+1$:		lbsr permit		; exit critical section
 		ldx #0			; return 0
 		setzero			; port is in use
 		rts
 
 ; led close - give it the device in x
 
-ledclose:	lbsr disable
+ledclose:	lbsr forbid
 		clr ledinuse		; mark it unused
 		lbsr memoryfree		; free the open device handle
-		lbsr enable
+		lbsr permit
 		rts
 
 ; write to the device in x, reg a

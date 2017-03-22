@@ -294,9 +294,9 @@ clearconsole:	pshs y,u
 		clr CON_CURSOR_COL,x	; ... left		
 		ldy CON_VRAMADDR,x	; base address of this console
 		ldu #ROWS*COLS		; number of bytes for a scren
-		lbsr disable		; enter critical vdc section
+		lbsr forbid		; enter critical vdc section
 		lbsr vclear		; zero the screen data
-		lbsr enable		; leave critical vdc section
+		lbsr permit		; leave critical vdc section
 		puls y,u
 		rts
 

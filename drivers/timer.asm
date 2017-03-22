@@ -47,9 +47,9 @@ timeropen:	ldx #TIMER_SIZE		; allocate the device struct
 		clr TIMER_RUNNING,x	; clear we are counting flag ...
 		clr TIMER_REPEAT,x	; and we are repeating
 		ldy #timers
-		lbsr disable
-		lbsr addtail
-		lbsr enable
+		lbsr disable		; list is walked in isr, so disable
+		lbsr addtail		; add timer to the list
+		lbsr enable		; release interrupts
 		setzero
 		rts
 
@@ -69,7 +69,7 @@ timercontrol:	debug ^'Timer control',DEBUG_SPEC_DRV
 timercontrolo:	setzero
 		rts
 
-starttimer:	lbsr disable
+starttimer:	lbsr disable		; stop handler playing with timer
 		lda TIMERCTRL_REP,y
 		sta TIMER_REPEAT,x
 		ldy TIMERCTRL_END,y

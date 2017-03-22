@@ -17,7 +17,7 @@ uartllopenmsg:	.asciz 'opening low level uart\r\n'
 
 uartllopen::	pshs a,b,x
 		ldy #uartportflags	; determine if uart is in use
-		lbsr disable		; enter critical section
+		lbsr disable		; no  isr till setup complete
 		tst a,y			; get current state
 		lbne 1$			; in use?
 		ldb #1			; mark it as being in use
