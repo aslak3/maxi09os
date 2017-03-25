@@ -20,6 +20,8 @@ echo3taskname:	.asciz 'echo3'
 echo4taskname:	.asciz 'echo4'
 sertermtaskname:.asciz 'serterm'
 montaskname:	.asciz 'monitor'
+shell1taskname:	.asciz 'shell1'
+shell2taskname:	.asciz 'shell2'
 
 rootdevnamez:	.asciz 'ide'
 rootunit:	.rmb 01
@@ -69,8 +71,8 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		lda #2
 		lbsr sysopen
 		tfr x,u
-		ldx #echotask
-		ldy #echo2taskname
+		ldx #shellstart
+		ldy #shell2taskname
 		lbsr createtask
 
 ;		ldx #sertermtask
@@ -92,8 +94,8 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		ldb #B19200
 		lbsr sysopen
 		tfr x,u
-		ldx #monitorstart
-		ldy #montaskname
+		ldx #shellstart
+		ldy #shell1taskname
 		lbsr createtask
 
 ;		ldx #uartnamez

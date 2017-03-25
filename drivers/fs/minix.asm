@@ -60,8 +60,22 @@ minixread:	pshs b,y
 		bne 1$			; no 256 wrap, so done now
 		inc MINIX_CURPOS,x	; increment high byte
 		lbsr checkcurblock	; maybe we have to get a new block?
-1$:		setzero
+1$:		lbsr checkeof		; check for eof
 		puls b,y
+		rts
+
+; checkeof - if at the end of the file, then set not zero. otherwise set
+; zero
+
+checkeof:	pshs a,b,x
+		ldd MINIX_CURPOS,x	; get current position
+		leax MINIX_INODE,x	; move to the inode
+		cmpd MINIXIN_LENGTH+2,x	; compare against length (low word)
+		beq 1$			; end of file if we move into length
+		setzero			; not at eof, success
+		bra 2$			; exit now
+1$:		setnotzero		; at the end, so error
+2$:		puls a,b,x
 		rts
 
 ; seek to the offset y
@@ -163,8 +177,8 @@ openfileindir::	pshs a,b,y,u
 		setzero
 		bra 2$			; out now
 1$:		ldx #0			; return nothing
-2$:		setnotzero		; failure
-		puls a,b,y,u
+		setnotzero		; failure
+2$:		puls a,b,y,u
 		rts
 
 
@@ -183,7 +197,7 @@ statfileindir::	pshs a,b,x
 ; open the current working directory for the current task, using the system
 ; mounted root fs, returning it in x
 
-opencwd:	pshs y,u
+opencwd::	pshs y,u
 		ldx currenttask		; get the current task
 		ldu TASK_CWD_INODENO,x	; get the cwd inode number
 		ldy rootsuperblock	; get the mounted superblock

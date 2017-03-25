@@ -64,7 +64,7 @@ notamatch:	setnotzero		; not a match, so not zero
 strcmpout:	puls a,x,y
 		rts
 
-; parse a stream of ascii hex into the y stack
+; parse a stream of asci hex and strings in x into y
 
 parseinput::	pshs a,y
 commandinput:	lda ,x+			; get the char from command name
@@ -96,7 +96,7 @@ parsebyte:	lda #1			; code 1 for bytes
 		bra nextparseinput	; look for more
 parseword:	lda #2			; code 2 for words
 		sta ,y+			; add it in to the stream
-		bsr aschextoword	; if we get here it must be a word
+		lbsr aschextoword	; if we get here it must be a word
 		std ,y++		; save the word in y
 		bra nextparseinput
 parsestring:	lda #3			; type 3 for strings
@@ -133,7 +133,27 @@ toupper::	cmpa #'a		; compare with "a"
 		suba #'a-'A		; convert to uppercase
 1$:		rts
 
-;;; private
+; match a string in y to the string,userdata array, returning the userdata
+; following the string in the array.  this is usually a subroutine address
+; and it goes in x. the array goes in u. also, y is advanced to the end
+; of the string, which is where parseargs will (presumably) have put the
+; arguments. On no match, y is left alone
+
+strmatcharray::	ldx ,u++		; get the string
+		beq strmatchfailed	; end of string?
+		lbsr strcmp		; compare the command with the list
+		bne 2$			; no match? check next one
+1$:		tst ,y+			; the caller is interested in args
+		bne 1$			; advance y to the arguments
+		ldx ,u			; get user data
+		setzero			; success
+		bra strmatcharrayo	; out
+2$:		ldx ,u++		; need to advance past sub pointer
+		bra strmatcharray	; before checking next command
+strmatchfailed:	setnotzero		; failure
+strmatcharrayo:	rts
+
+;;; PRIVATE
 
 ; jump x across spaces
 
@@ -142,7 +162,6 @@ skipspaces:	lda ,x+			; skip a space
 		beq skipspaces		; yes? then go back and look for more
 		leax -1,x		; back 1
 		rts
-
 
 ; aschextonib - convert a char on x to a low nibble in a
 
