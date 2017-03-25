@@ -78,6 +78,7 @@ member		TASK_DEF_IO,2		; the default io device
 member		TASK_PARENT,2		; the parent task
 member		TASK_EXIT_CODE,1	; the exit code of this task
 member		TASK_DEAD_LIST,LIST_SIZE; the list of dead children
+member		TASK_CWD_INODENO,2	; current working dir
 structend	TASK_SIZE
 
 ; reserved signal masks

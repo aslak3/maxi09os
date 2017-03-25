@@ -154,7 +154,7 @@ comparedirent:	pshs x,y
 ; open a file by name, x is the directory and u is the name, the file is
 ; returned in x so the caller must store the directory handle away
 
-openfile::	pshs a,b,y,u
+openfileindir::	pshs a,b,y,u
 		lbsr findinode		; get the inode for this filename
 		bne 1$			; not successful
 		tfr d,u			; todo: move this to d in minixopen
@@ -162,26 +162,60 @@ openfile::	pshs a,b,y,u
 		lbsr minixopen		; open the file
 		setzero
 		bra 2$			; out now
-1$:		setnotzero		; failure
-		ldx #0			; return nothing
-2$:		puls a,b,y,u
+1$:		ldx #0			; return nothing
+2$:		setnotzero		; failure
+		puls a,b,y,u
+		rts
+
+
+; stats a file by name, x is the directory and u is the name, and y is
+; is where to put the inode
+
+statfileindir::	pshs a,b,x
+		lbsr findinode		; find this inode
+		bne 1$			; couldn't find the named inode
+		ldx MINIX_SB,x		; get the superblock
+		lbsr getinode		; fill inode d into memory y
+		setzero			; success
+1$:		puls a,b,x
+		rts
+
+; open the current working directory for the current task, using the system
+; mounted root fs, returning it in x
+
+opencwd:	pshs y,u
+		ldx currenttask		; get the current task
+		ldu TASK_CWD_INODENO,x	; get the cwd inode number
+		ldy rootsuperblock	; get the mounted superblock
+		lbsr minixopen		; opened file will be in
+		puls y,u
+		rts
+
+; open the file in the current directory, the name is in u, the open file
+; will be in x
+
+openfile::	pshs y
+		lbsr opencwd		; open the current directory
+		tfr x,y			; save it so we can close it later
+		lbsr openfileindir	; open the file in the current dir
+		tfr cc,a		; save condition codes
+		exg y,x			; we need to close the dir now
+		lbsr minixclose		; close the dir
+		tfr y,x			; get thie file back in x
+		tfr a,cc		; restore condition codes
+		puls y
 		rts
 
 ; just a convience alias
 
 closefile::	lbra minixclose		; this is a branch
 
-; stats a file by name, x is the directory and u is the name, and y is
-; is where to put the inode
+; stat the file in the current directory, the name is in u, the memory
+; in y
 
-statfile::	pshs a,b,x
-		lbsr findinode		; find this inode
-		bne 1$			; couldn't find the named inode
-		ldx MINIX_SB,x		; get the superblock
-		lbsr getinode		; fill inode d into memory y
-		setzero			; success
-		bra 2$			; out now
-1$:		setnotzero		; failure
-2$:		puls a,b,x
+statfile::	lbsr opencwd		; open the current directory
+		lbsr statfileindir	; stat the file in u
+		tfr cc,a		; save condition codes
+		lbsr minixclose		; close the current directory
+		tfr a,cc		; restore condition codes
 		rts
-

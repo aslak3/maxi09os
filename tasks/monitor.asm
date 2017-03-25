@@ -311,6 +311,7 @@ rchevronsz:	.asciz '>>>'
 taskz:		.asciz 'Task: '
 parentz:	.asciz 'Parent: '
 defaultioz:	.asciz 'Default IO: '
+cwdinodenoz:	.asciz 'CWD INode Number: '
 initialpcz:	.asciz 'Initial PC: '
 savedsz:	.asciz 'Saved S: '
 sigallocz:	.asciz 'Sig Alloc: '
@@ -346,6 +347,10 @@ showtask:	pshs x
 
 		ldd TASK_DEF_IO,u
 		ldy #defaultioz
+		lbsr putlabw
+
+		ldd TASK_CWD_INODENO,u
+		ldy #cwdinodenoz
 		lbsr putlabw
 
 		ldd TASK_PC,u
@@ -730,9 +735,9 @@ dofindinode:	lda ,y+			; get the type
 
 		rts
 
-; openfile DDDD "filename"
+; openfileindir DDDD "filename"
 
-doopenfile:	lda ,y+			; get the type
+doopenfileindir:lda ,y+			; get the type
 		cmpa #2			; word?
 		lbne generalerror	; validation error
 		ldx ,y++		; get the dir handle
@@ -741,6 +746,24 @@ doopenfile:	lda ,y+			; get the type
 		cmpa #3			; word?
 		lbne generalerror	; validation error
 
+		tfr y,u			; filename needs to be in u
+
+		lbsr openfileindir
+
+		tfr x,d
+
+		ldy #resultz		; print a nice label
+		lbsr putlabwdefio	; print the device handle
+
+		clra
+
+		rts
+
+; openfile "filename"
+
+doopenfile:	lda ,y+			; get the type
+		cmpa #3			; word?
+		lbne generalerror	; validation error
 		tfr y,u			; filename needs to be in u
 
 		lbsr openfile
@@ -754,14 +777,33 @@ doopenfile:	lda ,y+			; get the type
 
 		rts
 
-; statfile DDDD "filename" MMMM
+; statfileindir "filename" MMMM
 
-dostatfile:	lda ,y+			; get the type
+dostatfileindir:lda ,y+			; get the type
 		cmpa #2			; word?
 		lbne generalerror	; validation error
 		ldx ,y++		; get the dir handle
 
 		lda ,y+			; get the type
+		cmpa #3			; word?
+		lbne generalerror	; validation error
+		tfr y,u			; filename needs to be in u
+
+1$:		tst ,y+			; testing for nulls
+		bne 1$			; keep advancing y to the end
+
+		lda ,y+			; get the type
+		cmpa #2			; byte?
+		lbne generalerror	; validation error
+		ldy, y++		; get the memory
+		
+		lbsr statfileindir
+
+		rts
+
+; statfile "filename" MMMM
+
+dostatfile:	lda ,y+			; get the type
 		cmpa #3			; word?
 		lbne generalerror	; validation error
 		tfr y,u			; filename needs to be in u
@@ -816,115 +858,124 @@ help:		ldx defaultio
 
 ; command names
 
-helpcomz:	.asciz 'help'
-questioncomz:	.asciz '?'
-dumpcomz:	.asciz 'dump'
-writecomz:	.asciz 'write'
-parsetestcomz:	.asciz 'parsetest'
-readbytecomz:	.asciz 'readbyte'
-memorycomz:	.asciz 'memory'
-taskscomz:	.asciz 'tasks'
-taskcomz:	.asciz 'task'
-quitcomz:	.asciz 'quit'
+helpcz:		.asciz 'help'
+questioncz:	.asciz '?'
+dumpcz:		.asciz 'dump'
+writecz:	.asciz 'write'
+parsetestcz:	.asciz 'parsetest'
+readbytecz:	.asciz 'readbyte'
+memorycz:	.asciz 'memory'
+taskscz:	.asciz 'tasks'
+taskcz:		.asciz 'task'
+quitcz:		.asciz 'quit'
 
-dosysopencomz:	.asciz 'sysopen'
-dosysclosecomz:	.asciz 'sysclose'
-dosysreadcomz:	.asciz 'sysread'
-dosyswritecomz:	.asciz 'syswrite'
-dosysreadbcomz:	.asciz 'sysreadblock'
-dosyswritebcomz:.asciz 'syswriteblock'
-dosysseekcomz:	.asciz 'sysseek'
-dosysctrlcomz:	.asciz 'syscontrol'
+dosysopencz:	.asciz 'sysopen'
+dosysclosecz:	.asciz 'sysclose'
+dosysreadcz:	.asciz 'sysread'
+dosyswritecz:	.asciz 'syswrite'
+dosysreadbcz:	.asciz 'sysreadblock'
+dosyswritebcz:	.asciz 'syswriteblock'
+dosysseekcz:	.asciz 'sysseek'
+dosysctrlcz:	.asciz 'syscontrol'
 
-dominixopencomz:.asciz 'minixopen'
+dominixopencz:	.asciz 'minixopen'
 
-mntminixcomz:	.asciz 'mountminix'
-unmntminixcomz:	.asciz 'unmountminix'
+mntminixcz:	.asciz 'mountminix'
+unmntminixcz:	.asciz 'unmountminix'
 
-dogetinodecomz:	.asciz 'getinode'
-dogetbytescomz:	.asciz 'getbytes'
-dofindinodecomz:.asciz 'findinode'
-doopenfilecomz:	.asciz 'openfile'
-dostatfilecomz:	.asciz 'statfile'
+dogetinodecz:	.asciz 'getinode'
+dogetbytescz:	.asciz 'getbytes'
+dofindinodecz:	.asciz 'findinode'
+
+doopenfileincz:	.asciz 'openfileindir'
+dostatfileincz:	.asciz 'statfileindir'
+doopenfilecz:	.asciz 'openfile'
+dostatfilecz:	.asciz 'statfile'
 
 ; command array - a list of command name and subroutine addresses, ending
 ; in a null word
 
-commandarray:	.word helpcomz
+commandarray:	.word helpcz
 		.word help
-		.word questioncomz
+		.word questioncz
 		.word help
 
-		.word dumpcomz
+		.word dumpcz
 		.word dump
 
-		.word writecomz
+		.word writecz
 		.word write
 
-		.word parsetestcomz
+		.word parsetestcz
 		.word parsetest
 
-		.word readbytecomz
+		.word readbytecz
 		.word readbyte
 
-		.word memorycomz
+		.word memorycz
 		.word memory
 
-		.word taskscomz
+		.word taskscz
 		.word tasks
 
-		.word taskcomz
+		.word taskcz
 		.word task
 
-		.word quitcomz
+		.word quitcz
 		.word quit
 
-		.word dosysopencomz
+		.word dosysopencz
 		.word dosysopen
 
-		.word dosysclosecomz
+		.word dosysclosecz
 		.word dosysclose
 
-		.word dosysreadcomz
+		.word dosysreadcz
 		.word dosysread
 
-		.word dosyswritecomz
+		.word dosyswritecz
 		.word dosyswrite
 
-		.word dosysreadbcomz
+		.word dosysreadbcz
 		.word dosysreadblk
 
-		.word dosyswritebcomz
+		.word dosyswritebcz
 		.word dosyswriteblk
 
-		.word dosysseekcomz
+		.word dosysseekcz
 		.word dosysseek
 
-		.word dosysctrlcomz
+		.word dosysctrlcz
 		.word dosyscontrol
 
-		.word mntminixcomz
+		.word mntminixcz
 		.word mntminix
 
-		.word unmntminixcomz
+		.word unmntminixcz
 		.word unmntminix
 
-		.word dogetinodecomz
+		.word dogetinodecz
 		.word dogetinode
 
-		.word dominixopencomz
+		.word dominixopencz
 		.word dominixopen
 
-		.word dogetbytescomz
+		.word dogetbytescz
 		.word dogetbytes
 
-		.word dofindinodecomz
+		.word dofindinodecz
 		.word dofindinode
 
-		.word doopenfilecomz
+		.word doopenfileincz
+		.word doopenfileindir
+
+		.word dostatfileincz
+		.word dostatfileindir
+
+		.word doopenfilecz
 		.word doopenfile
 
-		.word dostatfilecomz
+		.word dostatfilecz
 		.word dostatfile
 
 		.word 0x0000

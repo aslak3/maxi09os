@@ -17,6 +17,10 @@ reschedflag::	.rmb 1
 
 idletask::	.rmb 2
 
+; mounted superblock
+
+rootsuperblock::.rmb 2
+
 ; interrupt nest count, <1 disabled, >=1 enabled
 
 interruptnest::	.rmb 1

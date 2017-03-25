@@ -23,7 +23,9 @@ createtask::	pshs a,y
 		lda #1
 		sta DEVICE_SIGNAL,u
 		sta TASK_SIGALLOC,x
-1$:		ldy #readytasks		; get the ready list
+1$:		ldu TASK_CWD_INODENO,y	; get the old tasks cwd
+		stu TASK_CWD_INODENO,x	; save it in the new task
+		ldy #readytasks		; get the ready list
 		lbsr addtaskto		; add this new task to ready list
 		puls a,y
 		rts

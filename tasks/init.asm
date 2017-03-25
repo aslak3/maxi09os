@@ -6,8 +6,7 @@
 
 		.area RAM
 
-rootdevice::	.rmb 2			; the open root device
-rootsuperblock::.rmb 2			; the superblock handle
+rootdevice:	.rmb 2			; the open root device
 
 		.area ROM
 
@@ -48,6 +47,10 @@ mountroot:	tst rootunit		; get the root unit and see if its 0
 init::		debug ^'Init started',DEBUG_GENERAL
 
 		lbsr mountroot		; mount the root device
+
+		ldx currenttask		; get init's task struct
+		ldy #1			; root inode is 0001
+		sty TASK_CWD_INODENO,x	; this is inherited down the chain
 
 		ldx #timertask
 		ldy #timertaskname
