@@ -183,7 +183,7 @@ consoleclose:	lbsr memoryfree		; free the open device handle
 
 ; console read - get the last char in the buffer in a
 
-consoleread:	pshs b
+consoleread:	pshs b,u
 		lbsr disable		; into critical section
 		ldb CON_RX_COUNT_U,x	; get counter
 		cmpb CON_RX_COUNT_H,x	; compare..,
@@ -195,11 +195,11 @@ consoleread:	pshs b
 		stb CON_RX_COUNT_U,x	; and save it
 		lbsr enable		; out of critical section
 		setzero			; got data
-		puls b
+		bra 2$
 		rts
 1$:		lbsr enable		; out of critical section
 		setnotzero		; got no data
-		puls b
+2$:		puls b,u
 		rts
 
 ; write to the device in x, reg a

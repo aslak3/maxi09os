@@ -22,6 +22,8 @@ sertermtaskname:.asciz 'serterm'
 montaskname:	.asciz 'monitor'
 shell1taskname:	.asciz 'shell1'
 shell2taskname:	.asciz 'shell2'
+shell3taskname:	.asciz 'shell3'
+shell4taskname:	.asciz 'shell4'
 
 rootdevnamez:	.asciz 'ide'
 rootunit:	.rmb 01
@@ -61,6 +63,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 
 		ldx #consolenamez
 		lda #1
+		clrb
 		lbsr sysopen
 		tfr x,u
 		ldx #echotask
@@ -69,24 +72,20 @@ init::		debug ^'Init started',DEBUG_GENERAL
 
 		ldx #consolenamez
 		lda #2
+		clrb
+		lbsr sysopen
+		tfr x,u
+		ldx #shellstart
+		ldy #shell1taskname
+		lbsr createtask
+
+		ldx #consolenamez
+		lda #3
+		ldb #1
 		lbsr sysopen
 		tfr x,u
 		ldx #shellstart
 		ldy #shell2taskname
-		lbsr createtask
-
-;		ldx #sertermtask
-;		ldy #sertermtaskname
-;		ldu #0
-;		lbsr createtask
-
-		ldx #uartnamez
-		lda #1
-		ldb #B19200
-		lbsr sysopen
-		tfr x,u
-		ldx #echotask
-		ldy #echo3taskname
 		lbsr createtask
 
 		ldx #uartnamez
@@ -95,7 +94,16 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		lbsr sysopen
 		tfr x,u
 		ldx #shellstart
-		ldy #shell1taskname
+		ldy #shell3taskname
+		lbsr createtask
+
+		ldx #uartnamez
+		lda #1
+		ldb #B19200
+		lbsr sysopen
+		tfr x,u
+		ldx #shellstart
+		ldy #shell4taskname
 		lbsr createtask
 
 ;		ldx #uartnamez

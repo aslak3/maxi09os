@@ -30,12 +30,12 @@ putstrdefio::	pshs x
 
 ; puts the string in y to the device at x
 
-putstr::	pshs a
+putstr::	pshs a,y
 1$:		lda ,y+			; get the next char
 		beq 2$			; null found, bomb out
 		lbsr syswrite		; output the character
 		bra 1$			; more chars
-2$:		puls a
+2$:		puls a,y
 		rts
 
 ; gets a string, filling it into y from the default io device
@@ -48,7 +48,8 @@ getstrdefio::	pshs x
 
 ; gets a string, filling it into y from the device at x
 
-getstr::	clrb			; set the length to 0
+getstr::	pshs a,b,y
+		clrb			; set the length to 0
 getstrloop:	lbsr sysread		; get a char in a
 		bne getstrwait		; need to wait
 		cmpa #ASC_CR		; cr?
@@ -62,6 +63,7 @@ getstrloop:	lbsr sysread		; get a char in a
 getstrecho:	lbsr syswrite		; echo it
 		bra getstrloop		; get more
 getstrout:	clr ,y+			; add a null
+		puls a,b,y
 		rts
 getstrbs:	tstb			; see if the char count is 0
 		beq getstrloop		; do nothing if already zero
