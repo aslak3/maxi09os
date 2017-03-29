@@ -60,7 +60,12 @@ nofile:		ldy #commnotfoundz	; no externl file called that
 
 ; list directory
 
-list:		ldx currenttask
+list:		clrb			; long mode flag
+		lda ,y+			; get type
+		cmpa #4			; option code?
+		bne startlist		; carry on
+		ldb ,y+			; get option
+startlist:	ldx currenttask
 		ldu TASK_USERDATA,x	; get space for dirent
 		leay SHELL_DIRENT,u
 		lbsr opencwd		; open the current directory into x
@@ -72,23 +77,73 @@ list:		ldx currenttask
 2$:		lbsr closefile		; close the directory
 		rts
 
-; print the name for the dirent in y
+; print the name for the dirent in y, option is in b
 
-putdirentname:	pshs x,y
-		ldx defaultio
+putdirentname:	pshs a,b,x,y
+		cmpb #'l
+		beq 2$
+1$:		ldx defaultio
 		leay MINIXDE_NAME,y
 		lbsr putstr
 		ldy #newlinemsg
 		lbsr putstr
-		puls x,y
+		puls a,b,x,y
 		rts
-		
-; list with detailed info
+2$:		ldd MINIXDE_INODENO,y	; get inode number
+		lbsr summariseinode
+		bra 1$
 
-listlong:	ldy #listlongcz
-		lbsr putstrdefio
+dirtype:	.ascii 'd'
+filetype:	.ascii 'f'
+
+summariseinode:	pshs a,b,x,y
+		ldx rootsuperblock
+		leas -MINIXIN_SIZE,s
+		tfr s,y
+		lbsr getinode
+		ldx defaultio
+		lda MINIXIN_MODE,y	; load high byte of type/mode
+		anda #MODE_TYPE_MASK
+		cmpa #MODE_DIR
+		beq showdir
+		cmpa #MODE_REGULAR
+		beq showfile
+		lda #'-
+
+gottype:	lbsr syswrite
+		lda #ASC_SP
+		lbsr syswrite
+
+		lda MINIXIN_NLINKS,y
+		lbsr putbyte
+		lda #ASC_SP
+		lbsr syswrite
+
+		ldd MINIXIN_UID,y
+		lbsr putword
+		lda #'/
+		lbsr syswrite
+		lda MINIXIN_GID,y
+		lbsr putbyte
+		lda #ASC_SP
+		lbsr syswrite
+
+		ldd MINIXIN_LENGTH,y
+		lbsr putword
+		ldd MINIXIN_LENGTH+2,y
+		lbsr putword
+		lda #ASC_SP
+		lbsr syswrite
+
+		leas MINIXIN_SIZE,s
+		puls a,b,x,y
 		rts
 
+showdir:	lda #'d
+		bra gottype
+showfile:	lda #'f
+		bra gottype
+	
 ; type "foo" - type the file to the output device
 
 type:		lda ,y+			; get type
@@ -135,14 +190,10 @@ generalerror:
 ; built in commands
 
 listcz:		.asciz 'list'
-listlongcz:	.asciz 'listlong'
 typecz:		.asciz 'type'
 
 commandarray:	.word listcz
 		.word list
-
-		.word listlongcz
-		.word listlong
 
 		.word typecz
 		.word type

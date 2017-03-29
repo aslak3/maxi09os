@@ -42,13 +42,14 @@ structend	MINIXIN_SIZE		; 32 bytes
 ; mode and perms
 
 ; file types
-MODE_SOCKET	.equ 0140000		; unix socket
-MODE_LINK	.equ 0120000		; symbolic link
-MODE_REGULAR	.equ 0100000		; regular file
-MODE_BLOCK_DEV	.equ 0060000		; block device node
-MODE_DIR	.equ 0040000		; directory
-MODE_CHAR_DEV	.equ 0020000		; character device node
-MODE_FIFO	.equ 0010000		; named pipe
+MODE_TYPE_MASK	.equ 0xf0		; for masking out the file types
+MODE_SOCKET	.equ 0xc0		; unix socket
+MODE_LINK	.equ 0xa0		; symbolic link
+MODE_REGULAR	.equ 0x80		; regular file
+MODE_BLOCK_DEV	.equ 0x60		; block device node
+MODE_DIR	.equ 0x40		; directory
+MODE_CHAR_DEV	.equ 0x20		; character device node
+MODE_FIFO	.equ 0x10 		; named pipe
 
 ; special bits
 MODE_SETUID	.equ 0004000		; set user id
@@ -76,6 +77,6 @@ MODE_IXOTH	.equ 00001		; other execute
 ; directory entry (dirent)
 
 structstart 	0
-member		MINIXDE_INODE,2			; inode number
+member		MINIXDE_INODENO,2			; inode number
 member		MINIXDE_NAME,30			; null padded filename
 structend	MINIXDE_SIZE			; 32 bytes

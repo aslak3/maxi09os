@@ -102,8 +102,8 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		ldb #B19200
 		lbsr sysopen
 		tfr x,u
-		ldx #shellstart
-		ldy #shell4taskname
+		ldx #monitorstart
+		ldy #montaskname
 		lbsr createtask
 
 ;		ldx #uartnamez

@@ -182,11 +182,12 @@ storestring:	lbsr copystr		; use the concatstr operation
 writememoryout:	clra			; clean exit
 		rts
 
-; parsetest BB WWWW "STRING" .... - test the parser by outputting what was parsed
+; parsetest BB WWWW "STRING" -A.... - test the parser by outputting what was parsed
 
 bytefoundz:	.asciz 'byte: '
 wordfoundz:	.asciz 'word: '
 stringfoundz:	.asciz 'string: '
+optionfoundz:	.asciz 'option: '
 
 parsetest:	tfr y,u
 		ldx defaultio
@@ -198,6 +199,8 @@ parsetestloop:	lda ,u+
 		beq wordfound
 		cmpa #3
 		beq stringfound
+		cmpa #4
+		beq optionfound
 		tsta
 		beq parsetestout
 		lbra generalerror
@@ -225,10 +228,19 @@ stringfound:	ldy #stringfoundz
 		lbsr putstr
 		tfr u,y
 		lbsr putstr
-		tfr y,u
+1$:		tst ,u+
+		bne 1$
 		ldy #newlinez
 		lbsr putstr
 		bra parsetestloop		
+
+optionfound:	ldy #optionfoundz
+		lbsr putstr
+		lda ,u+			; get next byte (the option char)
+		lbsr syswrite		; write it out as char
+		ldy #newlinez		; now add a newline
+		lbsr putstr
+		bra parsetestloop	; back for more
 
 ; readbyte AAAA - reads the byte at AAAA and displays it
 

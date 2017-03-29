@@ -68,48 +68,58 @@ strcmpout:	puls a,x,y
 
 parseinput::	pshs a,y
 commandinput:	lda ,x+			; get the char from command name
-		beq parseinputout	; null? out we go
+		beq noparams		; null? out we go
 		cmpa #ASC_SP		; space?
 		bne notspace		; no? then skip null insertion
 		clr ,y+			; set char to null
 		bra nextparseinput	; now the params...
 notspace:	sta ,y+			; save it
 		bra commandinput	; back for from the command
+noparams:	clr ,y+			; mark end of command
+		bra parseinputout		; end, no params
 nextparseinput:	lbsr skipspaces
 		lda ,x			; get the char under the new pos
 		beq parseinputout
-		cmpa #0x22		; double quote
+		cmpa #'"		; double quote
 		beq parsestring		; if so it is a string
+		cmpa #'-		; hyphen
+		beq parseoption		; if so then parse it as an option
 		lda 2,x			; get the next but one char
 		beq parsebyte		; null? it's a byte
-		cmpa #0x20		; space
+		cmpa #ASC_SP		; space
 		beq parsebyte		; yes? it's a byte
 		lda 4,x			; get the next but 3 char
 		beq parseword		; null? it's a word
-		cmpa #0x20		; space
+		cmpa #ASC_SP		; space
 		beq parseword		; yes? it's a word
 		bra parseinputout	; no match, so end
 parsebyte:	lda #1			; code 1 for bytes
 		sta ,y+			; add it into the stream
-		bsr aschextobyte	; yes? this pair must be a byte
+		lbsr aschextobyte	; yes? this pair must be a byte
 		sta ,y+			; save it in y
 		bra nextparseinput	; look for more
 parseword:	lda #2			; code 2 for words
 		sta ,y+			; add it in to the stream
 		lbsr aschextoword	; if we get here it must be a word
 		std ,y++		; save the word in y
-		bra nextparseinput
+		bra nextparseinput	; back for more tokens
 parsestring:	lda #3			; type 3 for strings
 		sta ,y+			; save the type
 		leax 1,x		; move to after the quote
 stringloop:	lda ,x+			; get the string data
 		beq parsestringout	; end of the string (bad though)
-		cmpa #0x22		; closing quote
+		cmpa #'"		; closing quote
 		beq parsestringout	; yes? end of the string
 		sta ,y+			; add it in
 		bne stringloop		; check for nulls too
 parsestringout:	clr ,y+			; finish the string
 		bra nextparseinput	; back for more elements
+parseoption:	lda #4			; type 4 for options
+		sta ,y+			; save the type
+		leax 1,x		; move to after the hyphen
+		lda ,x+			; get the option character
+		sta ,y+			; save the option character
+		bra nextparseinput	; back for more tokens
 parseinputout:	clr ,y+			; null ender
 		puls a,y
 		rts

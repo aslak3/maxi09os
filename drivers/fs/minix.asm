@@ -137,7 +137,7 @@ findinode::	pshs x,y
 		beq 2$			; no more dirents?
 		lbsr comparedirent	; compare		
 		bne 1$			; back for more
-		ldd MINIXDE_INODE,y	; get the inode number
+		ldd MINIXDE_INODENO,y	; get the inode number
 		setzero			; success
 		bra 3$			; done now 
 2$:		ldd #0			; null inode number
@@ -151,7 +151,7 @@ findinode::	pshs x,y
 getnextdirent::	pshs x,u
 		ldu #MINIXDE_SIZE	; set the size of the dirent
 		lbsr getbytes		; read it in
-		leax MINIXDE_INODE,y	; move x to the inode number
+		leax MINIXDE_INODENO,y	; move x to the inode number
 		lbsr swapword		; swap it
 		puls x,u
 		rts
