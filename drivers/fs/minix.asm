@@ -124,10 +124,10 @@ updatecurblock:	pshs a,b,x,y
 
 ; UTILITY
 
-; findinode - find the inode for the file named in u, searching in the
+; findinodeindir - find the inode for the file named in u, searching in the
 ; directory x, resultant inode number in d. uses 32 bytes of stack
 
-findinode::	pshs x,y
+findinodeindir:	pshs x,y
 		leas -MINIXDE_SIZE,s	; take 32 bytes of stack
 		ldy #0			; seek back to start of dirents
 		lbsr minixseek		; do the seek
@@ -168,8 +168,8 @@ comparedirent:	pshs x,y
 ; open a file by name, x is the directory and u is the name, the file is
 ; returned in x so the caller must store the directory handle away
 
-openfileindir::	pshs a,b,y,u
-		lbsr findinode		; get the inode for this filename
+openfileindir:	pshs a,b,y,u
+		lbsr findinodeindir	; get the inode for this filename
 		bne 1$			; not successful
 		tfr d,u			; todo: move this to d in minixopen
 		ldy MINIX_SB,x		; get the superblock struct
@@ -181,12 +181,11 @@ openfileindir::	pshs a,b,y,u
 2$:		puls a,b,y,u
 		rts
 
-
 ; stats a file by name, x is the directory and u is the name, and y is
 ; is where to put the inode
 
-statfileindir::	pshs a,b,x
-		lbsr findinode		; find this inode
+statfileindir:	pshs a,b,x
+		lbsr findinodeindir	; find this inode
 		bne 1$			; couldn't find the named inode
 		ldx MINIX_SB,x		; get the superblock
 		lbsr getinode		; fill inode d into memory y
@@ -205,10 +204,27 @@ opencwd::	pshs y,u
 		puls y,u
 		rts
 
+; find the inode for the file named in u, returing it in d
+
+findinode::	pshs x,y
+		lbsr opencwd		; open the current directory
+		tfr x,y			; save it so we can close it later
+		lbsr findinodeindir	; stat for the file
+		bne 1$			; getting the inode failed
+		tfr y,x			; get the dir back in x
+		lbsr minixclose		; now close it
+		setzero			; success
+		bra 2$			; out we go
+1$:		tfr y,x			; get the dir back in x
+		lbsr minixclose		; now close it
+		setnotzero		; failure
+2$:		puls x,y
+		rts
+
 ; open the file in the current directory, the name is in u, the open file
 ; will be in x
 
-openfile::	pshs y
+openfile::	pshs a,y
 		lbsr opencwd		; open the current directory
 		tfr x,y			; save it so we can close it later
 		lbsr openfileindir	; open the file in the current dir
@@ -217,7 +233,7 @@ openfile::	pshs y
 		lbsr minixclose		; close the dir
 		tfr y,x			; get thie file back in x
 		tfr a,cc		; restore condition codes
-		puls y
+		puls a,y
 		rts
 
 ; just a convience alias
@@ -227,9 +243,32 @@ closefile::	lbra minixclose		; this is a branch
 ; stat the file in the current directory, the name is in u, the memory
 ; in y
 
-statfile::	lbsr opencwd		; open the current directory
+statfile::	pshs a,x
+		lbsr opencwd		; open the current directory
 		lbsr statfileindir	; stat the file in u
 		tfr cc,a		; save condition codes
 		lbsr minixclose		; close the current directory
 		tfr a,cc		; restore condition codes
+		puls a,x
+		rts
+
+; change current directory to the named dir in u. uses 32+2 bytes of stack.
+
+changecwd::	pshs a,x,y
+		leas -MINIXIN_SIZE,s	; get 32+2 bytes of stack
+		tfr s,y			; set up the stat buffer
+		lbsr statfile		; find the inode
+		bne 1$			; out if that failed
+		lda MINIXIN_MODE,y	; get file type
+		anda #MODE_TYPE_MASK	; mask out perms bits
+		cmpa #MODE_DIR		; is it a directory?
+		bne 1$			; not a dir? then exit with failure
+		ldd MINIXIN_INODENO,y	; get inode number
+		ldx currenttask		; get the current task
+		std TASK_CWD_INODENO,x	; save the new current dir
+		setzero			; set success
+		bra 2$			; skip to cleanup
+1$:		setnotzero		; set failure
+2$:		leas MINIXIN_SIZE,s	; wind stack forward
+		puls a,x,y
 		rts

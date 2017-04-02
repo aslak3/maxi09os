@@ -148,11 +148,11 @@ showfile:	lda #'f
 
 type:		lda ,y+			; get type
 		cmpa #3			; string?
-		lbne badparams		; validation error
+		lbne parserfail		; validation error
 		tfr y,u			; get the filename
 
 		lbsr openfile		; open the file
-		lbne commfailed
+		lbne notfound		; not found error?
 		tfr x,y			; y now has the file device
 		ldx defaultio		; has the default io channel
 1$:		exg x,y			; x now has the file
@@ -169,33 +169,55 @@ type:		lda ,y+			; get type
 		lbsr syswrite
 		bra 1$
 3$:		lbsr sysclose
+		setzero
+		rts
+
+; cd "foo" - type the file to the output device
+
+cd:		lda ,y+			; get type
+		cmpa #3			; string?
+		lbne parserfail		; validation error
+		tfr y,u			; get the filename
+
+		lbsr changecwd		; change the current working dir
+		lbne notadir		; not a directory
+
 		rts
 
 ; failure message branches
 
-badparamsz:	.asciz 'Bad parameters\r\n'
+general:	lda #ERR_GENERAL
+		bra showerror
+parserfail:	lda #ERR_PARSER_FAIL
+		bra showerror
+notadir:	lda #ERR_NOT_A_DIR
+		bra showerror
+notfound:	lda #ERR_NOT_FOUND
+		bra showerror
+internal:	lda #ERR_INTERNAL
+		bra showerror
 
-badparams:	ldy #badparamsz
-		lbsr putstrdefio
-		rts
-
-commfailedz:	.asciz 'Command failed\r\n'
-
-commfailed:	ldy #commfailedz
-		lbsr putstrdefio
-		rts
-
-generalerror:	
+showerror:	ldx defaultio		; get io channel
+		lbsr geterrorstr	; get error message from a into y
+		lbsr putstr		; print it out
+		ldy #newlinemsg		; add a new line
+		lbsr putstr		; yep, there it is
+		setnotzero		; set failed
+		rts	
 
 ; built in commands
 
 listcz:		.asciz 'list'
 typecz:		.asciz 'type'
+cdcz:		.asciz 'cd'
 
 commandarray:	.word listcz
 		.word list
 
 		.word typecz
 		.word type
+
+		.word cdcz
+		.word cd
 
 		.word 0x0000

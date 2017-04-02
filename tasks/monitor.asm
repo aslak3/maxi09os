@@ -725,44 +725,15 @@ dogetbytes:	lda ,y+			; get the type
 
 		rts
 
-; findinode DDDD "filename"
+; findinode "filename"
 
 dofindinode:	lda ,y+			; get the type
-		cmpa #2			; word?
-		lbne generalerror	; validation error
-		ldx ,y++		; get the dir handle
-
-		lda ,y+			; get the type
 		cmpa #3			; word?
 		lbne generalerror	; validation error
 
 		tfr y,u			; filename in u
 
 		lbsr findinode
-
-		ldy #resultz		; print a nice label
-		lbsr putlabwdefio	; print the device handle
-
-		clra
-
-		rts
-
-; openfileindir DDDD "filename"
-
-doopenfileindir:lda ,y+			; get the type
-		cmpa #2			; word?
-		lbne generalerror	; validation error
-		ldx ,y++		; get the dir handle
-
-		lda ,y+			; get the type
-		cmpa #3			; word?
-		lbne generalerror	; validation error
-
-		tfr y,u			; filename needs to be in u
-
-		lbsr openfileindir
-
-		tfr x,d
 
 		ldy #resultz		; print a nice label
 		lbsr putlabwdefio	; print the device handle
@@ -786,30 +757,6 @@ doopenfile:	lda ,y+			; get the type
 		lbsr putlabwdefio	; print the device handle
 
 		clra
-
-		rts
-
-; statfileindir "filename" MMMM
-
-dostatfileindir:lda ,y+			; get the type
-		cmpa #2			; word?
-		lbne generalerror	; validation error
-		ldx ,y++		; get the dir handle
-
-		lda ,y+			; get the type
-		cmpa #3			; word?
-		lbne generalerror	; validation error
-		tfr y,u			; filename needs to be in u
-
-1$:		tst ,y+			; testing for nulls
-		bne 1$			; keep advancing y to the end
-
-		lda ,y+			; get the type
-		cmpa #2			; byte?
-		lbne generalerror	; validation error
-		ldy, y++		; get the memory
-		
-		lbsr statfileindir
 
 		rts
 
@@ -898,9 +845,6 @@ unmntminixcz:	.asciz 'unmountminix'
 dogetinodecz:	.asciz 'getinode'
 dogetbytescz:	.asciz 'getbytes'
 dofindinodecz:	.asciz 'findinode'
-
-doopenfileincz:	.asciz 'openfileindir'
-dostatfileincz:	.asciz 'statfileindir'
 doopenfilecz:	.asciz 'openfile'
 dostatfilecz:	.asciz 'statfile'
 
@@ -977,12 +921,6 @@ commandarray:	.word helpcz
 
 		.word dofindinodecz
 		.word dofindinode
-
-		.word doopenfileincz
-		.word doopenfileindir
-
-		.word dostatfileincz
-		.word dostatfileindir
 
 		.word doopenfilecz
 		.word doopenfile

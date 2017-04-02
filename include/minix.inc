@@ -20,7 +20,7 @@ member 		MINIXSB_MAGIC,2		; magic!
 member 		MINIXSB_STATE,2		; clean/dirty state?
 member 		MINIXSB_ZONES,4		; number of zones? (long)
 structend 	MINIXSB_SBSIZE		; size on disk (not a struct field)
-; below  here is memory only, not on the disk
+; below here is memory only, not on the disk
 member 		MINIXSB_DEVICE,2	; the underlying device
 member 		MINIXSB_INOFF,2		; block number the inodes start at
 member 		MINIXSB_INBASE,2	; first inode div32 number in cache
@@ -37,7 +37,10 @@ member		MINIXIN_TIME,4		; timestamp (long)
 member		MINIXIN_GID,1		; group id (byte!)
 member		MINIXIN_NLINKS,1	; number of links (byte)
 member		MINIXIN_ZONES,9*2	; 9 zone (block) pointers
-structend	MINIXIN_SIZE		; 32 bytes
+structend	MINIXIN_INSIZE		; size on disk (32 bytes)
+; below here is memory, not on the disk
+member		MINIXIN_INODENO,2	; the inode number
+structend	MINIXIN_SIZE
 
 ; mode and perms
 

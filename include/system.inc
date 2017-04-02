@@ -87,11 +87,14 @@ structend	TASK_SIZE
 SIGNAL_CHILD	.equ 0x80		; child task has exited
 SIGNAL_RESERVED	.equ SIGNAL_CHILD	; not available for tasks
 
-; exit codes
+; error codes
 
-EXIT_OK		.equ 0			; all ok
-EXIT_ERROR	.equ 1			; generic failure code
-EXIT_UNDEF	.equ 0xff		; task not exited yet
+ERR_OK		.equ 0			; all ok
+ERR_GENERAL	.equ 1			; generic failure code
+ERR_PARSER_FAIL	.equ 2			; parser failed
+ERR_NOT_A_DIR	.equ 3			; not a directory
+ERR_NOT_FOUND	.equ 4			; file not found
+ERR_INTERNAL	.equ 5			; task not exited yet
 
 ; a record describing an available driver
 

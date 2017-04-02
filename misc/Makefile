@@ -1,3 +1,3 @@
-RELS = debug.rel misc.rel
+RELS = debug.rel misc.rel errors.rel
 
 include ../Makefile.inc

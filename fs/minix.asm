@@ -87,6 +87,7 @@ readfsblock::	pshs a,b,x,u		; save the file handle
 ; have then use that copy
 
 getinode::	pshs a,b,x
+		std MINIXIN_INODENO,y	; save the inode number
 		subd #1			; inodes start at 1
 		tfr d,u			; save inode number
 		lbsr div32		; find the inode block
@@ -98,7 +99,7 @@ getinode::	pshs a,b,x
 		lbsr mul32		; d now has byte offset start of inode
 		leax MINIXSB_INCACHE,x	; move x to the start of the cache
 		leax d,x		; add on the 32 byte inode offset
-		lda #MINIXIN_SIZE	; copy the whole inode
+		lda #MINIXIN_INSIZE	; copy the whole disk inode
 		lbsr memcpy256		; and do the copy
 		leax MINIXIN_MODE,y	; swap the file mode/type
 		lbsr swapword

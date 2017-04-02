@@ -59,7 +59,7 @@ newtask::	pshs a,y,u
 		sty TASK_DISPCOUNT,x	; count of scheduled times
 		sty TASK_PARENT,x	; no parent
 		sty TASK_DEF_IO,x	; no default io channel
-		lda #EXIT_UNDEF		; undefined error
+		lda #ERR_INTERNAL	; internal error, until set
 		sta TASK_EXIT_CODE,x	; save exit code
 		leay TASK_DEAD_LIST,x	; get dead list
 		lbsr initlist
@@ -91,7 +91,7 @@ exittask::	debugreg ^'Task exiting: ',DEBUG_TASK,DEBUG_REG_A
 ; will be in a. if no tasks were waiting to be expunged, then zero is set.
 
 childexit::	pshs y,x
-		lda #EXIT_ERROR		; general bad exit code
+		lda #ERR_GENERAL	; general bad exit code
 		ldx currenttask		; get curent task
 		leay TASK_DEAD_LIST,x	; get the list of dead children
 		lbsr remtaskfrom	; get oldest dead child
