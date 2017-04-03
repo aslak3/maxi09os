@@ -12,6 +12,7 @@ drivertable:	.word uartdef
 		.word timerdef
 		.word idedef
 		.word minixdef
+		.word joydef
 		.word 0x0000
 
 ; inits all drivers

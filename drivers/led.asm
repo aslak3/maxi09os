@@ -30,11 +30,11 @@ ledopen:	lbsr forbid		; enter critical section
 		sty DEVICE_SEEK,x	; seek
 		sty DEVICE_CONTROL,x	; and control
 		lbsr permit		; exit critical section
-		setnotzero
+		setzero
 		rts
 1$:		lbsr permit		; exit critical section
 		ldx #0			; return 0
-		setzero			; port is in use
+		setnotzero		; port is in use
 		rts
 
 ; led close - give it the device in x
