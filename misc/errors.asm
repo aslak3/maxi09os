@@ -5,14 +5,16 @@
 okz:		.asciz 'Ok (no error)'
 generalz:	.asciz 'Failure'
 parserfailz:	.asciz 'Parser error'
-notadirz:	.asciz 'Not a directory'
+notdirz:	.asciz 'Not a directory'
+notregularz:	.asciz 'Not a regular file'
 notfoundz:	.asciz 'Not found'
 internalz:	.asciz 'Internal error'
 
 errortable:	.word okz
 		.word generalz
 		.word parserfailz
-		.word notadirz
+		.word notdirz
+		.word notregularz
 		.word notfoundz
 		.word internalz	
 

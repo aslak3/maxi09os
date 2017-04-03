@@ -204,7 +204,7 @@ opencwd::	pshs y,u
 		puls y,u
 		rts
 
-; find the inode for the file named in u, returing it in d
+; find the inode number for the file named in u, returing it in d
 
 findinode::	pshs x,y
 		lbsr opencwd		; open the current directory
@@ -250,6 +250,25 @@ statfile::	pshs a,x
 		lbsr minixclose		; close the current directory
 		tfr a,cc		; restore condition codes
 		puls a,x
+		rts
+
+; grab a copy of the open file's inode and copy it into y
+
+statopenfile::	pshs x
+		leax MINIX_INODE,x	; move source of copy to inode
+		lda #MINIXIN_SIZE	; set the size of the copy
+		lbsr memcpy256		; copy the inode into y
+		puls x
+		rts
+
+; get the type of the open file and put it in a, it is masked to include
+; only the file type
+
+typeopenfile::	pshs x
+		leax MINIX_INODE,x	; move to the inode
+		lda MINIXIN_MODE,x	; get the type
+		anda #MODE_TYPE_MASK	; mask off to include just type
+		puls x
 		rts
 
 ; change current directory to the named dir in u. uses 32+2 bytes of stack.

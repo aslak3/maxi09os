@@ -153,6 +153,9 @@ type:		lda ,y+			; get type
 
 		lbsr openfile		; open the file
 		lbne notfound		; not found error?
+		lbsr typeopenfile	; get the type of opened thing
+		cmpa #MODE_REGULAR	; see if it is a normal file
+		lbne notregularfile	; error out of not a normal file
 		tfr x,y			; y now has the file device
 		ldx defaultio		; has the default io channel
 1$:		exg x,y			; x now has the file
@@ -180,7 +183,7 @@ cd:		lda ,y+			; get type
 		tfr y,u			; get the filename
 
 		lbsr changecwd		; change the current working dir
-		lbne notadir		; not a directory
+		lbne notdir		; not a directory
 
 		rts
 
@@ -190,7 +193,9 @@ general:	lda #ERR_GENERAL
 		bra showerror
 parserfail:	lda #ERR_PARSER_FAIL
 		bra showerror
-notadir:	lda #ERR_NOT_A_DIR
+notdir:		lda #ERR_NOT_DIR
+		bra showerror
+notregularfile:	lda #ERR_NOT_REGULAR
 		bra showerror
 notfound:	lda #ERR_NOT_FOUND
 		bra showerror
