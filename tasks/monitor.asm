@@ -6,6 +6,7 @@ inputbuffer:	.rmb 80
 parambuffer:	.rmb 100
 dumppointer:	.rmb 2
 dumpcounter:	.rmb 2
+taskslong:	.rmb 1
 
 		.area ROM
 
@@ -257,6 +258,7 @@ readbyte:	lda ,y+
 		lbsr putstr		; to tidy things up
 		clra			; success
 		rts
+
 ; memory - show the memory info
 
 totalmemz:	.asciz 'Total: '
@@ -289,7 +291,17 @@ readytasksz:	.asciz 'READY TASKS\r\n'
 waitingtasksz:	.asciz 'WAITING TASKS\r\n'
 idlerz:		.asciz 'IDLER\r\n'
 
-tasks:		ldy #readytasksz	; the heading for ready tasks
+tasks:		clr taskslong		; not in long mode by default
+		lda ,y+			; get type
+		cmpa #4			; looking for options
+		bne 1$			; skip
+		lda ,y+			; get option
+		cmpa #'l		; look for long option
+		bne 1$			; skip
+		lda #1			; otherwise match, set long mode
+		sta taskslong		; set long mode
+
+1$:		ldy #readytasksz	; the heading for ready tasks
 		lbsr putstrdefio	; show this heading in default io
 		ldy #readytasks		; get the ready tasks list
 		lbsr showtasklist	; show this list
@@ -319,8 +331,7 @@ endtasklist:	ldy #newlinez		; tidy up...
 		rts
 
 lchevronsz:	.asciz '<<<'
-rchevronsz:	.asciz '>>>'
-taskz:		.asciz 'Task: '
+rchevronsz:	.asciz '>>> '
 parentz:	.asciz 'Parent: '
 defaultioz:	.asciz 'Default IO: '
 cwdinodenoz:	.asciz 'CWD INode Number: '
@@ -343,11 +354,13 @@ showtask:	pshs x
 		ldy #rchevronsz
 		lbsr putstr
 
-		ldy #newlinez
-		lbsr putstr
 		tfr u,d
-		ldy #taskz
-		lbsr putlabw
+		lbsr putword
+		ldy #newlinemsg
+		lbsr putstr
+
+		tst taskslong		; check for long mode
+		beq 1$			; not long, so out we go now
 
 		ldd TASK_PARENT,u
 		ldy #parentz
@@ -388,7 +401,7 @@ showtask:	pshs x
 		ldy TASK_SP,u
 		lbsr taskregisters
 
-		puls x
+1$:		puls x
 		rts
 
 ; shows the registers as they were when the monitor was entered
@@ -460,6 +473,8 @@ task:		lda ,y+			; get the type
 		lbne generalerror	; validation error
 		ldx ,y++		; get the task hanlde
 
+		lda #1
+		sta taskslong		; always show long form
 		lbsr showtask		; show that task
 
 		rts

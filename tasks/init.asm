@@ -7,6 +7,7 @@
 		.area RAM
 
 rootdevice:	.rmb 2			; the open root device
+initiodevice:	.rmb 2			; init's console
 
 		.area ROM
 
@@ -26,7 +27,10 @@ shell3taskname:	.asciz 'shell3'
 shell4taskname:	.asciz 'shell4'
 
 rootdevnamez:	.asciz 'ide'
-rootunit:	.rmb 01
+rootunit:	.byte 1
+initioz:	.asciz 'uart'
+initiounit:	.byte 0
+initiobaud:	.byte B19200
 
 ; mount the root device, storing it in the variable rootdevice
 
@@ -48,9 +52,39 @@ mountroot:	tst rootunit		; get the root unit and see if its 0
 
 		rts
 
+openinitio:	ldx #initioz		; device
+		lda initiounit		; unit
+		ldb initiobaud		; baud rate
+		lbsr sysopen
+		stx initiodevice
+		rts
+
+closeinitio:	ldx initiodevice
+		lbsr sysclose
+		ldx #0
+		stx initiodevice
+		rts
+
+writeinitstr:	ldx initiodevice
+		lbsr putstr
+		rts		
+
+initstartedz:	.asciz '\r\n\r\nInit started\r\n'
+rootmountedz:	.asciz 'Root mounted\r\n'
+
 init::		debug ^'Init started',DEBUG_GENERAL
 
+		lbsr openinitio
+
+		ldy #initstartedz
+		lbsr writeinitstr
+
 		lbsr mountroot		; mount the root device
+
+		ldy #rootmountedz
+		lbsr writeinitstr
+
+		lbsr closeinitio
 
 		ldx currenttask		; get init's task struct
 		ldy #1			; root inode is 0001

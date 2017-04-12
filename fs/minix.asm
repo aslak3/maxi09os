@@ -91,6 +91,7 @@ getinode::	pshs a,b,x
 		subd #1			; inodes start at 1
 		tfr d,u			; save inode number
 		lbsr div32		; find the inode block
+		lbsr forbid		; enter criticial section
 		cmpd MINIXSB_INBASE,x	; compare it with the cache base
 		bne 3$			; not got this inode
 1$:		tfr u,d			; get inode back
@@ -115,6 +116,7 @@ getinode::	pshs a,b,x
 		leax 2,x		; advance to next zone
 		deca			; next zone (block)
 		bne 2$			; more zones?
+		lbsr permit		; leave criticial section
 		puls a,b,x
 		rts
 3$:		lbsr redoinodecache	; read the inode block
