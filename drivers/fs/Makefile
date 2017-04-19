@@ -1,3 +1,1 @@
-RELS = minix.rel
-
-include ../../Makefile.inc
+RELS += $(addprefix drivers/fs/, minix.rel)

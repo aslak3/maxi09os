@@ -1,3 +1,1 @@
-RELS = minix.rel
-
-include ../Makefile.inc
+RELS += $(addprefix fs/, minix.rel)

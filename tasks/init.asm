@@ -1,9 +1,25 @@
 ; our init task
 
-		.include '../include/system.inc'
-		.include '../include/debug.inc'
-		.include '../include/hardware.inc'
+		.include 'include/system.inc'
+		.include 'include/debug.inc'
+		.include 'include/hardware.inc'
 
+		.globl sysopen
+		.globl sysclose
+		.globl syscontrol
+		.globl sysread
+		.globl syswrite
+		.globl mountminix
+		.globl rootsuperblock
+		.globl putstr
+		.globl currenttask
+		.globl timertask
+		.globl echotask
+		.globl shellstart
+		.globl monitorstart
+		.globl createtask
+		.globl wait
+		
 		.area RAM
 
 rootdevice:	.rmb 2			; the open root device

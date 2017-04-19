@@ -1,10 +1,13 @@
 ; memory allocator and deallocator
 
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
-		.include '../include/debug.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+		.include 'include/debug.inc'
 
-.globl		l_RAM
+		.globl forbid
+		.globl permit
+
+		.globl l_RAM
 
 		.area ROM
 

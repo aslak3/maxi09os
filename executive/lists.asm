@@ -1,7 +1,7 @@
 ; linked list routines
 
-		.include '../include/system.inc'
-		.include '../include/debug.inc'
+		.include 'include/system.inc'
+		.include 'include/debug.inc'
 
 		.area ROM
 

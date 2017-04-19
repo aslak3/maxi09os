@@ -1,3 +1,1 @@
-RELS = uartlowlevel.rel
-
-include ../../Makefile.inc
+RELS += $(addprefix drivers/shared/, uartlowlevel.rel)

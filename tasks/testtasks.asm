@@ -1,9 +1,28 @@
 ; our two tasks
 
-		.include '../include/system.inc'
-		.include '../include/debug.inc'
-		.include '../include/hardware.inc'
-		.include '../include/ascii.inc'
+		.include 'include/system.inc'
+		.include 'include/debug.inc'
+		.include 'include/hardware.inc'
+		.include 'include/ascii.inc'
+
+		.globl bytetoaschex
+		.globl defaultio
+		.globl memoryalloc
+		.globl memoryavail
+		.globl newlinemsg
+		.globl getstr
+		.globl putlabb
+		.globl putlabw
+		.globl putstr
+		.globl strcmp
+		.globl syscontrol
+		.globl sysopen
+		.globl sysread
+		.globl syswrite
+		.globl wait
+		.globl runchild
+		.globl delay
+		.globl exittask
 
 		.area RAM
 

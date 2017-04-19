@@ -1,3 +1,1 @@
-RELS = debug.rel misc.rel errors.rel
-
-include ../Makefile.inc
+RELS += $(addprefix misc/, debug.rel errors.rel misc.rel)

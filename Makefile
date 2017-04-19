@@ -1,6 +1,5 @@
-export PATH := $(shell pwd)/tools:$(PATH)
-
-FLASHER = flasher
+AS = as6809-wrapper -oxsw
+FLASHER = tools/flasher
 
 6809_SERIAL = /dev/ttyS0
 
@@ -8,41 +7,26 @@ BIN = main.bin
 
 AREA_BASES = -b VECTORS=0xfff0 -b ROM=0xc000 -b DEBUGMSG=0xf800 -b RAM=0x0000
 
-DIRS = main drivers executive lib misc tasks fs
+INCS = $(addprefix include/, ascii.inc debug.inc hardware.inc \
+	minix.inc scancodes.inc system.inc v99lowlevel.inc)
 
-CLEANDIRS = $(addsuffix .clean, $(DIRS))
-DIRSALL = $(addsuffix /all.rel, $(DIRS))
+MAIN_REL = main/main.rel
 
-.PHONY: $(DIRS) $(CLEANDIRS)
+include $(addsuffix Makefile, drivers/ executive/ fs/ lib/ misc/ tasks/)
 
 all: $(BIN)
 
-clean: $(CLEANDIRS)
-	rm -f $(DIRSALL) $(BIN) *.ihx *.map *.sym include/externs.inc
-	
 main.bin: main.ihx
 	hex2bin -out $@ $<
 
-main.ihx: $(DIRSALL)
-	aslink $(AREA_BASES) -nmwi main.ihx $(DIRSALL)
+main.ihx: $(RELS) $(MAIN_REL)
+	aslink $(AREA_BASES) -nmwi main.ihx $(MAIN_REL) $(RELS)
 
-$(DIRSALL): $(DIRS)
-	make -C $(dir $@)
+%.rel: %.asm $(INCS)
+	$(AS) $@ $<
 
-$(CLEANDIRS):
-	make -C $(basename $@) clean
-
-include/externs.inc:
-	for I in $$(find -name "*.asm" | grep -v debug.asm); do \
-		echo -n  "; " ; \
-		echo $$I | cut -c 3- ; \
-		echo; \
-		for F in $$(cat $$I | grep :: | cut -d ":" -f 1); do \
-			echo "\t\t.globl $$F"; \
-		done; \
-		echo; \
-	 done \
-	 > $@
-
+clean: $(CLEANDIRS)
+	rm -f $(RELS) $(BIN) *.ihx *.map
+	
 flasher:
 	$(FLASHER) -f $(BIN) -s $(6809_SERIAL)

@@ -1,8 +1,15 @@
 ; uart driver - low level (hardware) layer - for the 16C654
 
-		.include '../../include/system.inc'
-		.include '../../include/hardware.inc'
-		.include '../../include/debug.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+		.include 'include/debug.inc'
+
+		.globl disable
+		.globl enable
+		.globl inthandlers
+		.globl uartrxhandler
+		.globl conrxhandler
+		.globl tailhandler
 
 		.area RAM
 

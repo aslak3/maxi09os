@@ -1,9 +1,11 @@
 ; scancode translation
 
-		.include '../../include/system.inc'
-		.include '../../include/ascii.inc'
-		.include '../../include/scancodes.inc'
-		.include '../../include/hardware.inc'
+		.include 'include/system.inc'
+		.include 'include/ascii.inc'
+		.include 'include/scancodes.inc'
+		.include 'include/hardware.inc'
+
+		.globl toupper
 
 		.area RAM
 

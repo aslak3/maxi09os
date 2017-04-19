@@ -1,6 +1,26 @@
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
-		.include '../include/debug.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+		.include 'include/debug.inc'
+
+		.globl interruptnest
+		.globl permitnest
+		.globl yield
+		.globl driverprepare
+		.globl tickerinit
+		.globl memoryinit
+		.globl reschedflag
+		.globl readytasks
+		.globl initlist
+		.globl waitingtasks
+		.globl idler
+		.globl newtask
+		.globl settaskname
+		.globl delay
+		.globl idletask
+		.globl init
+		.globl createtask
+		.globl doneschedule
+		.globl inthandlers
 
 		.area VECTORS
 

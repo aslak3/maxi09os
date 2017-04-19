@@ -1,7 +1,15 @@
 ; joy driver
 
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+
+		.globl memoryalloc
+		.globl memoryfree
+		.globl currenttask
+		.globl devicenotimpl
+		.globl signalalloc
+		.globl forbid
+		.globl permit
 
 		.area RAM
 

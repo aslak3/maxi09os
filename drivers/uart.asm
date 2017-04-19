@@ -1,8 +1,21 @@
 ; uart driver - for the 16C654
 
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
-		.include '../include/debug.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+		.include 'include/debug.inc'
+
+		.globl uartllopen
+		.globl uartllclose
+		.globl uartllsetbaud
+		.globl memoryalloc
+		.globl memoryfree
+		.globl currenttask
+		.globl devicenotimpl
+		.globl signalalloc
+		.globl remove
+		.globl enable
+		.globl disable
+		.globl driversignal
 
 PORTCOUNT	.equ 4
 

@@ -1,4 +1,40 @@
-		.include '../include/system.inc'
+		.include 'include/system.inc'
+
+		.globl memoryavail
+		.globl defaultio
+		.globl findinode
+		.globl forbid
+		.globl permit
+		.globl getbytes
+		.globl unmountminix
+		.globl mountminix
+		.globl getinode
+		.globl copystr
+		.globl parseinput
+		.globl strcmp
+		.globl idletask
+		.globl newlinemsg
+		.globl newlinez
+		.globl openfile
+		.globl printableasc
+		.globl getstr
+		.globl putbyte
+		.globl putlabbb
+		.globl putlabbdefio
+		.globl putlabw
+		.globl putlabwdefio
+		.globl putstr
+		.globl putstrdefio
+		.globl putword
+		.globl readytasks
+		.globl statfile
+		.globl sysclose
+		.globl syscontrol
+		.globl sysopen
+		.globl sysread
+		.globl sysseek
+		.globl syswrite
+		.globl waitingtasks
 
 		.area RAM
 

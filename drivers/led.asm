@@ -1,7 +1,13 @@
 ; led driver
 
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+
+		.globl forbid
+		.globl permit
+		.globl memoryalloc
+		.globl memoryfree
+		.globl devicenotimpl
 
 		.area RAM
 

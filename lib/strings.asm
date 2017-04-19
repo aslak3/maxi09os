@@ -1,7 +1,7 @@
 		;;; STRINGS ;;;
 
-		.include '../include/system.inc'
-		.include '../include/ascii.inc'
+		.include 'include/system.inc'
+		.include 'include/ascii.inc'
 
 		.area ROM
 

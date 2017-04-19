@@ -1,5 +1,3 @@
-		.include 'externs.inc'
-
 ; DEBUG related
 
 ;.define DEBUG

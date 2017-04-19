@@ -1,8 +1,18 @@
 ; GENERIC DRIVER FUNCTIONS
 
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
-		.include '../include/debug.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+		.include 'include/debug.inc'
+
+		.globl uartdef
+		.globl consoledef
+		.globl leddef
+		.globl timerdef
+		.globl idedef
+		.globl minixdef
+		.globl joydef
+		.globl strcmp
+		.globl intsignal
 
 		.area ROM
 

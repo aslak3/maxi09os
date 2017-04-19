@@ -1,8 +1,32 @@
 ; shell task
 
-		.include '../include/system.inc'
-		.include '../include/minix.inc'
-		.include '../include/ascii.inc'
+		.include 'include/system.inc'
+		.include 'include/minix.inc'
+		.include 'include/ascii.inc'
+
+		.globl newlinemsg
+		.globl changecwd
+		.globl currenttask
+		.globl defaultio
+		.globl geterrorstr
+		.globl getinode
+		.globl opencwd
+		.globl getnextdirent
+		.globl rootsuperblock
+		.globl typeopenfile
+		.globl getstr
+		.globl memoryalloc
+		.globl openfile
+		.globl closefile
+		.globl parseinput
+		.globl putbyte
+		.globl putstr
+		.globl putstrdefio
+		.globl putword
+		.globl strmatcharray
+		.globl sysclose
+		.globl sysread
+		.globl syswrite
 
 structstart	0
 member		SHELL_INPUT,256

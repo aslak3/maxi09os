@@ -1,6 +1,30 @@
-		.include '../include/system.inc'
-		.include '../include/debug.inc'
-		.include '../include/hardware.inc'
+		.include 'include/system.inc'
+		.include 'include/debug.inc'
+		.include 'include/hardware.inc'
+
+		.globl currenttask
+		.globl defaultio
+		.globl idletask
+		.globl waitingtasks
+		.globl readytasks
+		.globl addtaskto
+		.globl remove
+		.globl addtail
+		.globl addhead
+		.globl remhead
+		.globl remtail
+		.globl memoryalloc
+		.globl memoryfree
+		.globl initlist
+		.globl disable
+		.globl enable
+		.globl copystr
+		.globl runtimers
+		.globl permitnest
+		.globl interruptnest
+		.globl sysopen
+		.globl syswrite
+		.globl delay
 
 		.area ROM
 

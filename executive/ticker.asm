@@ -1,7 +1,10 @@
 ;;; TIMER ;;;
 
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+
+		.globl tickerhandler
+		.globl inthandlers
 
 		.area ROM
 

@@ -1,10 +1,23 @@
 ; minix driver - sits atop the block (prob ide) driver and presents read and
 ; writes to the contents of a "file", which might be a directory, symlink etc
 
-		.include '../../include/system.inc'
-		.include '../../include/hardware.inc'
-		.include '../../include/debug.inc'
-		.include '../../include/minix.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+		.include 'include/debug.inc'
+		.include 'include/minix.inc'
+
+		.globl memoryalloc
+		.globl memoryfree
+		.globl currenttask
+		.globl rootsuperblock
+		.globl devicenotimpl
+		.globl getinode
+		.globl readfsblock
+		.globl getbytes
+		.globl swapword
+		.globl swaplong
+		.globl strcmp
+		.globl memcpy256
 
 structstart	DEVICE_SIZE
 member		MINIX_SB,2		; a handle to the superblock 

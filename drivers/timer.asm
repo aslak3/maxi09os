@@ -1,8 +1,21 @@
 ; timer driver
 
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
-		.include '../include/debug.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+		.include 'include/debug.inc'
+
+		.globl memoryalloc
+		.globl memoryfree
+		.globl currenttask
+		.globl devicenotimpl
+		.globl signalalloc
+		.globl enable
+		.globl disable
+		.globl driversignal
+		.globl initlist
+		.globl addtail
+		.globl remove
+		.globl intsignal
 
 		.area RAM
 

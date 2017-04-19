@@ -1,3 +1,1 @@
-RELS = v99lowlevel.rel strings.rel io.rel
-
-include ../Makefile.inc
+RELS += $(addprefix lib/, io.rel strings.rel v99lowlevel.rel)

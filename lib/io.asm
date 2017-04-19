@@ -1,7 +1,13 @@
-		.include '../include/ascii.inc'
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
-		.include '../include/debug.inc'
+		.include 'include/ascii.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+		.include 'include/debug.inc'
+
+		.globl sysread
+		.globl syswrite
+		.globl defaultio
+		.globl wait
+		.globl newlinemsg
 
 		.area ROM
 

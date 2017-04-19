@@ -7,12 +7,38 @@
 ; 0x9000 - console 1 text data
 ; etc upto console 5
 
-		.include '../../include/hardware.inc'
-		.include '../../include/v99lowlevel.inc'
-		.include '../../include/system.inc'
-		.include '../../include/scancodes.inc'
-		.include '../../include/ascii.inc'
-		.include '../../include/debug.inc'
+		.include 'include/hardware.inc'
+		.include 'include/v99lowlevel.inc'
+		.include 'include/system.inc'
+		.include 'include/scancodes.inc'
+		.include 'include/ascii.inc'
+		.include 'include/debug.inc'
+
+		.globl uartllopen
+		.globl uartllclose
+		.globl uartllsetbaud
+		.globl memoryalloc
+		.globl memoryfree
+		.globl currenttask
+		.globl devicenotimpl
+		.globl signalalloc
+		.globl enable
+		.globl disable
+		.globl forbid
+		.globl permit
+		.globl driversignal
+		.globl initlist
+		.globl addtail
+		.globl remove
+		.globl intsignal
+		.globl vinit
+		.globl vsetcolours
+		.globl vclear
+		.globl vread
+		.globl vwrite
+		.globl fontdata
+		.globl vseekwrite
+		.globl mapscancode
 
 CONSOLECOUNT	.equ 6			; the number of virtual consoles
 PORTKEYBOARD	.equ PORTD		; the uart port attached to keybard

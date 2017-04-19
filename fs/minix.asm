@@ -1,9 +1,23 @@
 ; non-driver minix routines
 
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
-		.include '../include/minix.inc'
-		.include '../include/debug.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+		.include 'include/minix.inc'
+		.include 'include/debug.inc'
+
+		.globl memoryalloc
+		.globl memoryfree
+		.globl currenttask
+		.globl devicenotimpl
+		.globl signalalloc
+		.globl forbid
+		.globl permit
+		.globl memcpy256
+		.globl swapword
+		.globl swaplong
+		.globl sysread
+		.globl div32
+		.globl mul32
 
 		.area ROM
 

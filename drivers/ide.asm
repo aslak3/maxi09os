@@ -1,7 +1,14 @@
 ; ide low level driver
 
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+
+		.globl memoryalloc
+		.globl memoryfree
+		.globl currenttask
+		.globl devicenotimpl
+		.globl forbid
+		.globl permit
 
 PARTS		.equ 4			; 4 disk partitions
 

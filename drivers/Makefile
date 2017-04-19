@@ -1,5 +1,3 @@
-RELS = uart.rel led.rel timer.rel ide.rel joy.rel driver.rel
+RELS += $(addprefix drivers/, uart.rel led.rel timer.rel ide.rel joy.rel driver.rel)
 
-DIRS = console shared fs
-
-include ../Makefile.inc
+include $(addsuffix /Makefile, $(addprefix drivers/, console shared fs))

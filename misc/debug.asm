@@ -1,8 +1,8 @@
 ; debug - port c output
 
-		.include '../include/system.inc'
-		.include '../include/hardware.inc'
-		.include '../include/debug.inc'
+		.include 'include/system.inc'
+		.include 'include/hardware.inc'
+		.include 'include/debug.inc'
 
 .if DEBUG_MODE
 
