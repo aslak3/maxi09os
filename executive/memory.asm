@@ -11,10 +11,11 @@
 
 		.area ROM
 
-MEM_NEXT_O	.equ 0
-MEM_LENGTH_O	.equ 2
-MEM_FREE_O	.equ 4
-MEM_SIZE	.equ 5
+structstart	0
+member		MEM_NEXT_O,2		; the next memory block pointer
+member		MEM_LENGTH_O,2		; the length of this block
+member		MEM_FREE_O,1		; 1=free, 0=not free
+structend	MEM_SIZE
 
 memoryinit::	debug ^'Memory init',DEBUG_MEMORY
 		pshs a,b,x,y
@@ -45,7 +46,6 @@ memoryavail::	debugreg ^'Memory avail: ',DEBUG_MEMORY,DEBUG_REG_A
 		cmpa #MEM_LARGEST	; largest mode
 		beq dolargest		; run the largest loop
 		clra			; invalid input, clear bottom
-
 availout:	lbsr permit		; leave critical section
 		puls y
 		rts
@@ -96,8 +96,7 @@ checkfree:	cmpx MEM_LENGTH_O,y	; see how big this free block is
 		ble blockfits		; it fits!
 		bra checknext		; back to check the next one
 
-blockfits:	pshs y			; we have our block
-		clra			; this block now isn't free
+blockfits:	clra			; this block now isn't free
 		sta MEM_FREE_O,y	; save it
 		ldu MEM_LENGTH_O,y	; get the size of the free block
 		stx MEM_LENGTH_O,y	; and set the new nonfree block size
@@ -110,21 +109,22 @@ blockfits:	pshs y			; we have our block
 		ble blockfitso		; no extra free block needed
 		ldu MEM_NEXT_O,y	; get the original next block
 		stx MEM_NEXT_O,y	; link the nonfree block to the free
-		tfr x,y			; y is now the new block
+		exg x,y			; y is now the new, free, block
 		std MEM_LENGTH_O,y	; save the free size
 		lda #1			; mark it as free
 		sta MEM_FREE_O,y	; ...
 		stu MEM_NEXT_O,y	; link the new free block to next
-blockfitso:	puls y			; return start of previously block
-		leax MEM_SIZE,y		; add header offset, caller...
+		tfr x,y			; restore the allocated  block in y
+blockfitso:	leax MEM_SIZE,y		; add header offset, caller...
 		bra allocout		; gets only the useable space
 		
-; free memory block at x
+; free memory block at x - don't stack x since the caller should not be
+; using it after the call!
 
 memoryfree::	debugreg ^'Memory freeing block: ',DEBUG_MEMORY,DEBUG_REG_X
-		pshs a,x
+		pshs a
 		lda #1			; we are freeing
 		leax -MEM_SIZE,x	; go back the size of the struct
 		sta MEM_FREE_O,x	; and set free to 1
-		puls a,x
+		puls a
 		rts
