@@ -17,6 +17,10 @@ member		MEM_LENGTH_O,2		; the length of this block
 member		MEM_FREE_O,1		; 1=free, 0=not free
 structend	MEM_SIZE
 
+; the heap is init to span the whole of ram, starting wit the end of the
+; system variables. this space includes the temporary stack used in main
+; to get the system runing.
+
 memoryinit::	debug ^'Memory init',DEBUG_MEMORY
 		pshs a,b,x,y
 		ldy #l_RAM		; only one block to setup

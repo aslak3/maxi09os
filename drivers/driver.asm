@@ -42,7 +42,7 @@ driverprepare::	debug ^'Driver prepare start',DEBUG_DRIVER
 
 ; open device by string in x, with optional unit number in a
 
-sysopen::	pshs y,u
+sysopen::	pshs y,u		; save params for driver open call
 		ldu #drivertable	; setup table search
 1$:		ldy ,u			; get the def pointer
 		beq 2$			; end of list? exit with null
@@ -53,8 +53,8 @@ sysopen::	pshs y,u
 		bra 1$			; back to top
 2$:		ldx #0			; return a null in x
 		rts
-3$:		ldx ,u
-		puls y,u
+3$:		ldx ,u			; get the specific driver
+		puls y,u		; restore sysopen params for driver
 		jmp [DRIVER_OPEN,x]	; this is a jump
 
 ; close the device at x

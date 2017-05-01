@@ -32,15 +32,15 @@ serialgetcharo:	rts
 ; serialgetwto - same as above but with a c. 2 sec timeout
 
 serialgetwto:	pshs x
-		ldx #0xffff
-timeoutloop:	lda BASEPA+LSR16C654
-		anda #0b00000001
-		beq notready
-		lda BASEPA+RHR16C654
+		ldx #0xffff		; will delay for roughly 2 sec
+timeoutloop:	lda BASEPA+LSR16C654	; get status register
+		anda #0b00000001	; looking for rx bit
+		beq notready		; dec counter
+		lda BASEPA+RHR16C654	; get the rx'd byte
 		clrb			; no timeout occured
-		bra serialgettwoo
-notready:	leax -1,x
-		bne timeoutloop
+		bra serialgettwoo	; done, exit with byte in a
+notready:	leax -1,x		; dex
+		bne timeoutloop		; look again, if x not expired
 		ldb #1			; timeout occured
 serialgettwoo:	puls x
 		rts

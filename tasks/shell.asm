@@ -39,33 +39,33 @@ structend	SHELL_SIZE
 promptz:	.asciz '\r\nCommand > '
 commnotfoundz:	.asciz 'Command not found\r\n'
 
-shellstart::	ldx #SHELL_SIZE
-		lbsr memoryalloc
-		tfr x,u
-		ldx currenttask
-		stu TASK_USERDATA,x	; save the user memory pointer
+shellstart::	ldx #SHELL_SIZE		; how many bytes do we need?
+		lbsr memoryalloc	; allocate them
+		tfr x,u			; u is the user data pointer
+		ldx currenttask		; get the current task
+		stu TASK_USERDATA,x	; save the user memory in task
 
 shellloop:	ldx currenttask		; get current task. needed for u
 		ldu TASK_USERDATA,x	; get task datablock pointer
 		ldx defaultio		; defautl io used by some subs
 
-		ldy #promptz
-		lbsr putstr
+		ldy #promptz		; output the prompt
+		lbsr putstr		; "> " or something similar
 
-		leay SHELL_INPUT,u
-		lbsr getstr
-		ldy #newlinemsg
-		lbsr putstr
+		leay SHELL_INPUT,u	; setup the buffer to get it
+		lbsr getstr		; get the command input
+		ldy #newlinemsg		; tidy up by outputting ...
+		lbsr putstr		; ... a new line
 
 		leax SHELL_INPUT,u	; get input back
 		leay SHELL_PARAMS,u	; setup output param stream
 		lbsr parseinput		; parse into y, also makrs cmd end
 
-		ldu #commandarray
+		ldu #commandarray	; start at the start of the table
 		lbsr strmatcharray	; try to match the string
-		bne notbuiltin
+		bne notbuiltin		; if no matches, read from disk
 		jsr ,x			; run the subroutine
-		bra shellloop
+		bra shellloop		; back to the top of the shell loop
 
 notbuiltin:	tfr y,u			; get the commandline
 		lbsr openfile		; open the file
@@ -78,7 +78,7 @@ notbuiltin:	tfr y,u			; get the commandline
 
 nofile:		ldy #commnotfoundz	; no externl file called that
 		lbsr putstrdefio	; print the error message
-		bra shellloop
+		bra shellloop		; back to the top of the shell loop
 
 ; COMMANDS
 
@@ -89,84 +89,88 @@ list:		clrb			; long mode flag
 		cmpa #4			; option code?
 		bne startlist		; carry on
 		ldb ,y+			; get option
-startlist:	ldx currenttask
+startlist:	ldx currenttask		; get running task
 		ldu TASK_USERDATA,x	; get space for dirent
-		leay SHELL_DIRENT,u
+		leay SHELL_DIRENT,u	; dirent is in there
 		lbsr opencwd		; open the current directory into x
-1$:		lbsr getnextdirent
-		tst MINIXDE_NAME,y
-		beq 2$
-		lbsr putdirentname
-		bra 1$
+1$:		lbsr getnextdirent	; get the filename
+		tst MINIXDE_NAME,y	; is filename 0-length?
+		beq 2$			; if it is then we are finished
+		lbsr putdirentname	; otherwise output all details
+		bra 1$			; and go to the next name
 2$:		lbsr closefile		; close the directory
 		rts
 
 ; print the name for the dirent in y, option is in b
 
 putdirentname:	pshs a,b,x,y
-		cmpb #'l
-		beq 2$
-1$:		ldx defaultio
-		leay MINIXDE_NAME,y
-		lbsr putstr
-		ldy #newlinemsg
-		lbsr putstr
+		cmpb #'l		; long mode listing set?
+		beq 2$			; yes? summarise the inode
+1$:		ldx defaultio		; get default io channel for shell
+		leay MINIXDE_NAME,y	; get the filename from direent y
+		lbsr putstr		; output the filename
+		ldy #newlinemsg		; and a we need ...
+		lbsr putstr		; ... a newline
 		puls a,b,x,y
 		rts
 2$:		ldd MINIXDE_INODENO,y	; get inode number
-		lbsr summariseinode
+		lbsr summariseinode	; sumarise the inode
 		bra 1$
+
+; file mode characters to show the type of file - todo: more types
 
 dirtype:	.ascii 'd'
 filetype:	.ascii 'f'
 
+; summarise the inode in d, puts an inode on the stack
+
 summariseinode:	pshs a,b,x,y
-		ldx rootsuperblock
-		leas -MINIXIN_SIZE,s
-		tfr s,y
-		lbsr getinode
-		ldx defaultio
+		ldx rootsuperblock	; get the mounted superblock
+		leas -MINIXIN_SIZE,s	; make about 32 bytes on the stack
+		tfr s,y			; this is the memory pointer ...
+		lbsr getinode		; ... for the inode to be read into
+		ldx defaultio		; get the default io channel
 		lda MINIXIN_MODE,y	; load high byte of type/mode
-		anda #MODE_TYPE_MASK
-		cmpa #MODE_DIR
-		beq showdir
-		cmpa #MODE_REGULAR
-		beq showfile
-		lda #'-
+		anda #MODE_TYPE_MASK	; mask out all but the file type
+		cmpa #MODE_DIR		; compare it with directory type
+		beq showdir		; show 'd'
+		cmpa #MODE_REGULAR	; compare it with regular file type
+		beq showfile		; show 'f'
+		lda #'-			; show unknown type for others
 
-gottype:	lbsr syswrite
-		lda #ASC_SP
-		lbsr syswrite
+gottype:	lbsr syswrite		; show the type letter
+		lda #ASC_SP		; add a spare ...
+		lbsr syswrite		; after the type letter
 
-		lda MINIXIN_NLINKS,y
-		lbsr putbyte
-		lda #ASC_SP
-		lbsr syswrite
+		lda MINIXIN_NLINKS,y	; get the number of hard links
+		lbsr putbyte		; put that as 2 hex digits
+		lda #ASC_SP		; and a space ...
+		lbsr syswrite		; ... after it
 
-		ldd MINIXIN_UID,y
-		lbsr putword
-		lda #'/
-		lbsr syswrite
-		lda MINIXIN_GID,y
-		lbsr putbyte
-		lda #ASC_SP
-		lbsr syswrite
+		ldd MINIXIN_UID,y	; get the user id
+		lbsr putword		; output as a word (4 hex digits)
+		lda #'/			; and a slash ...
+		lbsr syswrite		; to act as a seperator
+		lda MINIXIN_GID,y	; get the group id
+		lbsr putbyte		; output it as a byte
+		lda #ASC_SP		; and a space ...
+		lbsr syswrite		; ... after it
 
-		ldd MINIXIN_LENGTH,y
-		lbsr putword
-		ldd MINIXIN_LENGTH+2,y
-		lbsr putword
-		lda #ASC_SP
-		lbsr syswrite
+		ldd MINIXIN_LENGTH,y	; get the high word for the length
+		lbsr putword		; and output as a word
+		ldd MINIXIN_LENGTH+2,y	; get the low word for the length
+		lbsr putword		; and output it as a word
+		lda #ASC_SP		; yes, it's ...
+		lbsr syswrite		; ... another space
 
-		leas MINIXIN_SIZE,s
+		leas MINIXIN_SIZE,s	; shrink the stack back
 		puls a,b,x,y
 		rts
 
-showdir:	lda #'d
-		bra gottype
-showfile:	lda #'f
-		bra gottype
+showdir:	lda #'d			; little tail for directory
+		bra gottype		; back to main path
+showfile:	lda #'f			; lttile tail for file
+		bra gottype		; back to main path
 	
 ; type "foo" - type the file to the output device
 

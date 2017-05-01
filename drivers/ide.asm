@@ -114,12 +114,14 @@ ideclose:	pshs u
 
 ; ideread - read to memory y from sectors in u, count in a sectors
 
-ideread:	lbsr seeknewpos		; seek to the current position
+ideread:	lbsr forbid		; only one task in at a time
+		lbsr seeknewpos		; seek to the current position
 
 		lda #IDECOMREADSEC	; this is read sector
 		lbsr simpleidecomm	; send the command
 
 		lbsr idellread		; read into y
+
 
 		setzero
 		rts

@@ -22,9 +22,6 @@
 		.globl runtimers
 		.globl permitnest
 		.globl interruptnest
-		.globl sysopen
-		.globl syswrite
-		.globl delay
 
 		.area ROM
 
@@ -77,8 +74,8 @@ newtask::	pshs a,y,u
 		sta TASK_SIGWAIT,x	; this one
 		sta TASK_SIGRECVD,x	; yeap, this one too
 		lda #1
-		sta TASK_INTNEST,x	; clear interrupt nest
-		sta TASK_PERMITNEST,x	; clear permit nest
+		sta TASK_INTNEST,x	; default interrupt nest to enabled
+		sta TASK_PERMITNEST,x	; default permit nest to enabled
 		ldy #0
 		sty TASK_DISPCOUNT,x	; count of scheduled times
 		sty TASK_PARENT,x	; no parent
@@ -279,6 +276,9 @@ permitted:	ldx currenttask		; get the current task struct
 		lbsr remtail		; remvoe the tail and add ...
 		lbsr addhead		; ... it to the head, rotating it
 
+; schedule the task in x to run - also the schedular's entry point from
+; main
+
 doneschedule::	debugxtask ^'Scheduling the task: ',DEBUG_TASK
 		stx currenttask		; set the pointer for current task
 		lds TASK_SP,x		; setup the stack from the task
@@ -296,55 +296,3 @@ doneschedule::	debugxtask ^'Scheduling the task: ',DEBUG_TASK
 scheduleidle:	ldx idletask		; get the idle task handlee
 		debug ^'Scheduling idler',DEBUG_TASK
 		bra doneschedule	; it will be made the current task
-
-; idler task
-
-leddevice:	.asciz 'led'
-
-idler::		ldx #leddevice		; get the led device name
-		lbsr sysopen		; open it
-1$:		lda #1			; on
-		lbsr syswrite		; make the led turn on
-		ldy #0x6000		; delay for a "reasonable" time
-		lbsr delay		; and delay
-		clra			; off
-		lbsr syswrite		; make the led turn off
-		ldy #0x6000		; delay for a "reasonable" time
-		lbsr delay		; and delay
-		bra 1$			; and back for more, forever
-
-;;;;;;;;;;;;;;; DEBUG
-
-;taskmsg:	.asciz 'Task: '
-;initialpcmsg:	.asciz 'Initial PC: '
-
-;dumptasks:	lbsr putstr
-;		ldy TASK_NEXT,y
-;		beq dumptaskout
-;		tfr y,d
-;		ldx #taskmsg
-;		lbsr putlabd
-;		ldd TASK_PC,y
-;		ldx #initialpcmsg
-;;		lbsr putlabd
-;		bra dumptasks
-;dumptaskout:	ldx #newlinemsg
-;		lbsr putstr
-;		rts
-
-;currenttaskmsg:	.asciz 'Current Task: '
-;readytasksmsg:	.asciz 'Ready Tasks\r\n'
-;waittasksmsg:	.asciz 'Waiting Tasks\r\n'
-
-;dumpalltasks:	ldd currenttask
-;		ldx #currenttaskmsg
-;		lbsr putlabd
-;		ldx #newlinemsg
-;		lbsr putstr
-;		ldx #readytasksmsg
-;		ldy #readytasks
-;		lbsr dumptasks
-;		ldx #waittasksmsg
-;		ldy #waitingtasks
-;		lbsr dumptasks
-;		rts

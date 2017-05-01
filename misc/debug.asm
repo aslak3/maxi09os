@@ -12,6 +12,8 @@ debugbuffer:	.rmb 100
 
 		.area ROM
 
+; these are the debug sections
+
 generalz::	.asciz 'General: '
 tasksz::	.asciz 'Tasks: '
 enddisz::	.asciz 'Enable/Disable: '

@@ -17,8 +17,6 @@ uartportflags:	.rmb 4			; four flags, 0=port a etc
 
 		.area ROM
 
-uartllopenmsg:	.asciz 'opening low level uart\r\n'
-
 ; uart open - open the uart port in a reg, returning the base address
 ; for the device in y. baud rate selected via b - no baud rate is set
 

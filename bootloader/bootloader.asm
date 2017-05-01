@@ -4,13 +4,13 @@
 
 		.org 0
 
-flashblock:	.rmb 64
+flashblock:	.rmb 64			; block of 64 bytes for rx data
 
 		.area ROM (ABS)
 
 		.org 0xc000
 
-realstart:
+realstart:				; chained addres always top of rom
 
 ; setup the reset vector, last location in rom
 
@@ -18,37 +18,35 @@ realstart:
 	
 		.word reset
 
-; this is the start of rom
+; this is the start of the last page in fpga rom
 
 		.org 0xff00
 
-; START OF GLOBAL READ-ONLY DATA
+; some constant strings
 
 resetmsg:	.asciz '\r\n***flash with f\r\n'
 flashreadymsg:	.asciz '+++'
 
-; setup stack to the end of ram so it can go grown backwards
-
-reset:		lds #STACKEND+1
+reset:		lds #STACKEND+1		; system stack grows down from end
 
 		lda #0xff		; clear all the interrupt routes
-		sta NMISOURCESR
+		sta NMISOURCESR		; we do not use any ints in loader
 		sta IRQSOURCESR
 		sta FIRQSOURCESR
 
-		lbsr serialinit
+		lbsr serialinit		; setup the serial port registers
 
 		ldx #resetmsg		; show prompt for flash
-		lbsr serialputstr
+		lbsr serialputstr	; no ints used for serial
 
 		lbsr serialgetwto	; wait for a key, getting the command
 
 		bne normalstart		; timeout
 
-		cmpa #0x66		; 'f'
-		beq flashcopy
+		cmpa #'f		; compare with 'f' to see if ...
+		beq flashcopy		; .. the remote end has an image
 
-normalstart:	jmp realstart
+normalstart:	jmp realstart		; jump to chained start position
  
 flashcopy:	ldx #LOADERSTART	; setup the rom copy to ram
 		ldy #LOADERCOPYSTART	; this is the second half of ram
@@ -62,7 +60,7 @@ romcopy:	lda ,x+			; read in
 		leax LOADERCOPYSTART,x	; offset it forward where it now is 
 		jmp ,x			; jump to the new location offlasher
 
-; flasher
+; flasher start
 
 flasher:	ldx #flashreadymsg	; tell other end it can send now
 		lbsr serialputstr
@@ -99,7 +97,7 @@ flashdelayloop:	leax -1,x		; dey
 ; next one
 
 		lda #0x23		; '#'
-		lbsr serialputchar		; send the char
+		lbsr serialputchar	; send the char
 		cmpu #ROMEND+1		; see if we are the end of rom
 		bne inflashblk		; back to the next block
 

@@ -23,11 +23,10 @@ timers:		.rmb LIST_SIZE		; list of open timers
 
 		.area ROM
 
-timerprepare:	pshs y
-		ldy #timers
-		lbsr initlist
-		puls y
-		rts
+timerdef::	.word timeropen
+		.word timerprepare
+		.asciz "timer"
+
 
 ; timer device instance struct
 
@@ -38,9 +37,11 @@ member		TIMER_RUNNING,1		; is the timer running
 member		TIMER_REPEAT,1		; counter is of the repeating type
 structend	TIMER_SIZE
 
-timerdef::	.word timeropen
-		.word timerprepare
-		.asciz "timer"
+timerprepare:	pshs y
+		ldy #timers		; get the timer list
+		lbsr initlist		; and make a valid empty list
+		puls y
+		rts
 
 ; timer open
 
@@ -75,29 +76,31 @@ timerclose:	lbsr remove		; remove the node
 ; write to the device in x, reg a is command, reg y is param block
 
 timercontrol:	debug ^'Timer control',DEBUG_SPEC_DRV
-		cmpa #TIMERCMD_START
-		beq starttimer
-		cmpa #TIMERCMD_STOP
-		beq stoptimer
-timercontrolo:	setzero
+		cmpa #TIMERCMD_START	; is it a start message?
+		beq starttimer		; if so, start it up
+		cmpa #TIMERCMD_STOP	; is it a stop message?
+		beq stoptimer		; if so, stop the timer
+		setnotzero		; otherwise, input error
+		rts
+timercontrolo:	setzero			; exit success
 		rts
 
 starttimer:	lbsr disable		; stop handler playing with timer
-		lda TIMERCTRL_REP,y
-		sta TIMER_REPEAT,x
-		ldy TIMERCTRL_END,y
-		sty TIMER_END,x
-		ldy #0
-		sty TIMER_COUNTER,x
-		lda #1
-		sta TIMER_RUNNING,x
+		lda TIMERCTRL_REP,y	; get the repeating timer flag
+		sta TIMER_REPEAT,x	; save it in the timer struct
+		ldy TIMERCTRL_END,y	; get the counter end value
+		sty TIMER_END,x		; save it in the timer struct
+		ldy #0			; clear the ...
+		sty TIMER_COUNTER,x	; ... current timer value
+		lda #1			; and mark the timer as ...
+		sta TIMER_RUNNING,x	; running
 		debug ^'Timer start',DEBUG_SPEC_DRV
-		lbsr enable
-		bra timercontrolo
-stoptimer:	lbsr disable
-		clr TIMER_RUNNING,x
-		lbsr enable
-		bra timercontrolo
+		lbsr enable		; now we can enable ints again
+		bra timercontrolo	; back to common exit path
+stoptimer:	lbsr disable		; stop handler playing with timer
+		clr TIMER_RUNNING,x	; mark the timer as stopped
+		lbsr enable		; now we can enable ints again
+		bra timercontrolo	; back to common exit path
 
 ;;; INTERUPT
 
@@ -119,9 +122,9 @@ runtimers::	pshs x,y,a
 		lda TIMER_REPEAT,x	; see if we are repeating
 		beq 2$			; no restart timer if not repeating
 		ldy #0			; reset ...
-		sty TIMER_COUNTER,x	; the counter value
-		lda #1			;
-		sta TIMER_RUNNING,x	; start it again
+		sty TIMER_COUNTER,x	; ... the counter value
+		lda #1			; now we can ...
+		sta TIMER_RUNNING,x	; ... start it again
 2$:		lda DEVICE_SIGNAL,x	; get signal bit for task
 		tfr x,y			; save timer device struct
 		ldx DEVICE_TASK,x	; get the task for that owns timer

@@ -17,7 +17,7 @@
 		.globl disable
 		.globl driversignal
 
-PORTCOUNT	.equ 4
+PORTCOUNT	.equ 4			; there are four.... ports!
 
 structstart	DEVICE_SIZE
 member		UART_RX_BUF,32		; rx buffer
@@ -30,15 +30,16 @@ member		UART_BASEADDR,2		; base hardware address
 member		UART_UNIT,1		; unit number for opend uart
 structend	UART_SIZE
 
+
+uartdef::	.word uartopen
+		.word uartprepare
+		.asciz 'uart'
+
 		.area RAM
 
 uartdevices:	.rmb 2*PORTCOUNT	; all the port devices
 
 		.area ROM
-
-uartdef::	.word uartopen
-		.word uartprepare
-		.asciz 'uart'
 
 uartprepare:	rts
 
@@ -99,7 +100,7 @@ uartclose:	lda UART_UNIT,x		; obtain the port number
 ;		rts
 
 uartread:	pshs b,u
-		lbsr disable
+		lbsr disable		; disable ints
 		ldb UART_RX_COUNT_U,x	; get counter
 		cmpb UART_RX_COUNT_H,x	; compare..,
 		beq 1$			; no character? then return
@@ -108,7 +109,7 @@ uartread:	pshs b,u
 		incb			; move along to the next
 		andb #63		; wrapping to 32 byte window
 		stb UART_RX_COUNT_U,x	; and save it
-		lbsr enable
+		lbsr enable		; enable ints
 		debug ^'UART done read',DEBUG_SPEC_DRV
 		setzero			; got data
 		puls b,u
@@ -154,7 +155,7 @@ uartrxhandler::	pshs a,b,u
 		subb UART_RX_COUNT_U,x	; get current user pointer
 		cmpb #-1		; one behind?
 		beq 2$			; back for more chars unless overrun
-		cmpb #63
+		cmpb #63		; ?? what was this ??
 		beq 2$
 		bra 1$
 2$:		lbsr driversignal	; signal the task that owns it

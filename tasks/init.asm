@@ -68,21 +68,33 @@ mountroot:	tst rootunit		; get the root unit and see if its 0
 
 		rts
 
-openinitio:	ldx #initioz		; device
+; open the init io device, saving it in the variable and in x
+
+openinitio:	pshs a,b,x
+		ldx #initioz		; device
 		lda initiounit		; unit
 		ldb initiobaud		; baud rate
 		lbsr sysopen
 		stx initiodevice
+		puls a,b,x
 		rts
 
-closeinitio:	ldx initiodevice
-		lbsr sysclose
-		ldx #0
-		stx initiodevice
+; close the init io device
+
+closeinitio:	pshs x
+		ldx initiodevice	; get the init io device
+		lbsr sysclose		; close it
+		ldx #0			; now it needs ...
+		stx initiodevice	; ... to be cleared to zero
+		puls x
 		rts
 
-writeinitstr:	ldx initiodevice
-		lbsr putstr
+; output the string in y to the init io device
+
+writeinitstr:	pshs x
+		ldx initiodevice	; get the init io device
+		lbsr putstr		; output the string
+		puls x
 		rts		
 
 initstartedz:	.asciz '\r\n\r\nInit started\r\n'
@@ -90,26 +102,26 @@ rootmountedz:	.asciz 'Root mounted\r\n'
 
 init::		debug ^'Init started',DEBUG_GENERAL
 
-		lbsr openinitio
+		lbsr openinitio		; open the init io channel
 
-		ldy #initstartedz
-		lbsr writeinitstr
+		ldy #initstartedz	; output a short greeting ...
+		lbsr writeinitstr	; ... on the init io channel
 
 		lbsr mountroot		; mount the root device
 
-		ldy #rootmountedz
-		lbsr writeinitstr
+		ldy #rootmountedz	; output the fact that root's mounted
+		lbsr writeinitstr	; ... on the init io channel
 
-		lbsr closeinitio
+		lbsr closeinitio	; close the init io channel
 
 		ldx currenttask		; get init's task struct
 		ldy #1			; root inode is 0001
 		sty TASK_CWD_INODENO,x	; this is inherited down the chain
 
-		ldx #timertask
-		ldy #timertaskname
-		ldu #0
-		lbsr createtask
+		ldx #timertask		; now start the timer task
+		ldy #timertaskname	; ... giving it a name
+		ldu #0			; and no default io
+		lbsr createtask		; it will open the io devices itself
 
 		ldx #consolenamez
 		lda #1
@@ -152,21 +164,12 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		ldb #B19200
 		lbsr sysopen
 		tfr x,u
-		ldx #monitorstart
-		ldy #montaskname
+		ldx #shellstart
+		ldy #shell4taskname
 		lbsr createtask
 
-;		ldx #uartnamez
-;		lda #1
-;		ldb #B19200
-;		lbsr sysopen
-;		tfr x,u
-;		ldx #echotask
-;		ldy #echo4taskname
-;		lbsr createtask
+		clra			; wait on a signal that will ...
+		lbsr wait		; ... never arrive
 
-		clra
-		lbsr wait
-
-again:		bra again
+again:		bra again		; we should never reach here
 

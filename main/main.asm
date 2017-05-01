@@ -40,60 +40,60 @@
 ; setup stack to the end of ram so it can go grown backwards
 
 reset:		lda #0x02		; map all of the eeprom in
-		sta MUDDYSTATE
+		sta MUDDYSTATE		; by writing 02 to the state reg
 
-		ldx #RAMSTART
-1$:		clr ,x+
-		cmpx #RAMEND
-		bne 1$
+		ldx #RAMSTART		; start at the beginning of ram
+1$:		clr ,x+			; clear a byte and inc pointer
+		cmpx #RAMEND		; at the end?
+		bne 1$			; no? then keep going
 
-		disableinterrupts
-		clr interruptnest
-		clr permitnest
+		disableinterrupts	; disable interrupts
+		clr interruptnest	; set interrupt nest counter to 0
+		clr permitnest		; and the permit nest counter to 0
 
-		lds #STACKEND+1
+		lds #STACKEND+1		; with no ints, we can setup s
 
 		lda #0xff		; clear all the interrupt routes
-		sta NMISOURCESR
-		sta IRQSOURCESR
-		sta FIRQSOURCESR
+		sta NMISOURCESR		; ...
+		sta IRQSOURCESR		; ...
+		sta FIRQSOURCESR	; ...
 
-		debuginit
+		debuginit		; init the debug uart port
 		debug ^'Starting debug',DEBUG_GENERAL
 
-		lbsr driverprepare
+		lbsr driverprepare	; prepare all drivers
 
 		lbsr tickerinit		; init the timer
 		lbsr memoryinit		; init the heap
 
-		clr reschedflag
+		clr reschedflag		; don't resched after interrupt
 
-		ldy #readytasks
-		lbsr initlist
-		ldy #waitingtasks
-		lbsr initlist
+		ldy #readytasks		; init some lists
+		lbsr initlist		; first the ready task list
+		ldy #waitingtasks	; init another list
+		lbsr initlist		; now the waiting task list
 
 		lda #0xff		; led on
-		sta LED
-		ldy #0xd000		; small delay
-		lbsr delay
+		sta LED			; just so we can see how far
+		ldy #0xd000		;  ... small delay ...
+		lbsr delay		; the boot has got
 
 		clra
 		sta LED			; led off
 
-		ldx #idler
-		lbsr newtask
-		ldy #idlername
-		lbsr settaskname
+		ldx #idler		; the idler task routine
+		lbsr newtask		; needs to be created
+		ldy #idlername		; and ...
+		lbsr settaskname	; ... it needs a name
 		debugreg ^'Idle task created: ',DEBUG_GENERAL,DEBUG_REG_X
-		stx idletask
+		stx idletask		; this is so we can schedule it
 
-		ldx #init
-		ldy #initname
-		ldu #0
-		lbsr createtask
+		ldx #init		; init is the mummy of all tasks
+		ldy #initname		; set the name
+		ldu #0			; no default io
+		lbsr createtask		; create the task and make it ready
 
-		lbra doneschedule
+		lbra doneschedule	; fall to the bottom of the sched'er
 
 idlername:	.asciz 'idler'
 initname:	.asciz 'init'

@@ -213,13 +213,13 @@ putlabbb::	lbsr putstr		; output the label
 ; PRIVATE
 
 putzero:	pshs a
-		lda #'0
-		lbsr syswrite
+		lda #'0			; ascii 0
+		lbsr syswrite		; write it to x
 		puls a
 		rts
 
 putone:		pshs a
-		lda #'1
-		lbsr syswrite
+		lda #'1			; ascii 1
+		lbsr syswrite		; write it to x
 		puls a
 		rts

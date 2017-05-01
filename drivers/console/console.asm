@@ -42,9 +42,9 @@
 
 CONSOLECOUNT	.equ 6			; the number of virtual consoles
 PORTKEYBOARD	.equ PORTD		; the uart port attached to keybard
-COLS		.equ 80
-ROWS		.equ 24
-HALF		.equ 12			; for scrolling half
+COLS		.equ 80			; number of columns of text
+ROWS		.equ 24			; number of rows of text
+HALF		.equ 12			; for scrolling half a screen
 CURSORVAL	.equ 127		; the cursor pattern number
 
 structstart	DEVICE_SIZE
@@ -59,7 +59,7 @@ member		CON_CAPSLOCK,1		; caps lock on?
 member		CON_VRAMADDR,2		; base vram address for this console
 member		CON_CURSOR_ROW,1	; row position of cursor
 member		CON_CURSOR_COL,1	; column position of cursor
-member		CON_SCROLL_BIG,1	; big jumps when scrolling
+member		CON_SCROLL_BIG,1	; big jumps when scrolling mode
 structend	CON_SIZE
 
 		.area RAM
@@ -287,7 +287,7 @@ oldline:	lda #COLS-1		; last coloumn on a row
 		dec CON_CURSOR_ROW,x	; back one line
 		bra consolewriteo
 
-handleff:	lbsr clearconsole
+handleff:	lbsr clearconsole	; formfeed - clear console
 		bra consolewriteo
 
 handleht:	lbsr blankcursor	; blank current cursor positionlda CON_CURSOR_COL,x	; get current col position
@@ -450,7 +450,7 @@ conrxhandler::	debug ^'Console in UART RX handler',DEBUG_INT
 		stb CON_RX_COUNT_H,x	; save the buffer write count
 		cmpb CON_RX_COUNT_U,x	; get current user pointer
 		lbne 1$			; back for more chars unless overrun
-4$:		ldx #condevices
+4$:		ldx #condevices		; get the console devices table
 		ldb activeconsole	; get this again
 		lslb			; 2 bytes for a pointer
 		ldx b,x			; get the device for the active con

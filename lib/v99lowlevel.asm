@@ -116,12 +116,12 @@ vseekread::	pshs a,b
 ; prepare the vdc for reading or writing from y in vram
 
 vseekcommon:	tfr y,d			; we need to do some shifting
-		lsra
-		lsra
-		lsra
-		lsra
-		lsra
-		lsra			; six shifts put a15 at bit 1
+		lsra			; 1
+		lsra			; 2
+		lsra			; 3
+		lsra			; 4
+		lsra			; 5
+		lsra			; 6 shifts put a15 at bit 1
 		loadareg VADDRREG
 		tfr y,d			; retore original address
 		stb VADDRPORT		; the low 8 bits of address (easy)

@@ -370,7 +370,7 @@ keydown:	anda #0x7f		; mask out the up/down; its in b
 		beq asciicontrol
 		tstb			; key direction?
 		bne printablekey	; down, so convert it
-nonprintable:	clra
+nonprintable:	clra			; non printable char, 0, set zero
 mapscancodeo:	puls b,x
 		rts			; otherwise we are done
 
@@ -394,7 +394,7 @@ printablekey:	ldx #unshiftmap		; assume we are not shifting
 		tst capslockon		; check for caps lock on
 		beq 2$			; is it?
 		lbsr toupper		; otherwise uppercase the letter
-2$:		setnotzero
+2$:		setnotzero		; printable char
 		bra mapscancodeo	; cleanup
 3$:		ldx #controlmap		; controling, use alternate table
 		bra 1$			; get key

@@ -1,4 +1,6 @@
-export PATH := $(shell pwd)/../tools:$(PATH)
+AS = as6809-wrapper -oxsw
+FLASHER = ../tools/flasher
+BIN2MIF = ../tools/bin2mif.pl
 
 MIF = bootloader.mif
 BIN = bootloader.bin
@@ -10,7 +12,7 @@ INCS = ../include/hardware.inc
 all: $(MIF)
 
 %.mif: %.bin
-	bin2mif.pl < $< > $@
+	$(BIN2MIF) < $< > $@
 
 %.bin: %.ihx
 	hex2bin -out $@ $<
@@ -19,7 +21,7 @@ all: $(MIF)
 	aslink -nmwi $@ $<
 	
 %.rel: $(LOADER_ASM) $(INCS)
-	as6809 -oxs $<
+	$(AS) -oxs $<
 
 clean:
 	rm -f $(MIF) $(BIN) *.rel *.ihx *.map *.sym

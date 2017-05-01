@@ -101,11 +101,11 @@ readfsblock::	pshs a,b,x,u		; save the file handle
 ; have then use that copy
 
 getinode::	pshs a,b,x
+		lbsr forbid		; enter criticial section
 		std MINIXIN_INODENO,y	; save the inode number
 		subd #1			; inodes start at 1
 		tfr d,u			; save inode number
 		lbsr div32		; find the inode block
-		lbsr forbid		; enter criticial section
 		cmpd MINIXSB_INBASE,x	; compare it with the cache base
 		bne 3$			; not got this inode
 1$:		tfr u,d			; get inode back

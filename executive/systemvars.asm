@@ -10,21 +10,21 @@
 currenttask::	.rmb 2			; current task pointer
 defaultio::	.rmb 2			; current task's io channel
 
-readytasks::	.rmb LIST_SIZE
-waitingtasks::	.rmb LIST_SIZE
+readytasks::	.rmb LIST_SIZE		; tasks that have or want cpu
+waitingtasks::	.rmb LIST_SIZE		; tasks that are wait()ing
 
-reschedflag::	.rmb 1
+idletask::	.rmb 2			; the idle task's handle
 
-idletask::	.rmb 2
+reschedflag::	.rmb 1			; int handler needs to schedule
 
-; mounted superblock
+; filesystem related
 
-rootsuperblock::.rmb 2
+rootsuperblock::.rmb 2			; system-wide mounted superblock
 
-; interrupt nest count, <1 disabled, >=1 enabled
+; interrupt and permit nest counts, <1 disabled, >=1 enabled
 
-interruptnest::	.rmb 1
-permitnest::	.rmb 1
+interruptnest::	.rmb 1			; interrupts enabled?
+permitnest::	.rmb 1			; task switching enabled?
 
 ; interrupt table - handlers
 
