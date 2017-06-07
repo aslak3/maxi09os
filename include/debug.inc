@@ -15,6 +15,8 @@
 		.globl memoryz
 		.globl driverz
 		.globl specdrvz
+		.globl spacez
+		.globl newlinemsg
 
 .macro 		debuginit
 		pshs a,y
@@ -135,7 +137,7 @@ label:		.asciz "message"
 		puls x
 .endm
 
-.else
+.else 					; no DEBUG_MODE set
 
 .macro		debuginit
 .endm

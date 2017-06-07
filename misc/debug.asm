@@ -4,6 +4,9 @@
 		.include 'include/hardware.inc'
 		.include 'include/debug.inc'
 
+		.globl wordtoaschex
+		.globl bytetoaschex
+
 .if DEBUG_MODE
 
 		.area RAM

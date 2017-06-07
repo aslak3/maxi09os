@@ -30,16 +30,15 @@ member		UART_BASEADDR,2		; base hardware address
 member		UART_UNIT,1		; unit number for opend uart
 structend	UART_SIZE
 
-
-uartdef::	.word uartopen
-		.word uartprepare
-		.asciz 'uart'
-
 		.area RAM
 
 uartdevices:	.rmb 2*PORTCOUNT	; all the port devices
 
 		.area ROM
+
+uartdef::	.word uartopen
+		.word uartprepare
+		.asciz 'uart'
 
 uartprepare:	rts
 

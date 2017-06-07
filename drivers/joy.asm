@@ -11,16 +11,15 @@
 		.globl forbid
 		.globl permit
 
-		.area RAM
-
-joysinuse:	.rmb 1			; 1 for open, 0 for closed
-		.rmb 1			; for both joysticks
-
-
 structstart	DEVICE_SIZE
 member		JOY_PORT_ADDR,2		; the hardward address
 member		JOY_UNIT,1		; unit number
 structend	JOY_SIZE
+
+		.area RAM
+
+joysinuse:	.rmb 1			; 1 for open, 0 for closed
+		.rmb 1			; for both joysticks
 
 		.area ROM
 

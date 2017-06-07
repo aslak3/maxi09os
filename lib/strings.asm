@@ -1,5 +1,3 @@
-		;;; STRINGS ;;;
-
 		.include 'include/system.inc'
 		.include 'include/ascii.inc'
 
@@ -206,4 +204,3 @@ aschextoword:	bsr aschextobyte	; convert the first byte in the string
 		bsr aschextobyte	; convert the second byte
 		exg a,b			; swap the bytes
 		rts			; d is now the word
-

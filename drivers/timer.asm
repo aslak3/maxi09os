@@ -17,6 +17,15 @@
 		.globl remove
 		.globl intsignal
 
+; timer device instance struct
+
+structstart	DEVICE_SIZE
+member		TIMER_COUNTER,2		; counter for this timer
+member		TIMER_END,2		; counter limit value
+member		TIMER_RUNNING,1		; is the timer running
+member		TIMER_REPEAT,1		; counter is of the repeating type
+structend	TIMER_SIZE
+
 		.area RAM
 
 timers:		.rmb LIST_SIZE		; list of open timers
@@ -26,16 +35,6 @@ timers:		.rmb LIST_SIZE		; list of open timers
 timerdef::	.word timeropen
 		.word timerprepare
 		.asciz "timer"
-
-
-; timer device instance struct
-
-structstart	DEVICE_SIZE
-member		TIMER_COUNTER,2		; counter for this timer
-member		TIMER_END,2		; counter limit value
-member		TIMER_RUNNING,1		; is the timer running
-member		TIMER_REPEAT,1		; counter is of the repeating type
-structend	TIMER_SIZE
 
 timerprepare:	pshs y
 		ldy #timers		; get the timer list

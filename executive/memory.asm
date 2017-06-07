@@ -9,13 +9,13 @@
 
 		.globl l_RAM
 
-		.area ROM
-
 structstart	0
 member		MEM_NEXT_O,2		; the next memory block pointer
 member		MEM_LENGTH_O,2		; the length of this block
 member		MEM_FREE_O,1		; 1=free, 0=not free
 structend	MEM_SIZE
+
+		.area ROM
 
 ; the heap is init to span the whole of ram, starting wit the end of the
 ; system variables. this space includes the temporary stack used in main

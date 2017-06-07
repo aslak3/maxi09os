@@ -127,4 +127,3 @@ vseekcommon:	tfr y,d			; we need to do some shifting
 		stb VADDRPORT		; the low 8 bits of address (easy)
 		anda #0b00111111	; mask out the high two bits
 		rts
-

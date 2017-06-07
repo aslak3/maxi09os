@@ -92,5 +92,5 @@ driversignal::	pshs a,x
 
 ; devicenotimpl - dummy for not implemented sys funciton
 
-devicenotimpl::	debug ^'Not implemented'
+devicenotimpl::	debug ^'Not implemented',DEBUG_DRIVER
 		rts

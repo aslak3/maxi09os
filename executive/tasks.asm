@@ -1,6 +1,6 @@
 		.include 'include/system.inc'
-		.include 'include/debug.inc'
 		.include 'include/hardware.inc'
+		.include 'include/debug.inc'
 
 		.globl currenttask
 		.globl defaultio
@@ -23,9 +23,9 @@
 		.globl permitnest
 		.globl interruptnest
 
-		.area ROM
-
 STACK		.equ 128
+
+		.area ROM
 
 ; createtask - create a task with initial pc in x, name in y, optional
 ; default io channel in u and make it ready to run

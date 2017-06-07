@@ -143,7 +143,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 
 		ldx #consolenamez
 		lda #3
-		ldb #1
+		ldb #1			; big scroll mode
 		lbsr sysopen
 		tfr x,u
 		ldx #shellstart
@@ -164,12 +164,11 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		ldb #B19200
 		lbsr sysopen
 		tfr x,u
-		ldx #shellstart
-		ldy #shell4taskname
+		ldx #monitorstart
+		ldy #montaskname
 		lbsr createtask
 
 		clra			; wait on a signal that will ...
 		lbsr wait		; ... never arrive
 
 again:		bra again		; we should never reach here
-

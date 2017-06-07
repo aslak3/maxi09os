@@ -1,5 +1,3 @@
-;;; TIMER ;;;
-
 		.include 'include/system.inc'
 		.include 'include/hardware.inc'
 
