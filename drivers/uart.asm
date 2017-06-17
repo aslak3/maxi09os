@@ -132,32 +132,59 @@ uartwrite:	pshs y,b
 
 ;;; INTERRUPT
 
-; handle receive interrupts - a has the port number
+; handle receive interrupts - a has the port number, b has the isr
 
-uartrxhandler::	pshs a,b,u
-		debug ^'Start UART RX handler',DEBUG_INT
+uartrxhandler::	pshs a,b,y,u
+		debugreg ^'Start UART RX handler, ISR: ',DEBUG_INT,DEBUG_REG_B
+		debugreg ^'UART port: ',DEBUG_INT,DEBUG_REG_A
 		rola			; two bytes for a pointer
 		ldy #uartdevices	; the open devices table
 		ldx a,y			; get the device for the port
 		ldy UART_BASEADDR,x	; get the base address
-1$:		ldb UART_RX_COUNT_H,x	; get current count of bytes
-		lda LSR16C654,y		; get the current status
+nextint:	andb #0b00111110	; mask out the int status and fifo
+		debugreg ^'ISR after masking: ',DEBUG_INT,DEBUG_REG_B
+		bitb #0b00000001	; no int?
+		lbne noint		; none left? go streight out
+		cmpb #0b00000110	; lsr needs to be read
+		beq lsrsource
+		cmpb #0b00000100	; receive data ready
+		beq rxdataready
+		cmpb #0b00001100	; receive data timeout
+		lbeq rxdatatimeout
+		debugreg ^'Unknown interrupt source: ',DEBUG_INT,DEBUG_REG_B
+		lbra uartrxout
+lsrsource:	lda LSR16C654,y		; get the current status
 		debugreg ^'LSR: ',DEBUG_INT,DEBUG_REG_A
-		bita #0b0000011		; look for rx state
-		beq 2$			; bit clear? no data, out
-		lda RHR16C654,y		; get the byte from the port
-		leau UART_RX_BUF,x	; get the buffer
-		sta b,u			; save the new char in the buffer
-		incb			; we got a char
-		andb #63		; wrap 0->63
-		stb UART_RX_COUNT_H,x	; save the buffer write counter
-		subb UART_RX_COUNT_U,x	; get current user pointer
-		cmpb #-1		; one behind?
-		beq 2$			; back for more chars unless overrun
-		cmpb #63		; ?? what was this ??
-		beq 2$
-		bra 1$
-2$:		lbsr driversignal	; signal the task that owns it
-		puls a,b,u
+		lbra rxonechar
+rxdataready:	lda LSR16C654,y		; get the current status
+		debugreg ^'RX ready, LSR: ',DEBUG_INT,DEBUG_REG_A
+		bra rxonechar
+rxdatatimeout:	lda LSR16C654,y
+		debugreg ^'RX timeout, LSR: ',DEBUG_INT,DEBUG_REG_A
+		bra rxonechar
+getintstate:	ldb ISR16C654,y		; get interrupt status again
+		lbra nextint
+uartrxout:	lbsr driversignal	; signal the task that owns it
+		puls a,b,y,u
 		debug ^'End UART RX handler',DEBUG_INT
 		rts
+
+noint:		debug ^'No interrupt generated',DEBUG_INT
+		bra uartrxout
+
+rxonechar:	ldb RHR16C654,y		; regardless of lsr get byte from port
+		debugreg ^'Got char: ',DEBUG_INT,DEBUG_REG_B
+		bita #0b00000011	; look for rx state
+		beq getintstate		; no data, check ints again on way out
+		debug ^'Adding char to ring',DEBUG_INT
+		lda UART_RX_COUNT_H,x	; get current count of bytes
+		leau UART_RX_BUF,x	; get the buffer
+		stb a,u			; save the new char in the buffer
+		inca			; we got a char
+		anda #63		; wrap 0->63
+		sta UART_RX_COUNT_H,x	; save the buffer write counter
+		suba UART_RX_COUNT_U,x	; get current user pointer
+		cmpa #-1		; one behind?
+		lbeq uartrxout		; overrun? exit
+		lda LSR16C654,y		; get the current status again
+		bra rxonechar		; get more chars

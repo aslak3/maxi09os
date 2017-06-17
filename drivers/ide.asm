@@ -122,18 +122,22 @@ ideread:	lbsr forbid		; only one task in at a time
 
 		lbsr idellread		; read into y
 
+		lbsr permit		; schedule other tasks
 
 		setzero
 		rts
 
 ; idewrite - write from memory y to sectors in u, count in a sectors
 
-idewrite:	lbsr seeknewpos		; seek to the current position
+idewrite:	lbsr forbid		; only one task in at a time
+		lbsr seeknewpos		; seek to the current position
 
 		lda #IDECOMWRITESEC	; this is write sector
 		lbsr simpleidecomm	; send the command
 
 		lbsr idellwrite		; write into x
+
+		lbsr permit		; schedule other tasks
 
 		setzero
 		rts

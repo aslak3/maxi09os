@@ -82,15 +82,15 @@ uartllsetbaud::	pshs a
 		puls a
 		rts
 
-uartllsethwhs::	pshs a
-		lda #0xbf		; bf magic to enhanced feature reg
-		sta LCR16C654,y		; 8n1 and config baud
-		lda #0b10000000		; rts cts
-		sta EFR16C654,y
-		lda #0b00000011
-		sta LCR16C654,y		; 8n1 and back to normal
-		puls a
-		rts
+;uartllsethwhs::	pshs a
+;		lda #0xbf		; bf magic to enhanced feature reg
+;		sta LCR16C654,y		; 8n1 and config baud
+;		lda #0b10000000		; rts cts
+;		sta EFR16C654,y
+;		lda #0b00000011
+;		sta LCR16C654,y		; 8n1 and back to normal
+;		puls a
+;		rts
 
 ;;; INTERRUPT
 
@@ -113,7 +113,7 @@ notportb:	ldb BASEPC16C654+ISR16C654
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notportc
 		lda #2
-		lbsr uartrxhandler	; handle the normbal uart
+		lbsr uartrxhandler	; handle the normal uart
 		bra uarthandlero
 notportc:	ldb BASEPD16C654+ISR16C654
 		bitb #0b00000001	; if no interrupt set, check next one
