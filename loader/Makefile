@@ -2,10 +2,10 @@ AS = as6809-wrapper -oxsw
 FLASHER = ../tools/flasher
 BIN2MIF = ../tools/bin2mif.pl
 
-MIF = bootloader.mif
-BIN = bootloader.bin
+MIF = loader.mif
+BIN = loader.bin
 
-LOADER_ASM = bootloader.asm
+LOADER_ASM = loader.asm
 
 INCS = ../include/hardware.inc
 

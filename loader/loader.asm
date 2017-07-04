@@ -29,6 +29,8 @@ flashreadymsg:	.asciz '+++'
 
 reset:		lds #STACKEND+1		; system stack grows down from end
 
+		clr LED			; turn LED off
+
 		lda #0xff		; clear all the interrupt routes
 		sta NMISOURCESR		; we do not use any ints in loader
 		sta IRQSOURCESR
@@ -39,7 +41,12 @@ reset:		lds #STACKEND+1		; system stack grows down from end
 		ldx #resetmsg		; show prompt for flash
 		lbsr serialputstr	; no ints used for serial
 
+		lda #1
+		sta LED			; LED on
+
 		lbsr serialgetwto	; wait for a key, getting the command
+
+		clr LED			; LED off
 
 		bne normalstart		; timeout
 
@@ -55,9 +62,11 @@ romcopy:	lda ,x+			; read in
 		cmpx #LOADEREND+1	; check to see if we are at the end
 		bne romcopy		; copy more
 
-		ldx #flasher		; get the location of the flasher code
-		leax -LOADERSTART,x	; offset it from the start of rom
-		leax LOADERCOPYSTART,x	; offset it forward where it now is 
+; get the location of the flasher code, offset it from the start of rom
+; and offset it forward where it now is 
+
+		ldx #flasher-LOADERSTART+LOADERCOPYSTART
+
 		jmp ,x			; jump to the new location offlasher
 
 ; flasher start
@@ -73,7 +82,7 @@ flasher:	ldx #flashreadymsg	; tell other end it can send now
 		ldu #ROMSTART		; setup the counter into rom
 inflashblk:	ldx #flashblock		; this is the block in ram we...
 		ldb #64			; are copying into
-inflash:	lbsr serialgetchar	; get the byte from the port
+inflash:	bsr serialgetchar	; get the byte from the port
 		sta ,x+			; store it
 		decb			; we store 64bytes
 		bne inflash		; back to the next byte
@@ -97,7 +106,7 @@ flashdelayloop:	leax -1,x		; dey
 ; next one
 
 		lda #0x23		; '#'
-		lbsr serialputchar	; send the char
+		bsr serialputchar	; send the char
 		cmpu #ROMEND+1		; see if we are the end of rom
 		bne inflashblk		; back to the next block
 
