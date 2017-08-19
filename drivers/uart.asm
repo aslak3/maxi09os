@@ -27,6 +27,7 @@ member		UART_TX_COUNT_H,2	; unused
 member		UART_RX_COUNT_U,2	; rx buffer offset for user code
 member		UART_TX_COUNT_U,2	; unused
 member		UART_BASEADDR,2		; base hardware address
+member		UART_LINE_STATUS,1	; last lsr read in
 member		UART_UNIT,1		; unit number for opend uart
 structend	UART_SIZE
 
@@ -87,22 +88,18 @@ uartclose:	lda UART_UNIT,x		; obtain the port number
 		lbsr memoryfree		; free the open device handle
 		rts
 
-; read from the device in x, into a, waiting until there's a char
-
-;uartread:	pshs y
-;		ldy UART_BASEADDR,x	; get the base address
-;1$:		lda LSR16C654,y		; get status
-;		bita #0b0000001		; input empty?
-;		beq 1$			; go back and look again
-;		lda RHR16C654,y		; get the char into a
-;		puls y
-;		rts
+; read from the device in x, into a. if there's data set zeero, otherwise
+; there's an error. either no data or a break.
 
 uartread:	pshs b,u
 		lbsr disable		; disable ints
+		lda UART_LINE_STATUS,x	; get current line status
+		clr UART_LINE_STATUS,x	; clear the current line status
+		bita #0x10		; break?
+		bne gotbreak		; got a break, no data
 		ldb UART_RX_COUNT_U,x	; get counter
 		cmpb UART_RX_COUNT_H,x	; compare..,
-		beq 1$			; no character? then return
+		beq nodata		; no character? then return
 		leau UART_RX_BUF,x	; get the buffer
 		lda b,u			; get the last char written to buf
 		incb			; move along to the next
@@ -113,10 +110,15 @@ uartread:	pshs b,u
 		setzero			; got data
 		puls b,u
 		rts
-1$:		lbsr enable
+gotbreak:	lda #IO_ERR_BREAK	; set error state
+		bra uartreaderror
+nodata:		lda #IO_ERR_WAIT	; caller should wait
+uartreaderror:	debugreg ^'UART read error: ',DEBUG_SPEC_DRV,DEBUG_REG_A
+		lbsr enable		; exit critical section
 		setnotzero		; got no data
 		puls b,u
 		rts
+
 
 ; write to the device in x, reg a, waiting until it's been sent
 
@@ -172,7 +174,10 @@ uartrxout:	lbsr driversignal	; signal the task that owns it
 noint:		debug ^'No interrupt generated',DEBUG_INT
 		bra uartrxout
 
-rxonechar:	ldb RHR16C654,y		; regardless of lsr get byte from port
+rxonechar:	tfr a,b			; save the lsr in b
+		orb UART_LINE_STATUS,x	; or it over current line status
+		stb UART_LINE_STATUS,x	; save the combined line status
+		ldb RHR16C654,y		; regardless of lsr get byte from port
 		debugreg ^'Got char: ',DEBUG_INT,DEBUG_REG_B
 		bita #0b00000011	; look for rx state
 		beq getintstate		; no data, check ints again on way out

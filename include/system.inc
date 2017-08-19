@@ -18,7 +18,7 @@ DEBUG_REG_Y	.equ 0x08
 
 .ifdef DEBUG
 .msg 'Debug is enabled'
-DEBUG_MODE	.equ DEBUG_INT
+DEBUG_MODE	.equ DEBUG_DRIVER|DEBUG_TASK|DEBUG_SPEC_DRV|DEBUG_INT
 ;DEBUG_MODE	.equ 0xff
 .else
 DEBUG_MODE	.equ 0
@@ -94,6 +94,12 @@ ERR_NOT_DIR	.equ 3			; not a directory
 ERR_NOT_REGULAR	.equ 4			; not a normal file
 ERR_NOT_FOUND	.equ 5			; file not found
 ERR_INTERNAL	.equ 6			; task not exited yet
+
+; io errors
+
+IO_ERR_OK	.equ 0			; io operation completed ok
+IO_ERR_WAIT	.equ 1			; task should wait, no data yet
+IO_ERR_BREAK	.equ 0xff		; get a break signal
 
 ; a record describing an available driver
 

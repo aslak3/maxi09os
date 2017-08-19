@@ -7,24 +7,45 @@
 		.globl syswrite
 		.globl defaultio
 		.globl wait
-		.globl newlinemsg
+		.globl newlinez
 
 		.area ROM
 
 ;;;;; IO
 
+; handleerrors
+
+breakz:		.asciz 'BREAK!!!\r\n'
+
+handleioerror:: pshs a,y
+		cmpa #IO_ERR_WAIT	; should we wait?
+		beq dowait		; go and wait before returning
+		cmpa #IO_ERR_BREAK	; got a break?
+		beq dobreak		; handle the break
+		bra handleioerroro
+dowait:		debug ^'Handle IO error, waiting',DEBUG_DRIVER
+		lda DEVICE_SIGNAL,x	; get the signal mask to wait on
+		lbsr wait		; and wait...
+		bra handleioerroro	; now return, caller should retry	
+dobreak:	debug ^'Handle IO error, break',DEBUG_DRIVER
+		ldy #breakz		; break!
+		lbsr putstr
+handleioerroro:	puls a,y
+		rts
+
 ; gets a buffer from device at x, memory in y, length in u
 
 getbytes::	pshs a,y,u
-		exg u,y			; y has no zero bit on leay
-1$:		lbsr sysread		; get byte in a
-		; todo check for wait
+		exg u,y			; u has no zero bit on leau
+getbytesloop:	lbsr sysread		; get byte in a
+		bne handleioerror	; need to deal with errors
 		sta ,u+			; save in callers memory
 		leay -1,y		; dec byte counter
-		bne 1$			; back for more
+		bne getbytesloop	; back for more
 		puls a,y,u
 		rts
-		
+getbyteserror:	lbsr handleioerror	; deal with error
+		bra getbytesloop
 
 ; puts the string in y to the default io device
 
@@ -57,7 +78,7 @@ getstrdefio::	pshs x
 getstr::	pshs a,b,y
 		clrb			; set the length to 0
 getstrloop:	lbsr sysread		; get a char in a
-		bne getstrwait		; need to wait
+		bne getstrerror		; need to wait
 		cmpa #ASC_CR		; cr?
 		beq getstrout		; if it is, then out
 		cmpa #ASC_LF		; lf?
@@ -83,8 +104,7 @@ getstrbs:	tstb			; see if the char count is 0
 		lda #ASC_BS		; then back one again
 		lbsr syswrite
 		bra getstrloop		; echo the bs and charry on
-getstrwait:	lda DEVICE_SIGNAL,x	; get the signal mask to wait on
-		lbsr wait		; and wait...
+getstrerror:	lbsr handleioerror	; deal with error, might wait
 		debugreg ^'Get string wait returned: ',DEBUG_DRIVER,DEBUG_REG_A
 		bra getstrloop		; go and get the new data
 
@@ -170,7 +190,7 @@ putlabwdefio::	pshs x
 
 putlabw::	lbsr putstr		; output the label
 		lbsr putword		; output the word
-		ldy #newlinemsg		; and also...
+		ldy #newlinez		; and also...
 		lbsr putstr		; output a newline
 		rts
 
@@ -188,7 +208,7 @@ putlabbdefio::	pshs x
 
 putlabb::	lbsr putstr		; output the label
 		lbsr putbyte		; output the word
-		ldy #newlinemsg		; and also...
+		ldy #newlinez		; and also...
 		lbsr putstr		; output a newline
 		rts
 
@@ -206,7 +226,7 @@ putlabbbdefio::	pshs x
 
 putlabbb::	lbsr putstr		; output the label
 		lbsr putbyteb		; output the byte in binary
-		ldy #newlinemsg		; and also...
+		ldy #newlinez		; and also...
 		lbsr putstr		; output a newline
 		rts
 

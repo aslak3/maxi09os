@@ -152,10 +152,6 @@ tailhandler::	debug ^'Tail handler',DEBUG_INT
 		debug ^'Rescheduling',DEBUG_INT
 		jmp yield		; reschedule the interrupt target
 
-newlinemsg::	.asciz '\r\n'
-newlinez::	.asciz '\r\n'
-spacez::	.asciz ' '
-
 		.area DEBUGMSG
 
 ; empty placeholder for when debug is disabled

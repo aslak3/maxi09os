@@ -3,16 +3,6 @@
 
 		.area ROM
 
-; nibtoaschex - convert a low nibble in a to a character in x, advancing it
-
-nibtoaschex::	anda #0x0f		; mask out the high nibble
-		adda #0x30		; add '0'
-		cmpa #0x39		; see if we are past '9'
-		ble 1$			; no? number then, so we're done
-		adda #0x07		; yes? letter then, add 'A'-'9'
-1$:		sta ,x+			; add it
-		rts		
-
 ; bytetoaschex - convert a byte in a to two characters in x, advancing it
 		
 bytetoaschex::	pshs a			; save original input byte
@@ -20,9 +10,9 @@ bytetoaschex::	pshs a			; save original input byte
 		lsra			; ..
 		lsra			; ..
 		lsra			; ..
-		bsr nibtoaschex		; convert the low nibble
+		lbsr nibtoaschex	; convert the low nibble
 		puls a			; get the original input back
-		bsr nibtoaschex		; convert the high nibble
+		lbsr nibtoaschex	; convert the high nibble
 		rts
 
 ; wordtoaschex - convert a word in d to four characters in x, advancing it
@@ -163,6 +153,15 @@ strmatcharrayo:	rts
 
 ;;; PRIVATE
 
+; nibtoaschex - convert a low nibble in a to a character in x, advancing it
+
+nibtoaschex:	anda #0x0f		; mask out the high nibble
+		adda #0x30		; add '0'
+		cmpa #0x39		; see if we are past '9'
+		ble 1$			; no? number then, so we're done
+		adda #0x07		; yes? letter then, add 'A'-'9'
+1$:		sta ,x+			; add it
+		rts		
 ; jump x across spaces
 
 skipspaces:	lda ,x+			; skip a space

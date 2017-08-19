@@ -2,6 +2,11 @@
 
 		.area ROM
 
+; constants
+
+newlinez::	.asciz '\r\n'
+spacez::	.asciz ' '
+
 ; delay by y
 
 delay::		leay -1,y		; decrement y

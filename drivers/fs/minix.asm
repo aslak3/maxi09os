@@ -74,6 +74,7 @@ minixread:	pshs b,y
 		inc MINIX_CURPOS,x	; increment high byte
 		lbsr checkcurblock	; maybe we have to get a new block?
 1$:		lbsr checkeof		; check for eof
+		setzero
 		puls b,y
 		rts
 

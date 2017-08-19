@@ -13,7 +13,6 @@
 		.globl parseinput
 		.globl strcmp
 		.globl idletask
-		.globl newlinemsg
 		.globl newlinez
 		.globl openfile
 		.globl printableasc
@@ -392,7 +391,7 @@ showtask:	pshs x
 
 		tfr u,d
 		lbsr putword
-		ldy #newlinemsg
+		ldy #newlinez
 		lbsr putstr
 
 		tst taskslong		; check for long mode

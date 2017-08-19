@@ -4,7 +4,7 @@
 		.include 'include/minix.inc'
 		.include 'include/ascii.inc'
 
-		.globl newlinemsg
+		.globl newlinez
 		.globl changecwd
 		.globl currenttask
 		.globl defaultio
@@ -54,7 +54,7 @@ shellloop:	ldx currenttask		; get current task. needed for u
 
 		leay SHELL_INPUT,u	; setup the buffer to get it
 		lbsr getstr		; get the command input
-		ldy #newlinemsg		; tidy up by outputting ...
+		ldy #newlinez		; tidy up by outputting ...
 		lbsr putstr		; ... a new line
 
 		leax SHELL_INPUT,u	; get input back
@@ -109,7 +109,7 @@ putdirentname:	pshs a,b,x,y
 1$:		ldx defaultio		; get default io channel for shell
 		leay MINIXDE_NAME,y	; get the filename from direent y
 		lbsr putstr		; output the filename
-		ldy #newlinemsg		; and a we need ...
+		ldy #newlinez		; and a we need ...
 		lbsr putstr		; ... a newline
 		puls a,b,x,y
 		rts
@@ -233,7 +233,7 @@ internal:	lda #ERR_INTERNAL
 showerror:	ldx defaultio		; get io channel
 		lbsr geterrorstr	; get error message from a into y
 		lbsr putstr		; print it out
-		ldy #newlinemsg		; add a new line
+		ldy #newlinez		; add a new line
 		lbsr putstr		; yep, there it is
 		setnotzero		; set failed
 		rts	

@@ -225,6 +225,7 @@ consoleread:	pshs b,u
 		rts
 1$:		lbsr enable		; out of critical section
 		setnotzero		; got no data
+		lda #IO_ERR_WAIT
 2$:		puls b,u
 		rts
 

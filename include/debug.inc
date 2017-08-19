@@ -16,7 +16,7 @@
 		.globl driverz
 		.globl specdrvz
 		.globl spacez
-		.globl newlinemsg
+		.globl newlinez
 
 .macro 		debuginit
 		pshs a,y
@@ -79,7 +79,7 @@ label:		.asciz "message"
 		lbsr debugprinty
 		emitdebugstr #spacez
 .endif
-		emitdebugstr #newlinemsg
+		emitdebugstr #newlinez
 		puls cc
 .endif
 .endm
@@ -98,7 +98,7 @@ label:		.asciz "message"
 		pshs x
 		leax TASK_NAME,x
 		lbsr debugprint
-		emitdebugstr #newlinemsg
+		emitdebugstr #newlinez
 		puls x
 		puls cc
 .endif
