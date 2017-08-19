@@ -16,7 +16,6 @@
 		.globl timertask
 		.globl echotask
 		.globl shellstart
-		.globl monitorstart
 		.globl createtask
 		.globl wait
 		
@@ -36,7 +35,6 @@ echo2taskname:	.asciz 'echo2'
 echo3taskname:	.asciz 'echo3'
 echo4taskname:	.asciz 'echo4'
 sertermtaskname:.asciz 'serterm'
-montaskname:	.asciz 'monitor'
 shell1taskname:	.asciz 'shell1'
 shell2taskname:	.asciz 'shell2'
 shell3taskname:	.asciz 'shell3'
@@ -164,8 +162,8 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		ldb #B19200
 		lbsr sysopen
 		tfr x,u
-		ldx #monitorstart
-		ldy #montaskname
+		ldx #shellstart
+		ldy #shell4taskname
 		lbsr createtask
 
 		clra			; wait on a signal that will ...

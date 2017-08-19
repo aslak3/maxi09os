@@ -37,6 +37,7 @@
 
 		.area RAM
 
+iodevice:	.rmb 2
 inputbuffer:	.rmb 80
 parambuffer:	.rmb 100
 dumppointer:	.rmb 2
@@ -45,24 +46,25 @@ taskslong:	.rmb 1
 
 		.area ROM
 
-monstartz:	.asciz '\r\nMonitor, press enter to pause switching\r\n\r\n'
+greetz:		.asciz '\r\nEntered monitor\r\n\r\n'
 promptz:	.asciz '> '
 commfailedz:	.asciz 'Command failed\r\n'
 nosuchz:	.asciz 'No such command\r\n'
 resultz:	.asciz 'Result: '
 
+quitz:		.asciz 'quit'
+leavingmonz:	.asciz '\r\nLeaving moinitor\r\n\r\n'
+
 ; monitor entry point
 
-monitorstart::	ldx defaultio
+monitorstart::	lbsr forbid		; disable task switching
 
-		ldy #monstartz
-		lbsr putstr
-		ldy #inputbuffer
-		lbsr getstr
+		ldy #greetz		; say hello
+		lbsr putstr		; hello!
 
-		lbsr forbid
+		stx iodevice		; save the io device we are using
 
-mainloop:	ldx defaultio		; get io device
+mainloop:	ldx iodevice		; get io device
 
 		ldy #promptz		; '>' etc
 		lbsr putstr		; output that
@@ -81,6 +83,10 @@ mainloop:	ldx defaultio		; get io device
 		ldy #parambuffer	; into the parameter buffer
 		lbsr parseinput		; do the parse to extract stuff
 
+		ldx #quitz
+		lbsr strcmp
+		beq quitcommand
+
 startarray:	ldu #commandarray	; setup the command pointer
 nextcommand:	ldx ,u++		; get the command name
 		beq nosuchcommand	; end of command list?
@@ -91,6 +97,12 @@ skipcommand:	tst ,y+			; advance through the parambuffer
 		jsr [,u]		; jump to subroutine
 		bne commanderror	; error check for zero
 		bra mainloop		; back to top
+
+quitcommand:	ldx iodevice		; get current io device
+		ldy #leavingmonz	; tell user they are leaving monitor
+		lbsr putstr
+		lbsr permit		; enable multitasking
+		rti			; leave the monitor
 
 nomatch:	ldx ,u++		; need to advance past sub pointer
 		bra nextcommand		; before checking next command
@@ -829,12 +841,6 @@ dostatfile:	lda ,y+			; get the type
 
 		rts
 
-; quit - leave the monitor. renemable multitasking and go back to
-; waiting for the user to want to enter it again
-
-quit:		lbsr permit		; multitask once more
-		lbra monitorstart	; back to the start
-
 ; help or ? - shows some help text
 
 helpz:		.ascii 'Low-level commands:\r\n'
@@ -876,7 +882,6 @@ readbytecz:	.asciz 'readbyte'
 memorycz:	.asciz 'memory'
 taskscz:	.asciz 'tasks'
 taskcz:		.asciz 'task'
-quitcz:		.asciz 'quit'
 
 dosysopencz:	.asciz 'sysopen'
 dosysclosecz:	.asciz 'sysclose'
@@ -926,9 +931,6 @@ commandarray:	.word helpcz
 
 		.word taskcz
 		.word task
-
-		.word quitcz
-		.word quit
 
 		.word dosysopencz
 		.word dosysopen

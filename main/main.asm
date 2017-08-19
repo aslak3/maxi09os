@@ -21,12 +21,13 @@
 		.globl createtask
 		.globl doneschedule
 		.globl inthandlers
+		.globl monitorstart
 
 		.area VECTORS
 
 		.word 0x0000		; reserved
 		.word 0x0000		; swi3
-		.word 0x0000		; swi2
+		.word monitorstart	; swi2
 		.word firqinterrupt	; firq
 		.word irqinterrupt	; irq
 		.word yield		; swi

@@ -30,6 +30,7 @@ dowait:		debug ^'Handle IO error, waiting',DEBUG_DRIVER
 dobreak:	debug ^'Handle IO error, break',DEBUG_DRIVER
 		ldy #breakz		; break!
 		lbsr putstr
+		swi2
 handleioerroro:	puls a,y
 		rts
 
