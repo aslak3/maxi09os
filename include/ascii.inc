@@ -54,3 +54,7 @@ ASC_DOWN	.equ 0x8c
 ASC_LEFT	.equ 0x8d
 ASC_RIGHT	.equ 0x8e
 ASC_DEL		.equ 0x8f
+
+; special uart break emulation sequence
+
+ASC_BREAK	.equ 0xff

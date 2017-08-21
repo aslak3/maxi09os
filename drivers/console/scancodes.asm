@@ -147,7 +147,7 @@ shiftmap:
 		.byte ASC_F8		; f8
 		.byte ASC_F9		; f9
 		.byte ASC_F10		; f10
-		.byte ASC_HELP		; help
+		.byte ASC_BREAK		; help
 		.byte ASC_NUL		; unused
 
 ; row 1

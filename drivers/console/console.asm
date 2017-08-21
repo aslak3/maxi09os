@@ -213,20 +213,23 @@ consoleread:	pshs b,u
 		lbsr disable		; into critical section
 		ldb CON_RX_COUNT_U,x	; get counter
 		cmpb CON_RX_COUNT_H,x	; compare..,
-		beq 1$			; no character? then return
+		beq gotnodata		; no character? then return
 		leau CON_RX_BUF,x	; get the buffer
 		lda b,u			; get the last char written to buf
 		incb			; move along to the next
 		andb #31		; wrapping to 32 byte window
 		stb CON_RX_COUNT_U,x	; and save it
-		lbsr enable		; out of critical section
+		cmpa #ASC_BREAK		; look for break
+		beq gotbreak		; got it?
 		setzero			; got data
-		bra 2$
-		rts
-1$:		lbsr enable		; out of critical section
-		setnotzero		; got no data
-		lda #IO_ERR_WAIT
-2$:		puls b,u
+		bra consolereadout
+gotbreak:	lda #IO_ERR_BREAK	; send back break 
+		setnotzero		; error state
+		bra consolereadout
+gotnodata:	lda #IO_ERR_WAIT	; send back wait
+		setnotzero		; error state
+consolereadout: lbsr enable		; out of critical section
+		puls b,u
 		rts
 
 ; write to the device in x, reg a
