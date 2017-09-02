@@ -52,6 +52,7 @@ sysopen::	pshs y,u		; save params for driver open call
 		leau 2,u		; move to next record
 		bra 1$			; back to top
 2$:		ldx #0			; return a null in x
+		puls y,u		; restore stack for error path
 		rts
 3$:		ldx ,u			; get the specific driver
 		puls y,u		; restore sysopen params for driver

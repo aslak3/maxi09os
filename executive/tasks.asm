@@ -166,7 +166,7 @@ remtask::	lbsr disable		; enter critical section
 ; allocate the first avaialble signal bit, returning a bit mask in a
 
 signalalloc::	debug ^'Allocating signal',DEBUG_TASK
-		pshs x
+		pshs b,x
 		ldx currenttask		; get current task pointer
 		lda #1			; the bit to test
 		setnotcarry		; loop exists when test bit rots off
@@ -179,7 +179,7 @@ signalalloc::	debug ^'Allocating signal',DEBUG_TASK
 		orb TASK_SIGALLOC,x	; save the combined signals
 		stb TASK_SIGALLOC,x	; ...in the task struct
 3$:		debugreg ^'Allocd signal: ',DEBUG_TASK,DEBUG_REG_A
-		puls x
+		puls b,x
 		rts			; if no match, a will be 0
 
 ; signalfree - free the signal at a
@@ -195,7 +195,7 @@ signalfree::	pshs x
 ; wait - wait on signal mask a
 
 wait::		debugreg ^'Start wait for signal: ',DEBUG_TASK,DEBUG_REG_A
-		pshs x,y,b
+		pshs b,x,y
 		ldx currenttask		; obtain the current task
 		lbsr disable		; enter critical section
 		sta TASK_SIGWAIT,x	; save what we are waiting for
@@ -213,7 +213,7 @@ wait::		debugreg ^'Start wait for signal: ',DEBUG_TASK,DEBUG_REG_A
 		stb TASK_SIGRECVD,x	; and save the unwaited for ones
 		debugreg ^'End wait, got signal: ',DEBUG_TASK,DEBUG_REG_A
 		lbsr enable		; leave critical section
-		puls x,y,b
+		puls b,x,y
 		rts
 
 ; user space signaler - signal the task in x with the signal in a,

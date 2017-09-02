@@ -1,6 +1,7 @@
 ; shell task
 
 		.include 'include/system.inc'
+		.include 'include/hardware.inc'
 		.include 'include/minix.inc'
 		.include 'include/ascii.inc'
 
@@ -24,9 +25,16 @@
 		.globl putstrdefio
 		.globl putword
 		.globl strmatcharray
+		.globl sysopen
 		.globl sysclose
 		.globl sysread
 		.globl syswrite
+		.globl getchar
+		.globl putchar
+		.globl memoryalloc
+		.globl memoryfree
+		.globl putchardefio
+		.globl putworddefio
 
 structstart	0
 member		SHELL_INPUT,256
@@ -36,7 +44,7 @@ structend	SHELL_SIZE
 
 		.area ROM
 
-promptz:	.asciz '\r\nCommand > '
+promptz:	.asciz 'Command > '
 commnotfoundz:	.asciz 'Command not found\r\n'
 
 shellstart::	ldx #SHELL_SIZE		; how many bytes do we need?
@@ -54,8 +62,6 @@ shellloop:	ldx currenttask		; get current task. needed for u
 
 		leay SHELL_INPUT,u	; setup the buffer to get it
 		lbsr getstr		; get the command input
-		ldy #newlinez		; tidy up by outputting ...
-		lbsr putstr		; ... a new line
 
 		leax SHELL_INPUT,u	; get input back
 		leay SHELL_PARAMS,u	; setup output param stream
@@ -238,11 +244,104 @@ showerror:	ldx defaultio		; get io channel
 		setnotzero		; set failed
 		rts	
 
+; xrun - read a xmodem transfer on port b into memory and run it as a
+; subroutine
+
+uartz:		.asciz 'uart'
+
+xrun:		leas -1,s		; grab a byte of stack
+
+		lda ,y+			; get type
+		cmpa #2			; string?
+		lbne parserfail		; validation error
+		ldx ,y+			; get the size of the download
+
+		lbsr memoryalloc	; get the memory
+		tfr x,y			; save the address for copying
+		tfr x,u			; save the starting address for jsr
+
+		ldx #uartz		; uart device name
+		lda #1			; port b
+		ldb #B19200		; set the baudrate
+		lbsr sysopen		; open the port for the transfer
+
+		lda #ASC_NAK		; ask for a start
+		lbsr putchar		; ask sender to start sending
+
+blockloop:	
+		lbsr getchar		; get header byte	
+		cmpa #ASC_EOT		; eot for end of file
+		beq xrunrun		; if so then we run
+		cmpa #ASC_SOH		; soh for start of block
+		bne xrunerror		; if not then this is an error
+
+		lbsr getchar		; blocks so far
+		lbsr getchar		; 255 less blocks so far
+
+		clr ,s			; clear the checksum
+
+		ldb #128		; 128 bytes per block
+
+byteloop:	lbsr getchar		; get the byte for th efile
+		sta ,y+			; store the byte
+		adda ,s			; add the received byte the checksum
+		sta ,s			; store the checksum on each byte
+		decb			; decrement our byte counter
+		bne byteloop		; see if there are more bytes
+		
+		lbsr getchar		; get the checksum from sender
+		cmpa ,s			; check it against the one we made
+		bne blockbad		; if no good, handle it
+
+		lda #ASC_ACK		; if good, then ACK the block
+		lbsr putchar		; send the ACK
+
+		lda #'#			; output a progress marker
+		lbsr putchardefio	; on the shell device
+
+		bra blockloop		; get more blocks
+
+blockbad:	lda #ASC_NAK		; oh no, it was bad
+		lbsr putchar		; send a NAK; sender resends block
+
+		leay -0x80,y		; move back to start of the block
+		
+		bra blockloop		; try to get the same block again
+
+xrunrun:	lda #ASC_ACK		; at end of file ...
+		lbsr putchar		; ... ack the file
+
+		lbsr sysclose		; close the 2nd uart port
+
+		ldx defaultio		; load the io channel for x
+		ldy #newlinez		; clean up the hashes ...
+		lbsr putstr		; ... with a newline
+		jsr ,u			; run the recieved file as a sub
+
+		ldx defaultio		; get the io channel
+		lbsr putbyte		; output the resultant a register
+		ldy #newlinez		; and ...
+		lbsr putstr		; ... a newline
+
+		tsta			; 0 in a will indicate succes
+
+xrunout:	tfr u,x			; restore the memory block
+		lbsr memoryfree		; free the memory block
+
+		leas 1,s		; fix up stack
+		rts
+
+xrunerror:	lbsr sysclose		; close the xmodem port
+
+		setnotzero
+		bra xrunout
+
 ; built in commands
 
 listcz:		.asciz 'list'
 typecz:		.asciz 'type'
 cdcz:		.asciz 'cd'
+xruncz:		.asciz 'xrun'
 
 commandarray:	.word listcz
 		.word list
@@ -252,5 +351,8 @@ commandarray:	.word listcz
 
 		.word cdcz
 		.word cd
+
+		.word xruncz
+		.word xrun
 
 		.word 0x0000

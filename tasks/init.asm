@@ -157,14 +157,14 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		ldy #shell3taskname
 		lbsr createtask
 
-		ldx #uartnamez
-		lda #1
-		ldb #B19200
-		lbsr sysopen
-		tfr x,u
-		ldx #shellstart
-		ldy #shell4taskname
-		lbsr createtask
+;		ldx #uartnamez
+;		lda #2
+;		ldb #B19200
+;		lbsr sysopen
+;		tfr x,u
+;		ldx #shellstart
+;		ldy #shell4taskname
+;		lbsr createtask
 
 		clra			; wait on a signal that will ...
 		lbsr wait		; ... never arrive

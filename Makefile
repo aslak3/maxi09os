@@ -1,5 +1,4 @@
-AS = as6809-wrapper -oxsw
-FLASHER = tools/flasher
+AS = tools/as6809-wrapper -oxlsw
 
 6809_SERIAL = /dev/ttyS0
 
@@ -12,21 +11,26 @@ INCS = $(addprefix include/, ascii.inc debug.inc hardware.inc \
 
 MAIN_REL = main/main.rel
 
+AUTOGEN-INC = include/autogen.inc
+
 include $(addsuffix Makefile, drivers/ executive/ fs/ lib/ misc/ tasks/)
 
-all: $(BIN)
+all: $(BIN) include/autogen.inc
 
-main.bin: main.ihx
+$(BIN): main.ihx
 	hex2bin -out $@ $<
 
 main.ihx: $(RELS) $(MAIN_REL)
-	aslink $(AREA_BASES) -nmwi main.ihx $(MAIN_REL) $(RELS)
+	aslink $(AREA_BASES) -onmuwi main.ihx $(MAIN_REL) $(RELS)
 
 %.rel: %.asm $(INCS)
 	$(AS) $@ $<
 
 clean: $(CLEANDIRS)
-	rm -f $(RELS) $(BIN) *.ihx *.map
+	rm -f $(MAIN_REL) $(RELS) $(BIN) *.ihx *.map
 	
 flasher:
-	$(FLASHER) -f $(BIN) -s $(6809_SERIAL)
+	tools/flasher -f $(BIN) -s $(6809_SERIAL)
+
+$(AUTOGEN-INC): $(BIN)
+	tools/map2equates.pl < main.map > $(AUTOGEN-INC)

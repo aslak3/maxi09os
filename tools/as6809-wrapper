@@ -1,0 +1,11 @@
+#!/bin/sh
+
+as6809 $@
+
+E=$?
+
+if [ $E -ne 0 ]; then
+	rm $2
+fi
+
+exit $E

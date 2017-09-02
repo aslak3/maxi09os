@@ -13,7 +13,8 @@
 
 ;;;;; IO
 
-; handleerrors
+; general purpose io "error" handler - call after an io function has
+; returned non zero. it will then wait or handle the break signal.
 
 breakz:		.asciz 'BREAK!!!\r\n'
 
@@ -23,30 +24,62 @@ handleioerror:: pshs a,y
 		cmpa #IO_ERR_BREAK	; got a break?
 		beq dobreak		; handle the break
 		bra handleioerroro
-dowait:		debug ^'Handle IO error, waiting',DEBUG_DRIVER
+dowait:		debug ^'Handle IO error, waiting',DEBUG_LIB
 		lda DEVICE_SIGNAL,x	; get the signal mask to wait on
 		lbsr wait		; and wait...
 		bra handleioerroro	; now return, caller should retry	
-dobreak:	debug ^'Handle IO error, break',DEBUG_DRIVER
+dobreak:	debug ^'Handle IO error, break',DEBUG_LIB
 		ldy #breakz		; break!
 		lbsr putstr
 		swi2
 handleioerroro:	puls a,y
 		rts
 
+; get a char on the default io channel, waiting if needed
+
+getchardefio::	pshs x
+		ldx defaultio		; get the default io device
+		bsr getchar		; get the char, waiting if needed
+		puls x
+		rts
+
+; get a char from device x, waiting if needed
+
+getchar::	lbsr sysread		; get the byte into a
+		bne getcharerror	; error? deal with it
+		rts
+getcharerror:	lbsr handleioerror	; deal with error
+		bra getchar
+
+; put a char to device x, waiting if needed
+
+putchardefio::	pshs x
+		ldx defaultio		; get the default io device
+		bsr putchar		; put the charater in a, might wait
+		puls x
+		rts
+
+; put a char to device x, waiting if needed
+
+putchar::	lbsr syswrite		; get the byte into a
+		bne getcharerror	; error? deal with it
+		rts
+putcharerror:	lbsr handleioerror	; deal with error
+		rts
+
 ; gets a buffer from device at x, memory in y, length in u
 
-getbytes::	pshs a,y,u
+getchars::	pshs a,y,u
 		exg u,y			; u has no zero bit on leau
-getbytesloop:	lbsr sysread		; get byte in a
-		bne handleioerror	; need to deal with errors
+getcharsloop:	lbsr sysread		; get byte in a
+		bne getcharserror	; need to deal with errors
 		sta ,u+			; save in callers memory
 		leay -1,y		; dec byte counter
-		bne getbytesloop	; back for more
+		bne getcharsloop	; back for more
 		puls a,y,u
 		rts
-getbyteserror:	lbsr handleioerror	; deal with error
-		bra getbytesloop
+getcharserror:	lbsr handleioerror	; deal with error
+		bra getcharsloop
 
 ; puts the string in y to the default io device
 
@@ -91,6 +124,8 @@ getstrloop:	lbsr sysread		; get a char in a
 getstrecho:	lbsr syswrite		; echo it
 		bra getstrloop		; get more
 getstrout:	clr ,y+			; add a null
+		ldy #newlinez		; tidy up ...
+		lbsr putstr		; ... with a newline
 		puls a,b,y
 		rts
 getstrbs:	tstb			; see if the char count is 0
@@ -106,7 +141,7 @@ getstrbs:	tstb			; see if the char count is 0
 		lbsr syswrite
 		bra getstrloop		; echo the bs and charry on
 getstrerror:	lbsr handleioerror	; deal with error, might wait
-		debugreg ^'Get string wait returned: ',DEBUG_DRIVER,DEBUG_REG_A
+		debugreg ^'Get string wait returned: ',DEBUG_LIB,DEBUG_REG_A
 		bra getstrloop		; go and get the new data
 
 ; putnib - convert a low nibble in a and output it via x
@@ -118,6 +153,7 @@ putnib:		anda #0x0f		; mask out the high nibble
 		adda #0x07		; yes? letter then, add 'A'-'9'
 1$:		lbsr syswrite		; output it
 		rts		
+
 ; putbyte - convert a byte in a to two characters and send them via def io
 
 putbytedefio::	pshs x

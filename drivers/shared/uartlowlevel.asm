@@ -27,9 +27,9 @@ uartllopen::	pshs a,b,x
 		lbne 1$			; in use?
 		ldb #1			; mark it as being in use
 		stb a,y			; ...
-		rola			; multiply by 8
-		rola			; ... since there are 8 registers
-		rola			; ... in a uart port
+		lsla			; multiply by 8
+		lsla			; ... since there are 8 registers
+		lsla			; ... in a uart port
 		ldy #BASE16C654		; get the base address of quart
 		leay a,y		; y is now the base adress of the port
 		lda LSR16C654,y         ; get the current status
@@ -38,14 +38,15 @@ uartllopen::	pshs a,b,x
 		lda RHR16C654,y
 3$:		lda #0b00000001		; receive interrupts
 		sta IER16C654,y		; ... interrupts
-		lda #0b01000001
-		sta FCR16C654,y		; 16 deep fifo
+		lda #0b01000111
+		sta FCR16C654,y		; 16 deep fifo, reset fifo
 		ldx #uartllhandler	; get uart handler location
 		stx inthandlers+(INTPOSUART*2)	; save it in int table
 		lda #INTMASKUART	; enable the uart interrupt
 		sta IRQSOURCESS		; ... to be routed via disco
 		lbsr enable		; exit critical section
 		setzero
+		debugreg ^'UART-LL h/w addr open: ',DEBUG_SPEC_DRV,DEBUG_REG_Y
 		bra 2$
 1$:		lbsr enable		; exit critical section
 		ldy #0			; return 0
@@ -56,9 +57,16 @@ uartllopen::	pshs a,b,x
 ; uart close - give it the port number in a
 
 uartllclose::	pshs y
-		ldy #uartportflags	; get the top of the open flags
 		lbsr disable
+		ldy #uartportflags	; get the top of the open flags
 		clr a,y			; mark it unused
+		lsla			; multiply by 8
+		lsla			; ... since there are 8 registers
+		lsla			; ... in a uart port
+		ldy #BASE16C654		; get the base address of quart
+		leay a,y		; y is now the base adress of the port
+		debugreg ^'UART-LL h/w addr close: ',DEBUG_SPEC_DRV,DEBUG_REG_Y
+		clr IER16C654,y		; disable interrupts
 		lbsr enable
 		puls y
 		rts
@@ -96,7 +104,7 @@ uartllsetbaud::	pshs a
 
 ; interrupt handler for any uart port
 
-uartllhandler::	debug ^'In UART LowLevel handler',DEBUG_SPEC_DRV
+uartllhandler::	debug ^'In UART-LL handler',DEBUG_INT
 		ldb BASEPA16C654+ISR16C654
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notporta
@@ -120,6 +128,6 @@ notportc:	ldb BASEPD16C654+ISR16C654
 		bne notportd
 		lbsr conrxhandler	; handle the keyboard
 		bra uarthandlero
-notportd:	debug ^'Unknown UART port',DEBUG_SPEC_DRV
-uarthandlero:	debug ^'End UART handler',DEBUG_SPEC_DRV
+notportd:	debug ^'Unknown UART port',DEBUG_INT
+uarthandlero:	debug ^'End UART handler',DEBUG_INT
 		jmp tailhandler		; cheeck the reschedule state

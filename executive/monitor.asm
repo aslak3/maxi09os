@@ -5,7 +5,7 @@
 		.globl findinode
 		.globl forbid
 		.globl permit
-		.globl getbytes
+		.globl getchars
 		.globl unmountminix
 		.globl mountminix
 		.globl getinode
@@ -70,9 +70,6 @@ mainloop:	ldx iodevice		; get io device
 		lbsr putstr		; output that
 		ldy #inputbuffer	; now we need a command
 		lbsr getstr		; get the command (waiting as needed)
-
-		ldy #newlinez		; clear up the screen by ...
-		lbsr putstr		; ... outputting a newline
 
 		; parambuffer contains:
 		;   command followed by null
@@ -766,9 +763,9 @@ dogetinode:	lda ,y+			; get the type
 
 		rts
 
-; getbytes DDDD LLLL MMMM
+; getchars DDDD LLLL MMMM
 
-dogetbytes:	lda ,y+			; get the type
+dogetchars:	lda ,y+			; get the type
 		cmpa #2			; word?
 		lbne generalerror	; validation error
 		ldx ,y++		; get the device handle
@@ -783,7 +780,7 @@ dogetbytes:	lda ,y+			; get the type
 		lbne generalerror	; validation error
 		ldy ,y++		; get the memory address
 
-		lbsr getbytes
+		lbsr getchars
 
 		rts
 
@@ -898,7 +895,7 @@ mntminixcz:	.asciz 'mountminix'
 unmntminixcz:	.asciz 'unmountminix'
 
 dogetinodecz:	.asciz 'getinode'
-dogetbytescz:	.asciz 'getbytes'
+dogetcharscz:	.asciz 'getchars'
 dofindinodecz:	.asciz 'findinode'
 doopenfilecz:	.asciz 'openfile'
 dostatfilecz:	.asciz 'statfile'
@@ -968,8 +965,8 @@ commandarray:	.word helpcz
 		.word dominixopencz
 		.word dominixopen
 
-		.word dogetbytescz
-		.word dogetbytes
+		.word dogetcharscz
+		.word dogetchars
 
 		.word dofindinodecz
 		.word dofindinode

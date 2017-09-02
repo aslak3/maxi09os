@@ -13,7 +13,7 @@
 		.globl devicenotimpl
 		.globl getinode
 		.globl readfsblock
-		.globl getbytes
+		.globl getchars
 		.globl swapword
 		.globl swaplong
 		.globl strcmp
@@ -164,7 +164,7 @@ findinodeindir:	pshs x,y
 
 getnextdirent::	pshs x,u
 		ldu #MINIXDE_SIZE	; set the size of the dirent
-		lbsr getbytes		; read it in
+		lbsr getchars		; read it in
 		leax MINIXDE_INODENO,y	; move x to the inode number
 		lbsr swapword		; swap it
 		puls x,u
