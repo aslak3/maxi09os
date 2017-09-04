@@ -39,12 +39,8 @@
 
 		.area ROM
 
-; setup stack to the end of ram so it can go grown backwards
+reset:		ldx #RAMSTART		; start at the beginning of ram
 
-reset:		lda #0x02		; map all of the eeprom in
-		sta MUDDYSTATE		; by writing 02 to the state reg
-
-		ldx #RAMSTART		; start at the beginning of ram
 1$:		clr ,x+			; clear a byte and inc pointer
 		cmpx #RAMEND		; at the end?
 		bne 1$			; no? then keep going
@@ -52,6 +48,8 @@ reset:		lda #0x02		; map all of the eeprom in
 		disableinterrupts	; disable interrupts
 		clr interruptnest	; set interrupt nest counter to 0
 		clr permitnest		; and the permit nest counter to 0
+
+; setup stack to the end of ram so it can go grown backwards
 
 		lds #STACKEND+1		; with no ints, we can setup s
 

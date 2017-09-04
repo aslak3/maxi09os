@@ -8,10 +8,6 @@ flashblock:	.rmb 64			; block of 64 bytes for rx data
 
 		.area ROM (ABS)
 
-		.org 0xc000
-
-realstart:				; chained addres always top of rom
-
 ; setup the reset vector, last location in rom
 
 		.org 0xfffe
@@ -38,7 +34,28 @@ reset:		lds #STACKEND+1		; system stack grows down from end
 
 		lbsr serialinit		; setup the serial port registers
 
-		ldx #resetmsg		; show prompt for flash
+; copy the loader to ram. this is so we can access all of the eeprom space
+; from within the loader, including grabbing the eeprom's reset vector
+; so we can start the real eeprom content. this is also needed so we can
+; rewrite the eeprom if a flashing signal (f) is sent from the host.
+		
+		ldx #LOADERSTART	; setup the rom copy to ram
+		ldy #LOADERCOPYSTART	; this is the second half of ram
+romcopy:	lda ,x+			; read in
+		sta ,y+			; and write out
+		cmpx #LOADEREND+1	; check to see if we are at the end
+		bne romcopy		; copy more
+
+; calculate the ram offset so we can proceed from here running in the copy
+; held in ram.
+
+		ldx #ramcopy-LOADERSTART+LOADERCOPYSTART
+
+		jmp ,x			; jump to the new location of flasher
+
+; ram copy start
+
+ramcopy:	ldx #resetmsg		; show prompt for flash
 		lbsr serialputstr	; no ints used for serial
 
 		lda #1
@@ -51,33 +68,20 @@ reset:		lds #STACKEND+1		; system stack grows down from end
 		bne normalstart		; timeout
 
 		cmpa #'f		; compare with 'f' to see if ...
-		beq flashcopy		; .. the remote end has an image
+		beq flashing		; .. the remote end has an image
 
-normalstart:	jmp realstart		; jump to chained start position
+normalstart:	lda #0x02		; write protect eeprom
+		sta MUDDYSTATE		; but keep it mapped at ffxx
+
+		jmp [0xfffe]		; jump to new reset vector
  
-flashcopy:	ldx #LOADERSTART	; setup the rom copy to ram
-		ldy #LOADERCOPYSTART	; this is the second half of ram
-romcopy:	lda ,x+			; read in
-		sta ,y+			; and write out
-		cmpx #LOADEREND+1	; check to see if we are at the end
-		bne romcopy		; copy more
-
-; get the location of the flasher code, offset it from the start of rom
-; and offset it forward where it now is 
-
-		ldx #flasher-LOADERSTART+LOADERCOPYSTART
-
-		jmp ,x			; jump to the new location offlasher
-
-; flasher start
-
-flasher:	ldx #flashreadymsg	; tell other end it can send now
+flashing:	ldx #flashreadymsg	; tell other end it can send now
 		lbsr serialputstr
-
-; read 64bytes from the serial port into ram
 
 		lda #0x03		; enable eeprom writing
 		sta MUDDYSTATE		; and map last page to eeprom
+
+; read 64bytes from the serial port into ram
 
 		ldu #ROMSTART		; setup the counter into rom
 inflashblk:	ldx #flashblock		; this is the block in ram we...
@@ -110,13 +114,9 @@ flashdelayloop:	leax -1,x		; dey
 		cmpu #ROMEND+1		; see if we are the end of rom
 		bne inflashblk		; back to the next block
 
-; done writing, now we are verifying
-
-		lda #0x02		; write protect eeprom
-		sta MUDDYSTATE		; but keep it mapped at ffxx
-
-; send the content of the rom back, so the sender knows what was written -
-; we can't do anything if it didn't write, but at least we know
+; done writing, now we are verifying. send the content of the rom back, so
+; the sender knows what was written - we can't do anything if it didn't
+; write, but at least we know
 
 		ldu #ROMSTART		; back to the start
 verflash:	lda ,u+			; get the byte
@@ -129,6 +129,6 @@ verflash:	lda ,u+			; get the byte
 		
 		bra normalstart		; continue on
 
-; include the various subsystem implementations
+; include basic serial routines
 
 		.include 'serial.asm'
