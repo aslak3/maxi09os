@@ -9,6 +9,7 @@ AREA_BASES = -b VECTORS=0xfff0 -b ROM=0xc000 -b DEBUGMSG=0xf800 -b RAM=0x0000
 INCS = $(addprefix include/, ascii.inc debug.inc hardware.inc \
 	minix.inc scancodes.inc system.inc v99lowlevel.inc)
 
+SYSTEMVARS_REL = main/systemvars.rel
 MAIN_REL = main/main.rel
 
 AUTOGEN-INC = include/autogen.inc
@@ -20,8 +21,8 @@ all: $(BIN) include/autogen.inc
 $(BIN): main.ihx
 	hex2bin -out $@ $<
 
-main.ihx: $(RELS) $(MAIN_REL)
-	aslink $(AREA_BASES) -onmuwi main.ihx $(MAIN_REL) $(RELS)
+main.ihx: $(RELS) $(MAIN_REL) $(SYSTEMVARS_REL)
+	aslink $(AREA_BASES) -onmuwi main.ihx $(SYSTEMVARS_REL) $(MAIN_REL) $(RELS)
 
 %.rel: %.asm $(INCS)
 	$(AS) $@ $<
