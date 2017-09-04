@@ -10,7 +10,6 @@
 		.globl memoryfree
 		.globl currenttask
 		.globl rootsuperblock
-		.globl devicenotimpl
 		.globl getinode
 		.globl readfsblock
 		.globl getchars
@@ -30,7 +29,7 @@ structend	MINIX_SIZE
 
 		.area ROM
 
-minixdef::	.word minixopen
+_minixdef::	.word minixopen
 		.word 0x0000
 		.asciz "minix"
 

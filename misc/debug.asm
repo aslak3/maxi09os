@@ -17,17 +17,17 @@ debugbuffer:	.rmb 100
 
 ; these are the debug sections
 
-generalz::	.asciz 'General: '
-tasksz::	.asciz 'Tasks: '
-enddisz::	.asciz 'Enable/Disable: '
-intz::		.asciz 'Interrupt: '
-memoryz::	.asciz 'Memory: '
-driverz::	.asciz 'Drivers: '
-specdrvz::	.asciz 'Low level driver: '
+_generalz::	.asciz 'General: '
+_tasksz::	.asciz 'Tasks: '
+_enddisz::	.asciz 'Enable/Disable: '
+_intz::		.asciz 'Interrupt: '
+_memoryz::	.asciz 'Memory: '
+_driverz::	.asciz 'Drivers: '
+_specdrvz::	.asciz 'Low level driver: '
 
 ; write to the debug port the string in x
 
-debugprint::	pshs a,b,y,cc
+_debugprint::	pshs a,b,y,cc
 		ldy #BASEPC16C654
 1$:		lda ,x+			; byte to send
 		beq 3$			; end?
@@ -39,7 +39,26 @@ debugprint::	pshs a,b,y,cc
 3$:		puls a,b,y,cc
 		rts
 
-debugprintx::	pshs a,b,cc,x
+_debugprinta::	pshs a,b,cc,x
+		ldx #debugbuffer
+		lbsr bytetoaschex
+		clr ,x+
+		ldx #debugbuffer
+		lbsr debugprint
+		puls a,b,cc,x
+		rts
+
+_debugprintb::	pshs a,b,cc,x
+		ldx #debugbuffer
+		tfr b,a
+		lbsr bytetoaschex
+		clr ,x+
+		ldx #debugbuffer
+		lbsr debugprint
+		puls a,b,cc,x
+		rts
+
+_debugprintx::	pshs a,b,cc,x
 		tfr x,d
 		ldx #debugbuffer
 		lbsr wordtoaschex
@@ -49,29 +68,10 @@ debugprintx::	pshs a,b,cc,x
 		puls a,b,cc,x
 		rts
 
-debugprinty::	pshs a,b,cc,x
+_debugprinty::	pshs a,b,cc,x
 		tfr y,d
 		ldx #debugbuffer
 		lbsr wordtoaschex
-		clr ,x+
-		ldx #debugbuffer
-		lbsr debugprint
-		puls a,b,cc,x
-		rts
-
-debugprinta::	pshs a,b,cc,x
-		ldx #debugbuffer
-		lbsr bytetoaschex
-		clr ,x+
-		ldx #debugbuffer
-		lbsr debugprint
-		puls a,b,cc,x
-		rts
-
-debugprintb::	pshs a,b,cc,x
-		ldx #debugbuffer
-		tfr b,a
-		lbsr bytetoaschex
 		clr ,x+
 		ldx #debugbuffer
 		lbsr debugprint

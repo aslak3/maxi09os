@@ -13,11 +13,12 @@
 		.globl rootsuperblock
 		.globl putstr
 		.globl currenttask
-		.globl timertask
-		.globl echotask
-		.globl shellstart
 		.globl createtask
 		.globl wait
+
+		.globl _timertask
+		.globl _echotask
+		.globl _shellstart
 		
 		.area RAM
 
@@ -98,7 +99,7 @@ writeinitstr:	pshs x
 initstartedz:	.asciz '\r\n\r\nInit started\r\n'
 rootmountedz:	.asciz 'Root mounted\r\n'
 
-init::		debug ^'Init started',DEBUG_GENERAL
+_init::		debug ^'Init started',DEBUG_GENERAL
 
 		lbsr openinitio		; open the init io channel
 
@@ -116,7 +117,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		ldy #1			; root inode is 0001
 		sty TASK_CWD_INODENO,x	; this is inherited down the chain
 
-		ldx #timertask		; now start the timer task
+		ldx #_timertask		; now start the timer task
 		ldy #timertaskname	; ... giving it a name
 		ldu #0			; and no default io
 		lbsr createtask		; it will open the io devices itself
@@ -126,7 +127,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		clrb
 		lbsr sysopen
 		tfr x,u
-		ldx #echotask
+		ldx #_echotask
 		ldy #echo1taskname
 		lbsr createtask
 
@@ -135,7 +136,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		clrb
 		lbsr sysopen
 		tfr x,u
-		ldx #shellstart
+		ldx #_shellstart
 		ldy #shell1taskname
 		lbsr createtask
 
@@ -144,7 +145,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		ldb #1			; big scroll mode
 		lbsr sysopen
 		tfr x,u
-		ldx #shellstart
+		ldx #_shellstart
 		ldy #shell2taskname
 		lbsr createtask
 
@@ -153,7 +154,7 @@ init::		debug ^'Init started',DEBUG_GENERAL
 		ldb #B19200
 		lbsr sysopen
 		tfr x,u
-		ldx #shellstart
+		ldx #_shellstart
 		ldy #shell3taskname
 		lbsr createtask
 

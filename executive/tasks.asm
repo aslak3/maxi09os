@@ -19,9 +19,10 @@
 		.globl disable
 		.globl enable
 		.globl copystr
-		.globl runtimers
 		.globl permitnest
 		.globl interruptnest
+
+		.globl _runtimers
 
 STACK		.equ 128
 
@@ -103,7 +104,7 @@ exittask::	debugreg ^'Task exiting: ',DEBUG_TASK,DEBUG_REG_A
 		sta TASK_EXIT_CODE,x	; save exit code
 		ldx TASK_PARENT,x	; get its parent
 		lda #SIGNAL_CHILD	; we are indicating a child exit
-		lbsr intsignal		; send it to the parent
+		lbsr _intsignal		; send it to the parent
 		lbsr enable		; exit critical section
 		debugreg ^'Done exiting for task: ',DEBUG_TASK,DEBUG_REG_X
 		swi			; yield to another task
@@ -221,7 +222,7 @@ wait::		debugreg ^'Start wait for signal: ',DEBUG_TASK,DEBUG_REG_A
 
 signal::	debugreg ^'Signalling the task: ',DEBUG_TASK,DEBUG_REG_A|DEBUG_REG_X
 		lbsr disable		; enter criticial section
-		lbsr intsignal		; use the interrupt signal sender
+		lbsr _intsignal		; use the interrupt signal sender
 		swi			; now reschedule, returning later
 		lbsr enable		; leave critial section
 		rts
@@ -229,7 +230,7 @@ signal::	debugreg ^'Signalling the task: ',DEBUG_TASK,DEBUG_REG_A|DEBUG_REG_X
 
 ; signal action, only call with interrupts disabled
 
-intsignal::	debugreg ^'Interrupt signalling the task: ',DEBUG_INT,DEBUG_REG_A|DEBUG_REG_X
+_intsignal::	debugreg ^'Interrupt signalling the task: ',DEBUG_INT,DEBUG_REG_A|DEBUG_REG_X
 		pshs y
 		ora TASK_SIGRECVD,x	; or in the new sigs with current
 		sta TASK_SIGRECVD,x	; and save them in the target task
@@ -247,12 +248,12 @@ intsignal::	debugreg ^'Interrupt signalling the task: ',DEBUG_INT,DEBUG_REG_A|DE
 
 ; ticker
 
-tickerhandler::	debug ^'Ticker handler',DEBUG_INT
+_tickerhandler::debug ^'Ticker handler',DEBUG_INT
 		lda T1CL6522		; clear interrupt
 
-		lbsr runtimers		; run all the timer devices
+		lbsr _runtimers		; run all the timer devices
 
-yield::		debug ^'Manual yield entry',DEBUG_TASK
+_yield::	debug ^'Manual yield entry',DEBUG_TASK
 		tst permitnest		; see if task switch is enabled
 		bgt permitted		; >0, so task switching is enabled
 		rti			; if not, just return now
@@ -270,7 +271,7 @@ permitted:	ldx currenttask		; get the current task struct
 		beq scheduleidle	; no tasks, so idle
 
 		ldy NODE_NEXT,y		; this will become the new first
-		beq doneschedule	; only one task, so done already
+		beq _doneschedule	; only one task, so done already
 
 		ldy #readytasks		; get the list of ready tasks
 		lbsr remtail		; remvoe the tail and add ...
@@ -279,7 +280,7 @@ permitted:	ldx currenttask		; get the current task struct
 ; schedule the task in x to run - also the schedular's entry point from
 ; main
 
-doneschedule::	debugxtask ^'Scheduling the task: ',DEBUG_TASK
+_doneschedule::	debugxtask ^'Scheduling the task: ',DEBUG_TASK
 		stx currenttask		; set the pointer for current task
 		lds TASK_SP,x		; setup the stack from the task
 		lda TASK_INTNEST,x	; get the int nest count from task
@@ -295,4 +296,4 @@ doneschedule::	debugxtask ^'Scheduling the task: ',DEBUG_TASK
 
 scheduleidle:	ldx idletask		; get the idle task handlee
 		debug ^'Scheduling idler',DEBUG_TASK
-		bra doneschedule	; it will be made the current task
+		bra _doneschedule	; it will be made the current task

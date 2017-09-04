@@ -113,6 +113,8 @@ vseekread::	pshs a,b
 		puls a,b
 		rts
 
+; PRIVATE
+
 ; prepare the vdc for reading or writing from y in vram
 
 vseekcommon:	tfr y,d			; we need to do some shifting

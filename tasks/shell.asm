@@ -47,7 +47,7 @@ structend	SHELL_SIZE
 promptz:	.asciz 'Command > '
 commnotfoundz:	.asciz 'Command not found\r\n'
 
-shellstart::	ldx #SHELL_SIZE		; how many bytes do we need?
+_shellstart::	ldx #SHELL_SIZE		; how many bytes do we need?
 		lbsr memoryalloc	; allocate them
 		tfr x,u			; u is the user data pointer
 		ldx currenttask		; get the current task

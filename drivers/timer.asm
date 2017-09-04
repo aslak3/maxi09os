@@ -7,15 +7,15 @@
 		.globl memoryalloc
 		.globl memoryfree
 		.globl currenttask
-		.globl devicenotimpl
 		.globl signalalloc
 		.globl enable
 		.globl disable
-		.globl driversignal
 		.globl initlist
 		.globl addtail
 		.globl remove
-		.globl intsignal
+
+		.globl _intsignal
+		.globl _devicenotimp
 
 ; timer device instance struct
 
@@ -32,7 +32,7 @@ timers:		.rmb LIST_SIZE		; list of open timers
 
 		.area ROM
 
-timerdef::	.word timeropen
+_timerdef::	.word timeropen
 		.word timerprepare
 		.asciz "timer"
 
@@ -103,7 +103,7 @@ stoptimer:	lbsr disable		; stop handler playing with timer
 
 ;;; INTERUPT
 
-runtimers::	pshs x,y,a
+_runtimers::	pshs x,y,a
 		ldy #timers		; start with list
 		ldx LIST_HEAD,y		; get first node
 1$:		ldy NODE_NEXT,x		; we need to test for end
@@ -128,7 +128,7 @@ runtimers::	pshs x,y,a
 		tfr x,y			; save timer device struct
 		ldx DEVICE_TASK,x	; get the task for that owns timer
 		debug ^'Timer done',DEBUG_INT
-		lbsr intsignal		; signal the task
+		lbsr _intsignal		; signal the task
 		tfr y,x			; back to the device struct in x
 3$:		ldx NODE_NEXT,x		; get the next open timer
 		lbra 1$			; back for more

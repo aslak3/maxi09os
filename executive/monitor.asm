@@ -57,7 +57,7 @@ leavingmonz:	.asciz '\r\nLeaving moinitor\r\n\r\n'
 
 ; monitor entry point
 
-monitorstart::	lbsr forbid		; disable task switching
+_monitorstart::	lbsr forbid		; disable task switching
 
 		ldy #greetz		; say hello
 		lbsr putstr		; hello!

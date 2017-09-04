@@ -2,7 +2,7 @@
 
 		.area ROM
 
-fontdata::	.byte 0b00000000 ;           
+_fontdata::	.byte 0b00000000 ;           
 		.byte 0b00000000 ;           
 		.byte 0b00000000 ;           
 		.byte 0b00000000 ;           

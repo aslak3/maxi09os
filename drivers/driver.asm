@@ -4,41 +4,29 @@
 		.include 'include/hardware.inc'
 		.include 'include/debug.inc'
 
-		.globl uartdef
-		.globl consoledef
-		.globl leddef
-		.globl timerdef
-		.globl idedef
-		.globl minixdef
-		.globl joydef
 		.globl strcmp
-		.globl intsignal
+
+		.globl _uartdef
+		.globl _consoledef
+		.globl _leddef
+		.globl _timerdef
+		.globl _idedef
+		.globl _minixdef
+		.globl _joydef
+		.globl _intsignal
 
 		.area ROM
 
-drivertable:	.word uartdef
-		.word consoledef
-		.word leddef
-		.word timerdef
-		.word idedef
-		.word minixdef
-		.word joydef
+drivertable:	.word _uartdef
+		.word _consoledef
+		.word _leddef
+		.word _timerdef
+		.word _idedef
+		.word _minixdef
+		.word _joydef
 		.word 0x0000
 
 ; inits all drivers
-
-driverprepare::	debug ^'Driver prepare start',DEBUG_DRIVER
-		ldu #drivertable	; setup table search
-1$:		ldy ,u			; get current driver
-		beq 3$			; last one? exit
-		debugreg ^'Doing driver prpare for: ',DEBUG_DRIVER,DEBUG_REG_Y
-		ldx DRIVER_PREPARE,y	; get prepare routine from driver
-		beq 2$			; not one set? exit
-		jsr [DRIVER_PREPARE,y]	; run the prepare routine
-2$:		leau 2,u		; get the next driver
-		bra 1$			; back for more
-3$:		debug ^'Driver prpare end',DEBUG_DRIVER
-		rts	
 
 ; open device by string in x, with optional unit number in a
 
@@ -82,16 +70,29 @@ syscontrol::	jmp [DEVICE_CONTROL,x]	; this is a jump
 
 ; signals the task that owns the device in x
 
-driversignal::	pshs a,x
+_driverprep::	debug ^'Driver prepare start',DEBUG_DRIVER
+		ldu #drivertable	; setup table search
+1$:		ldy ,u			; get current driver
+		beq 3$			; last one? exit
+		debugreg ^'Doing driver prpare for: ',DEBUG_DRIVER,DEBUG_REG_Y
+		ldx DRIVER_PREPARE,y	; get prepare routine from driver
+		beq 2$			; not one set? exit
+		jsr [DRIVER_PREPARE,y]	; run the prepare routine
+2$:		leau 2,u		; get the next driver
+		bra 1$			; back for more
+3$:		debug ^'Driver prpare end',DEBUG_DRIVER
+		rts	
+
+_driversignal::	pshs a,x
 		debugreg ^'Signalling owner of device: ',DEBUG_TASK,DEBUG_REG_X
 		lda DEVICE_SIGNAL,x	; get interrupt bit
 		ldx DEVICE_TASK,x	; get task that owns port
 		debugreg ^'Task and signal: ',DEBUG_TASK,DEBUG_REG_A|DEBUG_REG_X
-		lbsr intsignal		; make it next to run
+		lbsr _intsignal		; make it next to run
 		puls a,x
 		rts  
 
-; devicenotimpl - dummy for not implemented sys funciton
+; _devicenotimp - dummy for not implemented sys funciton
 
-devicenotimpl::	debug ^'Not implemented',DEBUG_DRIVER
+_devicenotimp ::debug ^'Not implemented',DEBUG_DRIVER
 		rts

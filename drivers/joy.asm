@@ -5,11 +5,11 @@
 
 		.globl memoryalloc
 		.globl memoryfree
-		.globl currenttask
-		.globl devicenotimpl
 		.globl signalalloc
 		.globl forbid
 		.globl permit
+
+		.globl _devicenotimp
 
 structstart	DEVICE_SIZE
 member		JOY_PORT_ADDR,2		; the hardward address
@@ -23,7 +23,7 @@ joysinuse:	.rmb 1			; 1 for open, 0 for closed
 
 		.area ROM
 
-joydef::	.word joyopen
+_joydef::	.word joyopen
 		.word 0x0000
 		.asciz "joy"
 
@@ -49,7 +49,7 @@ joyopen:	lbsr forbid		; enter critical section
 		sty DEVICE_CLOSE,x	; ... in the device struct
 		ldy #joyread		; save the write pointer
 		sty DEVICE_READ,x	; ... in the device struct
-		ldy #devicenotimpl	; not implemented
+		ldy #_devicenotimp	; not implemented
 		sty DEVICE_WRITE,x	; write
 		sty DEVICE_SEEK,x	; seek
 		sty DEVICE_CONTROL,x	; and control

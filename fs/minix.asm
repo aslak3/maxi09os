@@ -7,9 +7,6 @@
 
 		.globl memoryalloc
 		.globl memoryfree
-		.globl currenttask
-		.globl devicenotimpl
-		.globl signalalloc
 		.globl forbid
 		.globl permit
 		.globl memcpy256

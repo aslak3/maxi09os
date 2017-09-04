@@ -7,9 +7,10 @@
 		.globl disable
 		.globl enable
 		.globl inthandlers
-		.globl uartrxhandler
-		.globl conrxhandler
-		.globl tailhandler
+
+		.globl _uartrxhandler
+		.globl _conrxhandler
+		.globl _tailhandler
 
 		.area RAM
 
@@ -20,7 +21,7 @@ uartportflags:	.rmb 4			; four flags, 0=port a etc
 ; uart open - open the uart port in a reg, returning the base address
 ; for the device in y. baud rate selected via b - no baud rate is set
 
-uartllopen::	pshs a,b,x
+_uartllopen::	pshs a,b,x
 		ldy #uartportflags	; determine if uart is in use
 		lbsr disable		; no  isr till setup complete
 		tst a,y			; get current state
@@ -40,7 +41,7 @@ uartllopen::	pshs a,b,x
 		sta IER16C654,y		; ... interrupts
 		lda #0b01000111
 		sta FCR16C654,y		; 16 deep fifo, reset fifo
-		ldx #uartllhandler	; get uart handler location
+		ldx #_uartllhandler	; get uart handler location
 		stx inthandlers+(INTPOSUART*2)	; save it in int table
 		lda #INTMASKUART	; enable the uart interrupt
 		sta IRQSOURCESS		; ... to be routed via disco
@@ -56,7 +57,7 @@ uartllopen::	pshs a,b,x
 
 ; uart close - give it the port number in a
 
-uartllclose::	pshs y
+_uartllclose::	pshs y
 		lbsr disable
 		ldy #uartportflags	; get the top of the open flags
 		clr a,y			; mark it unused
@@ -73,7 +74,7 @@ uartllclose::	pshs y
 
 ; sets the rate for the uart port y to rate b (and 8n1)
 
-uartllsetbaud::	pshs a
+_uartllsetbaud::pshs a
 		lda #0xbf		; bf magic to enhanced feature reg
 		sta LCR16C654,y		; 8n1 and config baud	
 		lda #0b00010000
@@ -104,30 +105,30 @@ uartllsetbaud::	pshs a
 
 ; interrupt handler for any uart port
 
-uartllhandler::	debug ^'In UART-LL handler',DEBUG_INT
+_uartllhandler::debug ^'In UART-LL handler',DEBUG_INT
 		ldb BASEPA16C654+ISR16C654
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notporta
 		lda #0
-		lbsr uartrxhandler	; handle the normal uart
+		lbsr _uartrxhandler	; handle the normal uart
 		bra uarthandlero
 notporta:	ldb BASEPB16C654+ISR16C654
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notportb
 		lda #1
-		lbsr uartrxhandler	; handle the normal uart
+		lbsr _uartrxhandler	; handle the normal uart
 		bra uarthandlero
 notportb:	ldb BASEPC16C654+ISR16C654
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notportc
 		lda #2
-		lbsr uartrxhandler	; handle the normal uart
+		lbsr _uartrxhandler	; handle the normal uart
 		bra uarthandlero
 notportc:	ldb BASEPD16C654+ISR16C654
 		bitb #0b00000001	; if no interrupt set, check next one
 		bne notportd
-		lbsr conrxhandler	; handle the keyboard
+		lbsr _conrxhandler	; handle the keyboard
 		bra uarthandlero
 notportd:	debug ^'Unknown UART port',DEBUG_INT
 uarthandlero:	debug ^'End UART handler',DEBUG_INT
-		jmp tailhandler		; cheeck the reschedule state
+		jmp _tailhandler	; cheeck the reschedule state

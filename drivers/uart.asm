@@ -4,18 +4,19 @@
 		.include 'include/hardware.inc'
 		.include 'include/debug.inc'
 
-		.globl uartllopen
-		.globl uartllclose
-		.globl uartllsetbaud
 		.globl memoryalloc
 		.globl memoryfree
 		.globl currenttask
-		.globl devicenotimpl
 		.globl signalalloc
 		.globl remove
 		.globl enable
 		.globl disable
-		.globl driversignal
+
+		.globl _uartllopen
+		.globl _uartllclose
+		.globl _uartllsetbaud
+		.globl _driversignal
+		.globl _devicenotimp
 
 PORTCOUNT	.equ 4			; there are four.... ports!
 
@@ -37,7 +38,7 @@ uartdevices:	.rmb 2*PORTCOUNT	; all the port devices
 
 		.area ROM
 
-uartdef::	.word uartopen
+_uartdef::	.word uartopen
 		.word uartprepare
 		.asciz 'uart'
 
@@ -48,10 +49,10 @@ uartprepare:	rts
 
 uartopen:	pshs y
 		lbsr disable
-		lbsr uartllopen		; y has base address
+		lbsr _uartllopen		; y has base address
 		lbne 1$			; 0 for good, else bad
-		lbsr uartllsetbaud	; set the rate from b
-;		lbsr uartllsethwhs	; enable hardware handshaking
+		lbsr _uartllsetbaud	; set the rate from b
+;		lbsr _uartllsethwhs	; enable hardware handshaking
 		ldx #UART_SIZE		; allocate the device struct
 		lbsr memoryalloc	; get the memory for the struct
 		sta UART_UNIT,x		; save unit number for uartclose
@@ -73,7 +74,7 @@ uartopen:	pshs y
 		sty DEVICE_READ,x		; ... in the device struct
 		ldy #uartwrite		; save the write pointer
 		sty DEVICE_WRITE,x	; ... in the device struct
-		ldy #devicenotimpl	; not implemented sub
+		ldy #_devicenotimp	; not implemented sub
 		sty DEVICE_SEEK,x	; for seek
 		sty DEVICE_CONTROL,x	; and for control
 		lbsr signalalloc	; get a signal bit
@@ -92,7 +93,7 @@ uartclose:	pshs a,y
 		lbsr disable
 		lda UART_UNIT,x		; obtain the port number
 		debugreg ^'UART close port no: ',DEBUG_SPEC_DRV,DEBUG_REG_A
-		lbsr uartllclose	; close the lowlevel unit
+		lbsr _uartllclose	; close the lowlevel unit
 		lbsr memoryfree		; free the open device handle
 		lsla			; two bytes for dev table pointers
 		ldy #uartdevices
@@ -148,7 +149,7 @@ uartwrite:	pshs b,y
 
 ; handle receive interrupts - a has the port number, b has the isr
 
-uartrxhandler::	pshs a,b,y,u
+_uartrxhandler::pshs a,b,y,u
 		debugreg ^'Start UART RX handler, ISR: ',DEBUG_INT,DEBUG_REG_B
 		debugreg ^'UART port: ',DEBUG_INT,DEBUG_REG_A
 		lsla			; two bytes for a pointer
@@ -181,7 +182,7 @@ rxdatatimeout:	lda LSR16C654,y
 		lbra rxonechar
 getintstate:	ldb ISR16C654,y		; get interrupt status again
 		lbra nextint
-uartrxout:	lbsr driversignal	; signal the task that owns it
+uartrxout:	lbsr _driversignal	; signal the task that owns it
 nosignal:	puls a,b,y,u
 		debug ^'End UART RX handler',DEBUG_INT
 		rts

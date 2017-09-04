@@ -1,12 +1,13 @@
 		.include 'include/system.inc'
 		.include 'include/hardware.inc'
 
-		.globl tickerhandler
 		.globl inthandlers
+
+		.globl _tickerhandler
 
 		.area ROM
 
-tickerinit::	lda #0b11000000
+_tickerinit::	lda #0b11000000
 		sta IER6522		; enable T1 interrupts
         
 		lda #0b01000000
@@ -19,7 +20,7 @@ tickerinit::	lda #0b11000000
 		sta T1CH6522
 
 		; interrupt handler
-		ldx #tickerhandler
+		ldx #_tickerhandler
 		stx inthandlers+(INTPOS6522*2)
 
 		; interrupt register

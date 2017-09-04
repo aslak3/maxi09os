@@ -4,33 +4,34 @@
 
 		.globl interruptnest
 		.globl permitnest
-		.globl yield
-		.globl driverprepare
-		.globl tickerinit
-		.globl memoryinit
 		.globl reschedflag
 		.globl readytasks
 		.globl initlist
 		.globl waitingtasks
-		.globl idler
 		.globl newtask
 		.globl settaskname
 		.globl delay
 		.globl idletask
-		.globl init
 		.globl createtask
-		.globl doneschedule
 		.globl inthandlers
-		.globl monitorstart
+
+		.globl _idler
+		.globl _init
+		.globl _monitorstart
+		.globl _yield
+		.globl _memoryinit
+		.globl _doneschedule
+		.globl _tickerinit
+		.globl _driverprep
 
 		.area VECTORS
 
 		.word 0x0000		; reserved
 		.word 0x0000		; swi3
-		.word monitorstart	; swi2
+		.word _monitorstart	; swi2 (see executive/monitor)
 		.word firqinterrupt	; firq
 		.word irqinterrupt	; irq
-		.word yield		; swi
+		.word _yield		; swi (see executive/tasks)
 		.word 0x0000		; nmi
 		.word reset		; reset
 
@@ -62,10 +63,10 @@ reset:		lda #0x02		; map all of the eeprom in
 		debuginit		; init the debug uart port
 		debug ^'Starting debug',DEBUG_GENERAL
 
-		lbsr driverprepare	; prepare all drivers
+		lbsr _driverprep	; prepare all drivers
 
-		lbsr tickerinit		; init the timer
-		lbsr memoryinit		; init the heap
+		lbsr _tickerinit	; init the timer
+		lbsr _memoryinit	; init the heap
 
 		clr reschedflag		; don't resched after interrupt
 
@@ -82,19 +83,19 @@ reset:		lda #0x02		; map all of the eeprom in
 		clra
 		sta LED			; led off
 
-		ldx #idler		; the idler task routine
+		ldx #_idler		; the idler task routine
 		lbsr newtask		; needs to be created
 		ldy #idlername		; and ...
 		lbsr settaskname	; ... it needs a name
 		debugreg ^'Idle task created: ',DEBUG_GENERAL,DEBUG_REG_X
 		stx idletask		; this is so we can schedule it
 
-		ldx #init		; init is the mummy of all tasks
+		ldx #_init		; init is the mummy of all tasks
 		ldy #initname		; set the name
 		ldu #0			; no default io
 		lbsr createtask		; create the task and make it ready
 
-		lbra doneschedule	; fall to the bottom of the sched'er
+		lbra _doneschedule	; fall to the bottom of the sched'er
 
 idlername:	.asciz 'idler'
 initname:	.asciz 'init'
@@ -145,13 +146,15 @@ irqinterrupt:	debug ^'IRQ int detected',DEBUG_INT
 1$:		debug ^'No interrupt routine found, halting',DEBUG_INT
 2$:		bra 2$			; no interrupt handler found
 
-tailhandler::	debug ^'Tail handler',DEBUG_INT
+; INTERNAL
+
+_tailhandler::	debug ^'Tail handler',DEBUG_INT
 		lda reschedflag		; check the reschedule flag
 		bne 1$			; flag? need to reschedule
 		rti			; regular exit
 1$:		clr reschedflag		; ensure it wont happen again
 		debug ^'Rescheduling',DEBUG_INT
-		jmp yield		; reschedule the interrupt target
+		jmp _yield		; reschedule the interrupt target
 
 		.area DEBUGMSG
 

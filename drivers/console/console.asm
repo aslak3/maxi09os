@@ -14,31 +14,32 @@
 		.include 'include/ascii.inc'
 		.include 'include/debug.inc'
 
-		.globl uartllopen
-		.globl uartllclose
-		.globl uartllsetbaud
 		.globl memoryalloc
 		.globl memoryfree
 		.globl currenttask
-		.globl devicenotimpl
 		.globl signalalloc
 		.globl enable
 		.globl disable
 		.globl forbid
 		.globl permit
-		.globl driversignal
 		.globl initlist
 		.globl addtail
 		.globl remove
-		.globl intsignal
 		.globl vinit
 		.globl vsetcolours
 		.globl vclear
 		.globl vread
 		.globl vwrite
-		.globl fontdata
 		.globl vseekwrite
-		.globl mapscancode
+
+		.globl _devicenotimp
+		.globl _driversignal
+		.globl _mapscancode
+		.globl _uartllopen
+		.globl _uartllclose
+		.globl _uartllsetbaud
+		.globl _fontdata
+
 
 CONSOLECOUNT	.equ 6			; the number of virtual consoles
 PORTKEYBOARD	.equ PORTD		; the uart port attached to keybard
@@ -113,7 +114,7 @@ convbasetable:	.byte 0b00100011 	; 0x8000
 
 ; console driver structure
 
-consoledef::	.word consoleopen
+_consoledef::	.word consoleopen
 		.word consoleprep
 		.asciz "console"
 
@@ -123,10 +124,10 @@ consoledef::	.word consoleopen
 consoleprep:	pshs a,b,x,y,u
 		debug ^'Console prep start',DEBUG_DRIVER
 		lda #PORTKEYBOARD	; open the port attached to...
-		lbsr uartllopen		; the keyboard mcu
+		lbsr _uartllopen		; the keyboard mcu
 		sty kbdbaseaddr		; save the base address
 		ldb #B9600		; the mcu currently uses 9600...
-		lbsr uartllsetbaud	; for its baud rate
+		lbsr _uartllsetbaud	; for its baud rate
 		lbsr vinit		; clear video memory, center screen
 		lda #0b00000100		; text 2 settings (80 columns)
 		loadareg VMODE0REG	; set this in mode 0 register
@@ -146,7 +147,7 @@ consoleprep:	pshs a,b,x,y,u
 		ldy #0			; 0 byte control codes
 		ldu #8*32		; 32 characters of empty font data
 		lbsr vclear		; clear it
-		ldx #fontdata		; the msx font data in mpu ram
+		ldx #_fontdata		; the msx font data in mpu ram
 		ldy #8*32		; skip 32 chars worth; control codes
 		ldu #8*96		; 96 characters of font data
 		lbsr vwrite		; set up the font data in vram
@@ -190,7 +191,7 @@ consoleopen:	ldx #CON_SIZE		; allocate the device struct
 		sty DEVICE_READ,x	; ... in the device struct
 		ldy #consolewrite	; save the write pointer
 		sty DEVICE_WRITE,x	; ... in the device struct
-		ldy #devicenotimpl	; not implemented ,,,
+		ldy #_devicenotimp	; not implemented ,,,
 		sty DEVICE_SEEK,x	; seek
 		sty DEVICE_CONTROL,x	; and control
 		lbsr signalalloc	; get a signal bit
@@ -420,7 +421,7 @@ scrollupone:	pshs x,y,u
 
 ; handle receive interrupts on consoe uart
 
-conrxhandler::	debug ^'Console in UART RX handler',DEBUG_INT
+_conrxhandler::	debug ^'Console in UART RX handler',DEBUG_INT
 1$:		ldy kbdbaseaddr		; get the base address
 		lda LSR16C654,y		; get the current status
 		debugreg ^'LSR: ',DEBUG_INT,DEBUG_REG_A
@@ -444,7 +445,7 @@ conrxhandler::	debug ^'Console in UART RX handler',DEBUG_INT
 		ldx b,x			; get the device for the active con
 		lbeq 5$			; ignore not open consoles
 		debug ^'Console is owned',DEBUG_INT
-		lbsr mapscancode	; translate the scancode in a
+		lbsr _mapscancode	; translate the scancode in a
 		beq 5$			; not a printable char
 		ldb CON_RX_COUNT_H,x	; get current count of bytes
 		leau CON_RX_BUF,x	; get the buffer
@@ -461,7 +462,7 @@ conrxhandler::	debug ^'Console in UART RX handler',DEBUG_INT
 		beq 5$			; ignore not open consoles
 		debugreg ^'Signaling owner of console: ',DEBUG_INT,DEBUG_REG_X
 		lsrb
-		lbsr driversignal	; signal the task that owns it
+		lbsr _driversignal	; signal the task that owns it
 		debug ^'Leaving console handler',DEBUG_INT
 5$:		rts
 

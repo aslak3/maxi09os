@@ -354,7 +354,7 @@ controlmap:
 ; translate scancode in a register, returning the ascii a - if no char is
 ; needed then a is zero
 
-mapscancode::	pshs b,x
+_mapscancode::	pshs b,x
 		ldb #1			; 1 for down
 		bita #0x80		; key going up orr down?
 		beq keydown		; down

@@ -56,7 +56,7 @@ timerctrlblk:	.byte 1
 bumpblk:	.byte 0
 		.word 40*5
 
-timertask::	lda #0
+_timertask::	lda #0
 		clrb
 		ldx #consolenamez		; we want a console
 		lbsr sysopen
@@ -137,7 +137,7 @@ memtestz:	.asciz 'mem'
 startingchildz:	.asciz '\r\nStarting child\r\n'
 echokidz:	.asciz 'echokid'
 
-echotask::	ldx #200
+_echotask::	ldx #200
 		lbsr memoryalloc
 		tfr x,u
 		lda #0x42

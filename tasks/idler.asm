@@ -10,7 +10,7 @@
 
 leddevice:	.asciz 'led'
 
-idler::		ldx #leddevice		; get the led device name
+_idler::	ldx #leddevice		; get the led device name
 		lbsr sysopen		; open it
 1$:		lda #1			; on
 		lbsr syswrite		; make the led turn on

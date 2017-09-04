@@ -10,6 +10,9 @@ while (<>)
 	{
 		$address = lc $address;
 
+		# Ignore globals starting in underscore.
+		next if ($global =~ /^_/);
+
 		my $tabs = "\t";
 		if (length $global < 8) {
 			$tabs = "\t\t";

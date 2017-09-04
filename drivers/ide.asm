@@ -5,10 +5,10 @@
 
 		.globl memoryalloc
 		.globl memoryfree
-		.globl currenttask
-		.globl devicenotimpl
 		.globl forbid
 		.globl permit
+
+		.globl _devicenotimp
 
 PARTS		.equ 4			; 4 disk partitions
 
@@ -51,7 +51,7 @@ parttableone:	.rmb PART_SIZE*PARTS	; the actual partition
 
 		.area ROM
 
-idedef::	.word ideopen
+_idedef::	.word ideopen
 		.word 0x0000
 		.asciz "ide"
 
@@ -75,7 +75,7 @@ ideopen:	pshs a,y,u
 		sty DEVICE_READ,x	; ... in the device struct
 		ldy #idewrite		; save the write sub pointer
 		sty DEVICE_WRITE,x	; ... in the device struct
-		ldy #devicenotimpl	; seek isn't implemented
+		ldy #_devicenotimp	; seek isn't implemented
 		sty DEVICE_SEEK,x	; as ide head is stateless
 		ldy #idecontrol		; save the control sub pointer
 		sty DEVICE_CONTROL,x	; ... in the device struct

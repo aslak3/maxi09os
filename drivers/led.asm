@@ -7,7 +7,8 @@
 		.globl permit
 		.globl memoryalloc
 		.globl memoryfree
-		.globl devicenotimpl
+
+		.globl _devicenotimp
 
 		.area RAM
 
@@ -15,7 +16,7 @@ ledinuse:	.rmb 1			; 1 for open, 0 for closed
 
 		.area ROM
 
-leddef::	.word ledopen
+_leddef::	.word ledopen
 		.word 0x0000		; nothing to prepare
 		.asciz "led"
 
@@ -32,7 +33,7 @@ ledopen:	lbsr forbid		; enter critical section
 		sty DEVICE_CLOSE,x	; ... in the device struct
 		ldy #ledwrite		; save the write pointer
 		sty DEVICE_WRITE,x	; ... in the device struct
-		ldy #devicenotimpl	; not implemented
+		ldy #_devicenotimp	; not implemented
 		sty DEVICE_SEEK,x	; seek
 		sty DEVICE_CONTROL,x	; and control
 		lbsr permit		; exit critical section

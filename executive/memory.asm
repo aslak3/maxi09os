@@ -17,23 +17,6 @@ structend	MEM_SIZE
 
 		.area ROM
 
-; the heap is init to span the whole of ram, starting wit the end of the
-; system variables. this space includes the temporary stack used in main
-; to get the system runing.
-
-memoryinit::	debug ^'Memory init',DEBUG_MEMORY
-		pshs a,b,x,y
-		ldy #l_RAM		; only one block to setup
-		ldx #0			; null for end of list
-		stx MEM_NEXT_O,y	; set the next entry to null
-		ldd #RAMEND		; get the total size
-		subd #l_RAM		; subtract space used for vars
-		std MEM_LENGTH_O,y	; save it
-		lda #1			; this block is free
-		sta MEM_FREE_O,y	; so set it 
-		puls a,b,x,y
-		rts
-
 ; memoryavail - returns the total memory available, total amount free, or
 ; largest single free block, based on the flag in a (MEM_TOTAL, MEM_FREE
 ; or MEM_LARGEST) - result is in d
@@ -132,3 +115,23 @@ memoryfree::	debugreg ^'Memory freeing block: ',DEBUG_MEMORY,DEBUG_REG_X
 		sta MEM_FREE_O,x	; and set free to 1
 		puls a
 		rts
+
+; INTERNAL
+
+; the heap is init to span the whole of ram, starting wit the end of the
+; system variables. this space includes the temporary stack used in main
+; to get the system runing.
+
+_memoryinit::	debug ^'Memory init',DEBUG_MEMORY
+		pshs a,b,x,y
+		ldy #l_RAM		; only one block to setup
+		ldx #0			; null for end of list
+		stx MEM_NEXT_O,y	; set the next entry to null
+		ldd #RAMEND		; get the total size
+		subd #l_RAM		; subtract space used for vars
+		std MEM_LENGTH_O,y	; save it
+		lda #1			; this block is free
+		sta MEM_FREE_O,y	; so set it 
+		puls a,b,x,y
+		rts
+
