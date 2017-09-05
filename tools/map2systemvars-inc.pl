@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# STDIN->maptoequates.pl->STDOUT
+# STDIN->map2equates.pl->STDOUT
 #
 # Output equates for all globals in RAM.
 
@@ -14,14 +14,16 @@ while (<>)
 
 		# Ignore globals starting in underscore.
 		next if ($global =~ /^_/);
-		# Ignore globals in ROM
+		# Ignore globals in ROM.
 		next if ($address >= 0xc000);
 
+		# Try to align the text nicely.
 		my $tabs = "\t";
 		if (length $global < 8) {
 			$tabs = "\t\t";
 		}
 	
+		# Print out the equate line.
 		printf "%s%s .equ 0x%04x\n", $global, $tabs, $address;
 	}
 }

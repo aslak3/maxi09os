@@ -1,0 +1,10 @@
+currenttask	 .equ 0x0000
+defaultio	 .equ 0x0002
+readytasks	 .equ 0x0004
+waitingtasks	 .equ 0x000a
+idletask	 .equ 0x0010
+reschedflag	 .equ 0x0012
+rootsuperblock	 .equ 0x0013
+interruptnest	 .equ 0x0015
+permitnest	 .equ 0x0016
+inthandlers	 .equ 0x0017

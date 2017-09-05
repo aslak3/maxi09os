@@ -227,7 +227,7 @@ showmem:	lda #MEM_TOTAL
 
 sertermz:	.asciz 'Serial terminal\r\n\r\n'
 
-sertermtask::	lda #3
+_sertermtask::	lda #3
 		ldb #1			; big scrolling
 		ldx #consolenamez
 		lbsr sysopen
