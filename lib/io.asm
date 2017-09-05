@@ -7,7 +7,8 @@
 		.globl syswrite
 		.globl defaultio
 		.globl wait
-		.globl newlinez
+
+		.globl _newlinez
 
 		.area ROM
 
@@ -124,7 +125,7 @@ getstrloop:	lbsr sysread		; get a char in a
 getstrecho:	lbsr syswrite		; echo it
 		bra getstrloop		; get more
 getstrout:	clr ,y+			; add a null
-		ldy #newlinez		; tidy up ...
+		ldy #_newlinez		; tidy up ...
 		lbsr putstr		; ... with a newline
 		puls a,b,y
 		rts
@@ -227,7 +228,7 @@ putlabwdefio::	pshs x
 
 putlabw::	lbsr putstr		; output the label
 		lbsr putword		; output the word
-		ldy #newlinez		; and also...
+		ldy #_newlinez		; and also...
 		lbsr putstr		; output a newline
 		rts
 
@@ -245,7 +246,7 @@ putlabbdefio::	pshs x
 
 putlabb::	lbsr putstr		; output the label
 		lbsr putbyte		; output the word
-		ldy #newlinez		; and also...
+		ldy #_newlinez		; and also...
 		lbsr putstr		; output a newline
 		rts
 
@@ -263,7 +264,7 @@ putlabbbdefio::	pshs x
 
 putlabbb::	lbsr putstr		; output the label
 		lbsr putbyteb		; output the byte in binary
-		ldy #newlinez		; and also...
+		ldy #_newlinez		; and also...
 		lbsr putstr		; output a newline
 		rts
 

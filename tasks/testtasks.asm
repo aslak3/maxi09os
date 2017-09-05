@@ -9,7 +9,6 @@
 		.globl defaultio
 		.globl memoryalloc
 		.globl memoryavail
-		.globl newlinez
 		.globl getstr
 		.globl putlabb
 		.globl putlabw
@@ -23,6 +22,8 @@
 		.globl runchild
 		.globl delay
 		.globl exittask
+
+		.globl _newlinez
 
 		.area RAM
 
@@ -111,7 +112,7 @@ _timertask::	lda #0
 		ldx consoledev
 		ldy #timertestdata
 		lbsr putstr
-		ldy #newlinez
+		ldy #_newlinez
 		lbsr putstr
 		tfr b,a
 		cmpa #0x20
@@ -155,7 +156,7 @@ echotestloop:	ldx defaultio
 		lbsr putstr
 		leay MESSAGE,u
 		lbsr putstr
-		ldy #newlinez
+		ldy #_newlinez
 		lbsr putstr
 
 		leay MESSAGE,u

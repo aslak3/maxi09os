@@ -4,8 +4,7 @@
 
 ; constants
 
-newlinez::	.asciz '\r\n'
-spacez::	.asciz ' '
+_newlinez::	.asciz '\r\n'
 
 ; delay by y
 

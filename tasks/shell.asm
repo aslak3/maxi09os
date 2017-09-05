@@ -5,7 +5,6 @@
 		.include 'include/minix.inc'
 		.include 'include/ascii.inc'
 
-		.globl newlinez
 		.globl changecwd
 		.globl currenttask
 		.globl defaultio
@@ -35,6 +34,8 @@
 		.globl memoryfree
 		.globl putchardefio
 		.globl putworddefio
+
+		.globl _newlinez
 
 structstart	0
 member		SHELL_INPUT,256
@@ -115,7 +116,7 @@ putdirentname:	pshs a,b,x,y
 1$:		ldx defaultio		; get default io channel for shell
 		leay MINIXDE_NAME,y	; get the filename from direent y
 		lbsr putstr		; output the filename
-		ldy #newlinez		; and a we need ...
+		ldy #_newlinez		; and a we need ...
 		lbsr putstr		; ... a newline
 		puls a,b,x,y
 		rts
@@ -239,7 +240,7 @@ internal:	lda #ERR_INTERNAL
 showerror:	ldx defaultio		; get io channel
 		lbsr geterrorstr	; get error message from a into y
 		lbsr putstr		; print it out
-		ldy #newlinez		; add a new line
+		ldy #_newlinez		; add a new line
 		lbsr putstr		; yep, there it is
 		setnotzero		; set failed
 		rts	
@@ -314,13 +315,13 @@ xrunrun:	lda #ASC_ACK		; at end of file ...
 		lbsr sysclose		; close the 2nd uart port
 
 		ldx defaultio		; load the io channel for x
-		ldy #newlinez		; clean up the hashes ...
+		ldy #_newlinez		; clean up the hashes ...
 		lbsr putstr		; ... with a newline
 		jsr ,u			; run the recieved file as a sub
 
 		ldx defaultio		; get the io channel
 		lbsr putbyte		; output the resultant a register
-		ldy #newlinez		; and ...
+		ldy #_newlinez		; and ...
 		lbsr putstr		; ... a newline
 
 		tsta			; 0 in a will indicate succes

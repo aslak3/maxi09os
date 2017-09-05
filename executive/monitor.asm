@@ -13,7 +13,6 @@
 		.globl parseinput
 		.globl strcmp
 		.globl idletask
-		.globl newlinez
 		.globl openfile
 		.globl printableasc
 		.globl getstr
@@ -34,6 +33,8 @@
 		.globl sysseek
 		.globl syswrite
 		.globl waitingtasks
+
+		.globl _newlinez
 
 		.area RAM
 
@@ -181,7 +182,7 @@ ascbyteloop:	lda b,y			; get the byte from memory
 		lda #0x5d		; closing ]
 		lbsr syswrite		; add it in
 
-		ldy #newlinez		; newline
+		ldy #_newlinez		; newline
 		lbsr putstr		; output it
 
 ; move onto the the next row
@@ -257,7 +258,7 @@ bytefound:	ldy #bytefoundz
 		lbsr putstr
 		lda ,u+
 		lbsr putbyte
-		ldy #newlinez
+		ldy #_newlinez
 		lbsr putstr
 		bra parsetestloop
 
@@ -265,7 +266,7 @@ wordfound:	ldy #wordfoundz
 		lbsr putstr
 		ldd ,u++
 		lbsr putword
-		ldy #newlinez
+		ldy #_newlinez
 		lbsr putstr
 		bra parsetestloop
 
@@ -275,7 +276,7 @@ stringfound:	ldy #stringfoundz
 		lbsr putstr
 1$:		tst ,u+
 		bne 1$
-		ldy #newlinez
+		ldy #_newlinez
 		lbsr putstr
 		bra parsetestloop		
 
@@ -283,7 +284,7 @@ optionfound:	ldy #optionfoundz
 		lbsr putstr
 		lda ,u+			; get next byte (the option char)
 		lbsr syswrite		; write it out as char
-		ldy #newlinez		; now add a newline
+		ldy #_newlinez		; now add a newline
 		lbsr putstr
 		bra parsetestloop	; back for more
 
@@ -298,7 +299,7 @@ readbyte:	lda ,y+
 
 		lda ,y			; get the byte from the address
 		lbsr putbyte		; output the byte
-		ldy #newlinez		; and we need a newline
+		ldy #_newlinez		; and we need a newline
 		lbsr putstr		; to tidy things up
 		clra			; success
 		rts
@@ -369,7 +370,7 @@ showtaskloop:	ldy NODE_NEXT,x		; get its following node
 		lbsr showtask		; show info about task x
 		ldx NODE_NEXT,x		; get the next one
 		bra showtaskloop	; and back for more tasks
-endtasklist:	ldy #newlinez		; tidy up...
+endtasklist:	ldy #_newlinez		; tidy up...
 		lbsr putstrdefio	; ... with a new line
 
 		rts
@@ -400,7 +401,7 @@ showtask:	pshs x
 
 		tfr u,d
 		lbsr putword
-		ldy #newlinez
+		ldy #_newlinez
 		lbsr putstr
 
 		tst taskslong		; check for long mode
@@ -503,7 +504,7 @@ taskregisters:	pshs a,u
 		ldd 10,u
 		lbsr putword
 
-		ldy #newlinez
+		ldy #_newlinez
 		lbsr putstr
 
 		puls a,u

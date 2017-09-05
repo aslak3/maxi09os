@@ -7,7 +7,6 @@
 		.globl idletask
 		.globl waitingtasks
 		.globl readytasks
-		.globl addtaskto
 		.globl remove
 		.globl addtail
 		.globl addhead
@@ -143,27 +142,6 @@ settaskname::	pshs x
 		puls x			; get the task pointer back
 		rts
 
-; add the node in x to the tail of the list in y, disabling as we go
-
-addtaskto::	lbsr disable		; enter critical section
-		lbsr addtail		; add to the end
-		lbsr enable		; leave critical section
-		rts
-
-; remove the head of the list in y, disabling as we go
-
-remtaskfrom::	lbsr disable		; enter critical section
-		lbsr remhead		; add to the end
-		lbsr enable		; leave critical section
-		rts
-
-; remove the node in x, disabling as we go
-
-remtask::	lbsr disable		; enter critical section
-		lbsr remove		; remove the node
-		lbsr enable		; leave critical section
-		rts
-
 ; allocate the first avaialble signal bit, returning a bit mask in a
 
 signalalloc::	debug ^'Allocating signal',DEBUG_TASK
@@ -227,6 +205,7 @@ signal::	debugreg ^'Signalling the task: ',DEBUG_TASK,DEBUG_REG_A|DEBUG_REG_X
 		lbsr enable		; leave critial section
 		rts
 
+;; INTERNAL
 
 ; signal action, only call with interrupts disabled
 
@@ -242,6 +221,29 @@ _intsignal::	debugreg ^'Interrupt signalling the task: ',DEBUG_INT,DEBUG_REG_A|D
 		lbsr addtail		; ... the ready queue
 1$:		debug ^'Done in initsignal',DEBUG_TASK
 		puls y
+		rts
+
+;; PRIVATE
+
+; add the node in x to the tail of the list in y, disabling as we go
+
+addtaskto:	lbsr disable		; enter critical section
+		lbsr addtail		; add to the end
+		lbsr enable		; leave critical section
+		rts
+
+; remove the head of the list in y, disabling as we go
+
+remtaskfrom:	lbsr disable		; enter critical section
+		lbsr remhead		; add to the end
+		lbsr enable		; leave critical section
+		rts
+
+; remove the node in x, disabling as we go
+
+remtask:	lbsr disable		; enter critical section
+		lbsr remove		; remove the node
+		lbsr enable		; leave critical section
 		rts
 
 ;;; INTERRUPT

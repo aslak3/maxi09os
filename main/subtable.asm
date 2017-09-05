@@ -33,9 +33,6 @@
 		.word childexit
 		.word runchild
 		.word settaskname
-		.word addtaskto
-		.word remtaskfrom
-		.word remtask
 		.word signalalloc
 		.word signalfree
 		.word wait
@@ -84,8 +81,6 @@
 		.word vseekwrite
 		.word vseekread
 		.word geterrorstr
-		.word newlinez
-		.word spacez
 		.word delay
 		.word swapword
 		.word swaplong
