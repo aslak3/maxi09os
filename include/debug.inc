@@ -2,21 +2,21 @@
 
 .if DEBUG_MODE
 
-		.globl debugprint
-		.globl debugprintx
-		.globl debugprinty
-		.globl debugprinta
-		.globl debugprintb
+		.globl _debugprint
+		.globl _debugprintx
+		.globl _debugprinty
+		.globl _debugprinta
+		.globl _debugprintb
 
-		.globl generalz
-		.globl tasksz
-		.globl enddisz
-		.globl intz
-		.globl memoryz
-		.globl driverz
-		.globl specdrvz
-		.globl spacez
-		.globl newlinez
+		.globl _generalz
+		.globl _tasksz
+		.globl _enddisz
+		.globl _intz
+		.globl _memoryz
+		.globl _driverz
+		.globl _specdrvz
+		.globl _newlinez
+		.globl _spacez
 
 .macro 		debuginit
 		pshs a,y
@@ -64,22 +64,22 @@ label:		.asciz "message"
 		.area ROM
 		emitdebugstr #label
 .if (register) & DEBUG_REG_A
-		lbsr debugprinta
-		emitdebugstr #spacez
+		lbsr _debugprinta
+		emitdebugstr #_spacez
 .endif
 .if (register) & DEBUG_REG_B
-		lbsr debugprintb
-		emitdebugstr #spacez
+		lbsr _debugprintb
+		emitdebugstr #_spacez
 .endif
 .if (register) & DEBUG_REG_X
-		lbsr debugprintx
-		emitdebugstr #spacez
+		lbsr _debugprintx
+		emitdebugstr #_spacez
 .endif
 .if (register) & DEBUG_REG_Y
-		lbsr debugprinty
-		emitdebugstr #spacez
+		lbsr _debugprinty
+		emitdebugstr #_spacez
 .endif
-		emitdebugstr #newlinez
+		emitdebugstr #_newlinez
 		puls cc
 .endif
 .endm
@@ -93,12 +93,12 @@ label:		.asciz "message"
 label:		.asciz "message"
 		.area ROM
 		emitdebugstr #label
-		lbsr debugprintx
-		emitdebugstr #spacez
+		lbsr _debugprintx
+		emitdebugstr #_spacez
 		pshs x
 		leax TASK_NAME,x
-		lbsr debugprint
-		emitdebugstr #newlinez
+		lbsr _debugprint
+		emitdebugstr #_newlinez
 		puls x
 		puls cc
 .endif
@@ -107,25 +107,25 @@ label:		.asciz "message"
 .macro		showdebugmode type
 
 .if DEBUG_GENERAL & type
-		emitdebugstr #generalz
+		emitdebugstr #_generalz
 .endif
 .if DEBUG_TASK & type
-		emitdebugstr #tasksz
+		emitdebugstr #_tasksz
 .endif
 .if DEBUG_ENDDIS & type
-		emitdebugstr #enddisz
+		emitdebugstr #_enddisz
 .endif
 .if DEBUG_INT & type
-		emitdebugstr #intz
+		emitdebugstr #_intz
 .endif
 .if DEBUG_MEMORY & type
-		emitdebugstr #memoryz
+		emitdebugstr #_memoryz
 .endif
 .if DEBUG_DRIVER & type
-		emitdebugstr #driverz
+		emitdebugstr #_driverz
 .endif
 .if DEBUG_SPEC_DRV & type
-		emitdebugstr #specdrvz
+		emitdebugstr #_specdrvz
 .endif
 
 .endm
@@ -133,7 +133,7 @@ label:		.asciz "message"
 .macro		emitdebugstr addr
 		pshs x
 		ldx addr
-		lbsr debugprint
+		lbsr _debugprint
 		puls x
 .endm
 

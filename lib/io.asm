@@ -72,15 +72,23 @@ putcharerror:	lbsr handleioerror	; deal with error
 
 getchars::	pshs a,y,u
 		exg u,y			; u has no zero bit on leau
-getcharsloop:	lbsr sysread		; get byte in a
-		bne getcharserror	; need to deal with errors
+getcharsloop:	lbsr getchar		; get byte in a
 		sta ,u+			; save in callers memory
 		leay -1,y		; dec byte counter
 		bne getcharsloop	; back for more
 		puls a,y,u
 		rts
-getcharserror:	lbsr handleioerror	; deal with error
-		bra getcharsloop
+
+; puts a buffer to device at x, memory in y, length in u
+
+putchars::	pshs a,y,u
+		exg u,y			; u has no zero bit on leau
+putcharsloop:	lda ,u+			; get the byte to send
+		lbsr putchar		; get byte in a
+		leay -1,y		; dec byte counter
+		bne putcharsloop	; back for more
+		puls a,y,u
+		rts
 
 ; puts the string in y to the default io device
 

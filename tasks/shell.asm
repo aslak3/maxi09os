@@ -317,7 +317,7 @@ xrunrun:	lda #ASC_ACK		; at end of file ...
 		ldx defaultio		; load the io channel for x
 		ldy #_newlinez		; clean up the hashes ...
 		lbsr putstr		; ... with a newline
-		jsr ,u			; run the recieved file as a sub
+		lbsr runsub		; run the subroutine
 
 		ldx defaultio		; get the io channel
 		lbsr putbyte		; output the resultant a register
@@ -336,6 +336,11 @@ xrunerror:	lbsr sysclose		; close the xmodem port
 
 		setnotzero
 		bra xrunout
+
+runsub:		pshs u
+		jsr ,u			; run the recieved file as a sub
+		puls u
+		rts
 
 ; built in commands
 

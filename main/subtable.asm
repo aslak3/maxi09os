@@ -87,3 +87,6 @@
 		.word div32
 		.word mul32
 		.word memcpy256
+		.word putchars
+		.word aschextobyte
+		.word aschextoword

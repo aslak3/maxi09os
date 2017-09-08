@@ -8,12 +8,13 @@
 		.globl bytetoaschex
 
 .if DEBUG_MODE
-
 		.area RAM
 
 debugbuffer:	.rmb 100
 
 		.area ROM
+
+_spacez::	.asciz ' '
 
 ; these are the debug sections
 
@@ -44,7 +45,7 @@ _debugprinta::	pshs a,b,cc,x
 		lbsr bytetoaschex
 		clr ,x+
 		ldx #debugbuffer
-		lbsr debugprint
+		lbsr _debugprint
 		puls a,b,cc,x
 		rts
 
@@ -54,7 +55,7 @@ _debugprintb::	pshs a,b,cc,x
 		lbsr bytetoaschex
 		clr ,x+
 		ldx #debugbuffer
-		lbsr debugprint
+		lbsr _debugprint
 		puls a,b,cc,x
 		rts
 
@@ -64,7 +65,7 @@ _debugprintx::	pshs a,b,cc,x
 		lbsr wordtoaschex
 		clr ,x+
 		ldx #debugbuffer
-		lbsr debugprint
+		lbsr _debugprint
 		puls a,b,cc,x
 		rts
 
@@ -74,7 +75,7 @@ _debugprinty::	pshs a,b,cc,x
 		lbsr wordtoaschex
 		clr ,x+
 		ldx #debugbuffer
-		lbsr debugprint
+		lbsr _debugprint
 		puls a,b,cc,x
 		rts
 

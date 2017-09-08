@@ -13,6 +13,7 @@
 		.globl _idedef
 		.globl _minixdef
 		.globl _joydef
+		.globl _spidef
 		.globl _intsignal
 
 		.area ROM
@@ -24,6 +25,7 @@ drivertable:	.word _uartdef
 		.word _idedef
 		.word _minixdef
 		.word _joydef
+		.word _spidef
 		.word 0x0000
 
 ; inits all drivers

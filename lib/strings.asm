@@ -151,6 +151,29 @@ strmatcharray::	ldx ,u++		; get the string
 strmatchfailed:	setnotzero		; failure
 strmatcharrayo:	rts
 
+; aschextobyte - convert two characters on x to a byte in a
+
+aschextobyte::	leas -1,s		; make room on stack for 1 temp byte
+		bsr aschextonib		; convert the low nibble
+		lsla			; make it the high nibble
+		lsla			; ..
+		lsla			; ..
+		lsla			; ..
+		sta ,s			; save it on the stack
+		bsr aschextonib		; convert the real low nibble
+		ora ,s			; combine it with the high nibble
+		leas 1,s		; shrink the stack again
+		rts
+
+; aschextowrd - convert four characters on x to a word in d
+
+aschextoword::	bsr aschextobyte	; convert the first byte in the string
+		tfr a,b			; move it asside
+		bsr aschextobyte	; convert the second byte
+		exg a,b			; swap the bytes
+		rts			; d is now the word
+
+
 ;;; PRIVATE
 
 ; nibtoaschex - convert a low nibble in a to a character in x, advancing it
@@ -162,6 +185,7 @@ nibtoaschex:	anda #0x0f		; mask out the high nibble
 		adda #0x07		; yes? letter then, add 'A'-'9'
 1$:		sta ,x+			; add it
 		rts		
+
 ; jump x across spaces
 
 skipspaces:	lda ,x+			; skip a space
@@ -182,24 +206,3 @@ aschextonib:	lda ,x+			; get the charater
 		suba #0x20
 aschextonibout:	rts
 
-; aschextobyte - convert two characters on x to a byte in a
-
-aschextobyte:	leas -1,s		; make room on stack for 1 temp byte
-		bsr aschextonib		; convert the low nibble
-		lsla			; make it the high nibble
-		lsla			; ..
-		lsla			; ..
-		lsla			; ..
-		sta ,s			; save it on the stack
-		bsr aschextonib		; convert the real low nibble
-		ora ,s			; combine it with the high nibble
-		leas 1,s		; shrink the stack again
-		rts
-
-; aschextowrd - convert four characters on x to a word in d
-
-aschextoword:	bsr aschextobyte	; convert the first byte in the string
-		tfr a,b			; move it asside
-		bsr aschextobyte	; convert the second byte
-		exg a,b			; swap the bytes
-		rts			; d is now the word

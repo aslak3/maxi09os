@@ -19,7 +19,7 @@ DEBUG_REG_Y	.equ 0x08
 
 .ifdef DEBUG
 .msg 'Debug is enabled'
-DEBUG_MODE	.equ DEBUG_SPEC_DRV|DEBUG_INT
+DEBUG_MODE	.equ DEBUG_SPEC_DRV
 ;DEBUG_MODE	.equ 0xff
 .else
 DEBUG_MODE	.equ 0

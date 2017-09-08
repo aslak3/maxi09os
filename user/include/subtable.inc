@@ -86,3 +86,6 @@ swaplong	 .equ 0xc0a8
 div32		 .equ 0xc0aa
 mul32		 .equ 0xc0ac
 memcpy256	 .equ 0xc0ae
+putchars	 .equ 0xc0b0
+aschextobyte	 .equ 0xc0b2
+aschextoword	 .equ 0xc0b4

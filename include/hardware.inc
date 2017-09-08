@@ -166,6 +166,11 @@ SCLK		.equ 0x02
 
 SIN		.equ 0x01
 
+SPIANALOGJOY0	.equ 0
+SPIANALOGJOY1	.equ 1
+SPICLOCK	.equ 2
+SPIEEPROM	.equ 3
+
 ; irq routing
 
 NMISOURCESR	.equ DISCOBASE+0x10

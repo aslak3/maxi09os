@@ -12,12 +12,13 @@ start:		leay promptz,pcr	; load prompt addr
 		jsr [putstr]		; ... hello
 		leay data,pcr		; get name
 		jsr [putstr]		; and print it
-		ldy newlinez		; tidy up with a newline
+		leay newlinez,pcr	; tidy up with a newline
 		jsr [putstr]		; ...
 
 		lda #0x47		; 42 with inflation
 		rts
 
+newlinez:	.asciz '\r\n'
 promptz:	.asciz 'What is your name? '
 helloz:		.asciz 'Hello '
 data:		.rmb 100
