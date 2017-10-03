@@ -20,7 +20,7 @@ vindirect::	ora #0x80		; auto incmreneting mode
 
 ; sets the colour in a to the r g b pointed to by x
 
-vsetcolour::	pshs a			; save the current colour
+vsetcolour::	pshs a,b		; save the current colour
 		loadareg VPALETTEREG	; we are writing to the colour reg
 		lda ,x+			; get red
 		lsla			; move it to the high nibble
@@ -31,17 +31,19 @@ vsetcolour::	pshs a			; save the current colour
 		ora ,x+			; or in blue over red
 		sta VPALETTEPORT	; output red and blue
 		stb VPALETTEPORT	; output green
-		puls a			; get the colour back
+		puls a,b			; get the colour back
 		rts
 
 ; set the colours - x points at r g b list, y sets the number of colours to
 ; set
 
-vsetcolours::	clra			; start from col 0
+vsetcolours::	pshs a
+		clra			; start from col 0
 1$:		bsr vsetcolour		; sets this colour
 		inca			; next colour
 		leay -1,y		; dec the count of colours
 		bne 1$			; more?
+		puls a
 		rts
 
 ; sets up "core" registers

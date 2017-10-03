@@ -124,26 +124,13 @@ _consoledef::	.word consoleopen
 consoleprep:	pshs a,b,x,y,u
 		debug ^'Console prep start',DEBUG_DRIVER
 		lda #PORTKEYBOARD	; open the port attached to...
-		lbsr _uartllopen		; the keyboard mcu
+		lbsr _uartllopen	; the keyboard mcu
 		sty kbdbaseaddr		; save the base address
 		ldb #B9600		; the mcu currently uses 9600...
 		lbsr _uartllsetbaud	; for its baud rate
 		lbsr vinit		; clear video memory, center screen
-		lda #0b00000100		; text 2 settings (80 columns)
-		loadareg VMODE0REG	; set this in mode 0 register
-		lda #0b01010000		; bl=1, enable display
-		loadareg VMODE1REG	; set this in mode 1 register
 		lda #0b00001000		; 64kbyte (by 4 bit) memories
-		loadareg VMODE2REG 	; set this in mode 2 register
-		lda #0b00000010		; nt=1, enable pal mode
-		loadareg VMODE3REG	; set this in mode 3 register
-		clra			; patterns are at the start of vram
-		loadareg VPATTBASEREG	; bottom half of vram - patterns
-		ldx #twocolpalette	; set the colour reg pointer
-		ldy #2			; 2 colours
-		lbsr vsetcolours	; set the 2 colourscolours
-		lda #0x10		; foreground=white, background=black
-		loadareg VCOLOUR1REG	; set the text colour register
+		loadareg VMODE2REG 	; set this before doing memory io
 		ldy #0			; 0 byte control codes
 		ldu #8*32		; 32 characters of empty font data
 		lbsr vclear		; clear it
@@ -222,15 +209,16 @@ consoleread:	pshs b,u
 		stb CON_RX_COUNT_U,x	; and save it
 		cmpa #ASC_BREAK		; look for break
 		beq gotbreak		; got it?
-		setzero			; got data
-		bra consolereadout
+		bra consolereadoz	; got data in a, out with zero
 gotbreak:	lda #IO_ERR_BREAK	; send back break 
-		setnotzero		; error state
-		bra consolereadout
+		bra consolereadonz	; error state
 gotnodata:	lda #IO_ERR_WAIT	; send back wait
-		setnotzero		; error state
-consolereadout: lbsr enable		; out of critical section
-		puls b,u
+consolereadonz:	lbsr enable		; out of critical section
+		setnotzero		; no data, error state
+		bra consolereadout
+consolereadoz:  lbsr enable		; out of critical section
+		setzero			; got data
+consolereadout:	puls b,u
 		rts
 
 ; write to the device in x, reg a
@@ -310,12 +298,27 @@ handlecontrol:	ora #0x40		; switch to the caps char set
 
 ; updates the vdc regsiters to show the active console
 
-showactive:	pshs a,x
+showactive:	pshs a,x,y
+		lda #0b00000100		; text 2 settings (80 columns)
+		loadareg VMODE0REG	; set this in mode 0 register
+		lda #0b01010000		; bl=1, enable display
+		loadareg VMODE1REG	; set this in mode 1 register
+		lda #0b00001000		; 64kbyte (by 4 bit) memories
+		loadareg VMODE2REG 	; set this in mode 2 register
+		lda #0b00000010		; nt=1, enable pal mode
+		loadareg VMODE3REG	; set this in mode 3 register
+		clra			; patterns are at the start of vram
+		loadareg VPATTBASEREG	; bottom half of vram - patterns
+		ldx #twocolpalette	; set the colour reg pointer
+		ldy #2			; 2 colours
+		lbsr vsetcolours	; set the 2 colourscolours
+		lda #0x10		; foreground=white, background=black
+		loadareg VCOLOUR1REG	; set the text colour register
 		lda activeconsole	; get the current console
 		ldx #convbasetable	; uart device pointer table
 		lda a,x			; two bytes for a pointer
 		loadareg VVIDBASEREG	; top half, 6 consoles of video
-		puls a,x
+		puls a,x,y
 		rts
 
 ; clear the console at x, which may be active
