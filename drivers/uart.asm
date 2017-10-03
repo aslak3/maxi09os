@@ -8,6 +8,7 @@
 		.globl memoryfree
 		.globl currenttask
 		.globl signalalloc
+		.globl signalfree
 		.globl remove
 		.globl enable
 		.globl disable
@@ -91,14 +92,16 @@ uartopen:	pshs y
 
 uartclose:	pshs a,y
 		lbsr disable
+		lda DEVICE_SIGNAL,x	; get the signal used by this dev
+		lbsr signalfree		; free the signal used
 		lda UART_UNIT,x		; obtain the port number
 		debugreg ^'UART close port no: ',DEBUG_SPEC_DRV,DEBUG_REG_A
 		lbsr _uartllclose	; close the lowlevel unit
 		lbsr memoryfree		; free the open device handle
 		lsla			; two bytes for dev table pointers
-		ldy #uartdevices
-		ldx #0
-		stx a,y
+		ldy #uartdevices	; get the device table
+		ldx #0			; clear ...
+		stx a,y			; ... the table entry
 		lbsr enable
 		puls a,y
 		rts
