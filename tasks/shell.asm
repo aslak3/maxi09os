@@ -101,8 +101,7 @@ startlist:	ldx currenttask		; get running task
 		leay SHELL_DIRENT,u	; dirent is in there
 		lbsr opencwd		; open the current directory into x
 1$:		lbsr getnextdirent	; get the filename
-		tst MINIXDE_NAME,y	; is filename 0-length?
-		beq 2$			; if it is then we are finished
+		bne 2$			; end of "file", so out we go
 		lbsr putdirentname	; otherwise output all details
 		bra 1$			; and go to the next name
 2$:		lbsr closefile		; close the directory
@@ -198,15 +197,15 @@ type:		lda ,y+			; get type
 		bne 3$			; finished with file
 		exg x,y			; x now has the terminal
 		cmpa #ASC_LF		; check for \n
-		beq 2$			; deal withi it by sending \r\n
+		beq 2$			; deal withi it by sending cr,lr
 		lbsr syswrite		; write to the output channel
-		bra 1$
-2$:		lda #ASC_CR
-		lbsr syswrite
-		lda #ASC_LF
-		lbsr syswrite
-		bra 1$
-3$:		lbsr sysclose
+		bra 1$			; look for more bytes
+2$:		lda #ASC_CR		; output the cr
+		lbsr syswrite		; ...
+		lda #ASC_LF		; output the lf
+		lbsr syswrite		; this does lf->cr,lf conversion
+		bra 1$			; back for more
+3$:		lbsr sysclose		; end of file, close whats in x
 		setzero
 		rts
 

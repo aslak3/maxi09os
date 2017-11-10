@@ -100,6 +100,7 @@ ERR_INTERNAL	.equ 6			; task not exited yet
 
 IO_ERR_OK	.equ 0			; io operation completed ok
 IO_ERR_WAIT	.equ 1			; task should wait, no data yet
+IO_ERR_EOF	.equ 2			; end of file reached
 IO_ERR_BREAK	.equ 0xff		; get a break signal
 
 ; a record describing an available driver

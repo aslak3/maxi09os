@@ -64,6 +64,8 @@ minixclose:	lbsr memoryfree		; free up the memory
 ; block is up to date
 
 minixread:	pshs b,y
+		lbsr checkeof		; check for eof first
+		beq 2$			; yes, so out with not zero code
 		ldd MINIX_CURPOS,x	; get the current block
 		anda #0b00000011	; mask out the >1024 position
 		leay MINIX_BLOCK,x	; get the disk block
@@ -72,23 +74,20 @@ minixread:	pshs b,y
 		bne 1$			; no 256 wrap, so done now
 		inc MINIX_CURPOS,x	; increment high byte
 		lbsr checkcurblock	; maybe we have to get a new block?
-1$:		lbsr checkeof		; check for eof
-		setzero
-		puls b,y
+1$:		setzero			; success!
+		bra 3$			; now out
+2$:		lda #IO_ERR_EOF		; set end of file error	
+3$:		puls b,y
 		rts
 
-; checkeof - if at the end of the file, then set not zero. otherwise set
+; checkeof - if at the end of the file, then set zero. otherwise set not
 ; zero
 
 checkeof:	pshs a,b,x
 		ldd MINIX_CURPOS,x	; get current position
 		leax MINIX_INODE,x	; move to the inode
 		cmpd MINIXIN_LENGTH+2,x	; compare against length (low word)
-		beq 1$			; end of file if we move into length
-		setzero			; not at eof, success
-		bra 2$			; exit now
-1$:		setnotzero		; at the end, so error
-2$:		puls a,b,x
+		puls a,b,x
 		rts
 
 ; seek to the offset y
@@ -117,7 +116,7 @@ checkcurblock:	pshs a
 		lsra			; div1024
 		cmpa MINIX_ZONEINDEX,x	; see if we are on the same block
 		beq 1$			; nothing to do
-		lbsr updatecurblock
+		lbsr updatecurblock	; get the new block
 1$:		puls a
 		rts
 
@@ -146,8 +145,7 @@ findinodeindir:	pshs x,y
 		lbsr minixseek		; do the seek
 		tfr s,y			; this is the dirent buffer
 1$:		lbsr getnextdirent	; get the next dirent
-		tst MINIXDE_NAME,y	; check for zero in first byte
-		beq 2$			; no more dirents?
+		bne 2$			; no more dirents?
 		lbsr comparedirent	; compare		
 		bne 1$			; back for more
 		ldd MINIXDE_INODENO,y	; get the inode number
@@ -159,14 +157,17 @@ findinodeindir:	pshs x,y
 		puls x,y
 		rts
 
-; move to the next dirent for directory in x, wirting it into y
+; move to the next dirent for directory in x, wirting it into y, exits
+; with zero if a dirent was found, notzero if not (eof was reached)
 
 getnextdirent::	pshs x,u
 		ldu #MINIXDE_SIZE	; set the size of the dirent
 		lbsr getchars		; read it in
+		bne getnextdirento	; eof?
 		leax MINIXDE_INODENO,y	; move x to the inode number
 		lbsr swapword		; swap it
-		puls x,u
+		setzero
+getnextdirento:	puls x,u
 		rts
 
 ; compare the dirent at y's filename with the filename in u
@@ -187,7 +188,7 @@ openfileindir:	pshs a,b,y,u
 		tfr d,u			; todo: move this to d in minixopen
 		ldy MINIX_SB,x		; get the superblock struct
 		lbsr minixopen		; open the file
-		setzero
+		setzero			; success
 		bra 2$			; out now
 1$:		ldx #0			; return nothing
 		setnotzero		; failure
