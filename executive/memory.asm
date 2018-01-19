@@ -9,12 +9,6 @@
 
 		.globl l_RAM
 
-structstart	0
-member		MEM_NEXT_O,2		; the next memory block pointer
-member		MEM_LENGTH_O,2		; the length of this block
-member		MEM_FREE_O,1		; 1=free, 0=not free
-structend	MEM_SIZE
-
 		.area ROM
 
 ; memoryavail - returns the total memory available, total amount free, or
@@ -26,11 +20,11 @@ memoryavail::	debugreg ^'Memory avail: ',DEBUG_MEMORY,DEBUG_REG_A
 		clrb			; memory size counter top half
 		ldy #l_RAM		; start at the start of the heap
 		lbsr forbid		; enter critical section
-		cmpa #MEM_TOTAL		; total mode?
+		cmpa #AVAIL_TOTAL	; total mode?
 		beq dototal		; run the total loop
-		cmpa #MEM_FREE		; free mode?
+		cmpa #AVAIL_FREE	; free mode?
 		beq dofree		; run the free loop
-		cmpa #MEM_LARGEST	; largest mode
+		cmpa #AVAIL_LARGEST	; largest mode
 		beq dolargest		; run the largest loop
 		clra			; invalid input, clear bottom
 availout:	lbsr permit		; leave critical section
@@ -38,26 +32,26 @@ availout:	lbsr permit		; leave critical section
 		rts
 
 dototal:	clra			; now clear bottom half
-totalloop:	addd MEM_LENGTH_O,y	; add size up
-		ldy MEM_NEXT_O,y	; get the next pointer
+totalloop:	addd MEM_LENGTH,y	; add size up
+		ldy MEM_NEXT,y		; get the next pointer
 		bne totalloop		; and go back to the top of the loop
 		bra availout
 
 dofree:		clra			; now clear bottom half
-freeloop:	tst MEM_FREE_O,y	; get the free flag
+freeloop:	tst MEM_FREE,y		; get the free flag
 		beq freenext		; not free, skip
-		addd MEM_LENGTH_O,y	; add size up
-freenext:	ldy MEM_NEXT_O,y	; get the next pointer
+		addd MEM_LENGTH,y	; add size up
+freenext:	ldy MEM_NEXT,y		; get the next pointer
 		bne freeloop		; and go back to the top of the loop
 		bra availout
 
 dolargest:	clra			; now clear bottom half
-largestloop:	tst MEM_FREE_O,y	; get the free flag
+largestloop:	tst MEM_FREE,y		; get the free flag
 		beq largestnext		; not free, skip
-		cmpd MEM_LENGTH_O,y	; compare x with this block len
+		cmpd MEM_LENGTH,y	; compare x with this block len
 		bgt largestnext		; not bigger? then enxt one
-		ldd MEM_LENGTH_O,y	; otherwise copy the block size
-largestnext:	ldy MEM_NEXT_O,y	; get the next pointer
+		ldd MEM_LENGTH,y	; otherwise copy the block size
+largestnext:	ldy MEM_NEXT,y		; get the next pointer
 		bne largestloop		; and go back to the top of the loop
 		bra availout
 
@@ -69,9 +63,9 @@ memoryalloc::	debugreg ^'Memory alloc, bytes: ',DEBUG_MEMORY,DEBUG_REG_X
 		leax MEM_SIZE,x		; add the overhead to the request
 		lbsr forbid		; critical section
 		ldy #l_RAM		; start at the start of the heap
-allocloop:	tst MEM_FREE_O,y	; get the free flag
+allocloop:	tst MEM_FREE,y		; get the free flag
 		bne checkfree		; it's free, now check size
-checknext:	ldy MEM_NEXT_O,y	; get the next pointer
+checknext:	ldy MEM_NEXT,y		; get the next pointer
 		bne allocloop		; and go back to the top of the loop
 		ldx #0			; ...if there is more, 
 allocout:	lbsr permit		; end critical section
@@ -79,28 +73,28 @@ allocout:	lbsr permit		; end critical section
 		debugreg ^'Got block: ',DEBUG_MEMORY,DEBUG_REG_X
 		rts			; otherwise no more rams
 
-checkfree:	cmpx MEM_LENGTH_O,y	; see how big this free block is
+checkfree:	cmpx MEM_LENGTH,y	; see how big this free block is
 		ble blockfits		; it fits!
 		bra checknext		; back to check the next one
 
 blockfits:	clra			; this block now isn't free
-		sta MEM_FREE_O,y	; save it
-		ldu MEM_LENGTH_O,y	; get the size of the free block
-		stx MEM_LENGTH_O,y	; and set the new nonfree block size
+		sta MEM_FREE,y		; save it
+		ldu MEM_LENGTH,y	; get the size of the free block
+		stx MEM_LENGTH,y	; and set the new nonfree block size
 		tfr y,d			; d now has the start of the block
-		addd MEM_LENGTH_O,y	; work out the start of the new free
+		addd MEM_LENGTH,y	; work out the start of the new free
 		tfr d,x			; save the start of new free in x
 		tfr u,d			; restore the orig free length in d
-		subd MEM_LENGTH_O,y	; calc size of the new free block
+		subd MEM_LENGTH,y	; calc size of the new free block
 		cmpd #MEM_SIZE		; enough to make a free block?
 		ble blockfitso		; no extra free block needed
-		ldu MEM_NEXT_O,y	; get the original next block
-		stx MEM_NEXT_O,y	; link the nonfree block to the free
+		ldu MEM_NEXT,y		; get the original next block
+		stx MEM_NEXT,y		; link the nonfree block to the free
 		exg x,y			; y is now the new, free, block
-		std MEM_LENGTH_O,y	; save the free size
+		std MEM_LENGTH,y	; save the free size
 		lda #1			; mark it as free
-		sta MEM_FREE_O,y	; ...
-		stu MEM_NEXT_O,y	; link the new free block to next
+		sta MEM_FREE,y		; ...
+		stu MEM_NEXT,y		; link the new free block to next
 		tfr x,y			; restore the allocated  block in y
 blockfitso:	leax MEM_SIZE,y		; add header offset, caller...
 		bra allocout		; gets only the useable space
@@ -110,9 +104,9 @@ blockfitso:	leax MEM_SIZE,y		; add header offset, caller...
 
 memoryfree::	debugreg ^'Memory freeing block: ',DEBUG_MEMORY,DEBUG_REG_X
 		pshs a
-		lda #1			; we are freeing
 		leax -MEM_SIZE,x	; go back the size of the struct
-		sta MEM_FREE_O,x	; and set free to 1
+		lda #1			; we are freeing
+		sta MEM_FREE,x		; and set free to 1
 		puls a
 		rts
 
@@ -126,12 +120,12 @@ _memoryinit::	debug ^'Memory init',DEBUG_MEMORY
 		pshs a,b,x,y
 		ldy #l_RAM		; only one block to setup
 		ldx #0			; null for end of list
-		stx MEM_NEXT_O,y	; set the next entry to null
+		stx MEM_NEXT,y		; set the next entry to null
 		ldd #RAMEND		; get the total size
 		subd #l_RAM		; subtract space used for vars
-		std MEM_LENGTH_O,y	; save it
+		std MEM_LENGTH,y	; save it
 		lda #1			; this block is free
-		sta MEM_FREE_O,y	; so set it 
+		sta MEM_FREE,y		; so set it 
 		puls a,b,x,y
 		rts
 

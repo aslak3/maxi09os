@@ -39,6 +39,14 @@ structrunning=structrunning+offset
 .macro structend lab
 lab .equ structrunning
 .endm
+
+; memory structure - public for debugging reasons
+
+structstart	0
+member		MEM_NEXT,2		; the next memory block pointer
+member		MEM_LENGTH,2		; the length of this block
+member		MEM_FREE,1		; 1=free, 0=not free
+structend	MEM_SIZE
 		
 ; list struct offsets
 
@@ -57,9 +65,9 @@ structend	NODE_SIZE
 
 ; flags for memoryavail
 
-MEM_TOTAL	.equ 0
-MEM_FREE	.equ 1
-MEM_LARGEST	.equ 2
+AVAIL_TOTAL	.equ 0
+AVAIL_FREE	.equ 1
+AVAIL_LARGEST	.equ 2
 
 ; a record describe a task in the system
 
