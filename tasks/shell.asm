@@ -12,6 +12,7 @@
 		.globl getinode
 		.globl opencwd
 		.globl getnextdirent
+		.globl readfile
 		.globl rootsuperblock
 		.globl typeopenfile
 		.globl getstr
@@ -70,8 +71,11 @@ shellloop:	ldx currenttask		; get current task. needed for u
 
 		ldu #commandarray	; start at the start of the table
 		lbsr strmatcharray	; try to match the string
-		bne notbuiltin		; if no matches, read from disk
+		bne nobuiltinmatch	; if no matches, read from disk
 		jsr ,x			; run the subroutine
+		bra shellloop		; back to the top of the shell loop
+
+nobuiltinmatch:	bsr notbuiltin		; run the no command handler as a sub
 		bra shellloop		; back to the top of the shell loop
 
 notbuiltin:	tfr y,u			; get the commandline
@@ -79,9 +83,20 @@ notbuiltin:	tfr y,u			; get the commandline
 		bne nofile		; no such filename?
 1$:		tst ,y+			; move to the end of the filename
 		bne 1$			; keep moving on?
-		; todo: read file in and run it as a subroutine
-		lbsr closefile		; close it
-		bra shellloop
+
+		lbsr typeopenfile	; get the type of opened thing
+		cmpa #MODE_REGULAR	; see if it is a normal file 
+		lbne notregularfile	; error out of not a normal file
+		lbsr readfile		; read file into y open file
+		lbsr closefile		; we can close the file now
+
+		ldx defaultio		; get default io
+		jsr ,y			; run the subroutine
+
+		tfr y,x			; restore the memory pointer
+		lbsr memoryfree		; free the memory
+
+2$:		rts
 
 nofile:		ldy #commnotfoundz	; no externl file called that
 		lbsr putstrdefio	; print the error message
@@ -216,33 +231,11 @@ cd:		lda ,y+			; get type
 		lbne parserfail		; validation error
 		tfr y,u			; get the filename
 
+		ldx #0			; no file to close on cd
 		lbsr changecwd		; change the current working dir
 		lbne notdir		; not a directory
 
 		rts
-
-; failure message branches
-
-general:	lda #ERR_GENERAL
-		bra showerror
-parserfail:	lda #ERR_PARSER_FAIL
-		bra showerror
-notdir:		lda #ERR_NOT_DIR
-		bra showerror
-notregularfile:	lda #ERR_NOT_REGULAR
-		bra showerror
-notfound:	lda #ERR_NOT_FOUND
-		bra showerror
-internal:	lda #ERR_INTERNAL
-		bra showerror
-
-showerror:	ldx defaultio		; get io channel
-		lbsr geterrorstr	; get error message from a into y
-		lbsr putstr		; print it out
-		ldy #_newlinez		; add a new line
-		lbsr putstr		; yep, there it is
-		setnotzero		; set failed
-		rts	
 
 ; xrun - read a xmodem transfer on port b into memory and run it as a
 ; subroutine
@@ -339,6 +332,34 @@ xrunerror:	lbsr sysclose		; close the xmodem port
 runsub:		pshs u
 		jsr ,u			; run the recieved file as a sub
 		puls u
+		rts
+
+; failure message branches
+
+parserfail:	lda #ERR_PARSER_FAIL
+		ldx #0
+		bra showerror
+
+general:	lda #ERR_GENERAL
+		bra showerror
+notdir:		lda #ERR_NOT_DIR
+		bra showerror
+notregularfile:	lda #ERR_NOT_REGULAR
+		bra showerror
+notfound:	lda #ERR_NOT_FOUND
+		bra showerror
+internal:	lda #ERR_INTERNAL
+		bra showerror
+
+showerror:	cmpx #0			; file to close?
+		beq 1$			; skip close of x
+		lbsr sysclose		; close the file in x
+1$:		ldx defaultio		; get io channel
+		lbsr geterrorstr	; get error message from a into y
+		lbsr putstr		; print it out
+		ldy #_newlinez		; add a new line
+		lbsr putstr		; yep, there it is
+		setnotzero		; set failed
 		rts
 
 ; built in commands
