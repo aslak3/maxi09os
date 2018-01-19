@@ -19,6 +19,8 @@
 		.globl putbyte
 		.globl putlabbb
 		.globl putlabbdefio
+		.globl putlabb
+		.globl putlabbdefio
 		.globl putlabw
 		.globl putlabwdefio
 		.globl putstr
@@ -35,6 +37,10 @@
 		.globl waitingtasks
 
 		.globl _newlinez
+
+		.globl l_RAM
+
+; the monitor is not reenterant - these are globals
 
 		.area RAM
 
@@ -119,8 +125,10 @@ generalerror:	lda #1			; set error state
 		rts			; exit command sub
 
 ;;; COMMANDS ;;;
+;
+; on entry to command sub, y contains the first parameter type
 
-; dump AAAA LLLL - dumps from AAAA, LLLLbytes
+; dump AAAA LLLL - dumps from AAAA, LLLL bytes
 ;
 ; C000  48 65 6C 6C 6F 2C 20 74  68 69 73 20 69 73 20 61  [Hello, this is a]
 
@@ -132,7 +140,7 @@ dump:		lda ,y+			; get the type
 		std dumppointer		; store it in the variable
 		lda ,y+			; get the type
 		cmpa #2			; is it a word?
-		bne generalerror	; yes, mark it as bad
+		lbne generalerror	; validation error
 		ldd ,y++		; length/count of bytes
 		andb #0xf0		; also rounded
 		std dumpcounter		; store it in the variable
@@ -142,8 +150,8 @@ dump:		lda ,y+			; get the type
 dumpnextrow:	ldd dumppointer		; get address of this row
 		lbsr putword		; print the address into the buffer
 		lda #0x20		; space
-		lbsr syswrite
-		lbsr syswrite
+		lbsr syswrite		; " "
+		lbsr syswrite		; " "
 
 ; hex version
 
@@ -304,6 +312,22 @@ readbyte:	lda ,y+
 		clra			; success
 		rts
 
+; readword AAAA - reads the word at AAAA and displays it
+
+readword:	lda ,y+
+		cmpa #2			; is it a word?
+		lbne generalerror	; validation error
+		ldy ,y			; get the address
+
+		ldx defaultio		; some things to write to default io
+
+		ldd ,y			; get the byte from the address
+		lbsr putword		; output the word
+		ldy #_newlinez		; and we need a newline
+		lbsr putstr		; to tidy things up
+		clra			; success
+		rts
+
 ; memory - show the memory info
 
 totalmemz:	.asciz 'Total: '
@@ -312,20 +336,55 @@ largestmemz:	.asciz 'Largest: '
 
 memory:		ldx defaultio		; everything outputs on default io
 
-		lda #MEM_TOTAL		; get the total memory
+		lda #AVAIL_TOTAL	; get the total memory
 		lbsr memoryavail	; it will go in d
 		ldy #totalmemz		; we will print a label too
 		lbsr putlabw		; which also adds a newline
 
-		lda #MEM_FREE		; get the free memory
+		lda #AVAIL_FREE		; get the free memory
 		lbsr memoryavail	; ...
 		ldy #freememz		; ...
 		lbsr putlabw		; ,,,
 
-		lda #MEM_LARGEST	; and the largest memory block
+		lda #AVAIL_LARGEST	; and the largest memory block
 		lbsr memoryavail	; ...
 		ldy #largestmemz	; ...
 		lbsr putlabw		; ...
+
+		clra
+		rts
+
+; debugmemory - show all memory blocks in the heap
+
+blockstartz:	.asciz 'Start: '
+blocknextz:	.asciz 'Next: '
+blocklengthz:	.asciz 'Length: '
+blockfreez:	.asciz 'Free: '
+
+debugmemory:	ldx defaultio		; everything outputs to default io
+		ldu #l_RAM		; start at the start of the heap
+
+1$:		tfr u,d			; show the start
+		ldy #blockstartz	; ...
+		lbsr putlabw		; ...
+
+		ldd MEM_NEXT,u		; show the next pointer
+		ldy #blocknextz		; ...
+		lbsr putlabw		; ...
+
+		ldd MEM_LENGTH,u	; show the length
+		ldy #blocklengthz	; ...
+		lbsr putlabw		; ...
+
+		lda MEM_FREE,u		; show free state
+		ldy #blockfreez		; ...
+		lbsr putlabb		; ...
+
+		ldy #_newlinez		; and a new line
+		lbsr putstr		; ...
+
+		ldu MEM_NEXT,u		; get the next pointer
+		bne 1$			; back for more if not at end
 
 		clra
 		rts
@@ -611,7 +670,7 @@ dosysread:	lda ,y+			; get the type
 		rts			; return with them
 
 ; sysreadblock HHHH SSSS CC MMMM - read a block from sector SSS count CC
-;into memory MMMM
+; into memory MMMM
 
 dosysreadblk:	lda ,y+			; get the type
 		cmpa #2			; word?
@@ -793,10 +852,10 @@ dofindinode:	lda ,y+			; get the type
 
 		tfr y,u			; filename in u
 
-		lbsr findinode
+		lbsr findinode		; get the indoe in d
 
 		ldy #resultz		; print a nice label
-		lbsr putlabwdefio	; print the device handle
+		lbsr putlabwdefio	; print the inode number
 
 		clra
 
@@ -809,9 +868,9 @@ doopenfile:	lda ,y+			; get the type
 		lbne generalerror	; validation error
 		tfr y,u			; filename needs to be in u
 
-		lbsr openfile
+		lbsr openfile		; open the file
 
-		tfr x,d
+		tfr x,d			; save the handle in do for printing
 
 		ldy #resultz		; print a nice label
 		lbsr putlabwdefio	; print the device handle
@@ -845,10 +904,12 @@ helpz:		.ascii 'Low-level commands:\r\n'
 		.ascii '  dump AAAA LLLL : dump from AAAA count LLLL bytes in hex\r\n'
 		.ascii '  write AAAA BB WWWW "STRING" ... : write to AAAA bytes, words, strings\r\n'
 		.ascii '  readbyte MMMM : read the byte at MMMM and display it\r\n'
+		.ascii '  readword MMMM : read the word at MMMM and display it\r\n'
 		.ascii 'System info commands:\r\n'
 		.ascii '  tasks : show tasks\r\n'
 		.ascii '  task TTTT : show the task TTTT\r\n'
-		.ascii '  memory : show memory status\r\n'
+		.ascii '  memory : show memory statistics\r\n'
+		.ascii '  debugmemory : dump out each heap memory block\r\n'
 		.ascii 'Device commands:\r\n'
 		.ascii '  sysopen "DEVICE" [AA [BB]] : open DEVICE with optional params\r\n'
 		.ascii '  sysclose HHHH : close the device at handle HHHH\r\n'
@@ -877,7 +938,9 @@ dumpcz:		.asciz 'dump'
 writecz:	.asciz 'write'
 parsetestcz:	.asciz 'parsetest'
 readbytecz:	.asciz 'readbyte'
+readwordcz:	.asciz 'readword'
 memorycz:	.asciz 'memory'
+debugmemorycz:	.asciz 'debugmemory'
 taskscz:	.asciz 'tasks'
 taskcz:		.asciz 'task'
 
@@ -921,8 +984,14 @@ commandarray:	.word helpcz
 		.word readbytecz
 		.word readbyte
 
+		.word readwordcz
+		.word readword
+
 		.word memorycz
 		.word memory
+
+		.word debugmemorycz
+		.word debugmemory
 
 		.word taskscz
 		.word tasks
