@@ -90,3 +90,4 @@
 		.word putchars
 		.word aschextobyte
 		.word aschextoword
+		.word lengthopenfile

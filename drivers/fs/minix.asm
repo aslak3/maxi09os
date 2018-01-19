@@ -285,6 +285,27 @@ typeopenfile::	pshs x
 		puls x
 		rts
 
+; get the length of the openfile, and put it in d
+
+lengthopenfile::pshs x
+		leax MINIX_INODE,x	; move to the inode
+		ldd MINIXIN_LENGTH+2,x	; get the size
+		puls x
+		rts
+
+; reads a whole file into new memory, file is in x, memory will be in y
+
+readfile::	pshs a,b,u
+		tfr x,y			; save file pointer in y
+		lbsr lengthopenfile	; get file length
+		tfr d,u			; save length for getchars
+		tfr d,x			; set size
+		lbsr memoryalloc	; memory will now be in x
+		exg x,y			; memory now in y, io now x
+		lbsr getchars		; read all the bytes into y
+		puls a,b,u
+		rts
+
 ; change current directory to the named dir in u. uses 32+2 bytes of stack.
 
 changecwd::	pshs a,x,y
