@@ -7,6 +7,8 @@
 		.globl syswrite
 		.globl defaultio
 		.globl wait
+		.globl lengthopenfile
+		.globl memoryalloc
 
 		.globl _newlinez
 

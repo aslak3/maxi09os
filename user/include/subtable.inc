@@ -89,3 +89,4 @@ memcpy256	 .equ 0xc0ae
 putchars	 .equ 0xc0b0
 aschextobyte	 .equ 0xc0b2
 aschextoword	 .equ 0xc0b4
+lengthopenfile	 .equ 0xc0b6

@@ -19,7 +19,7 @@ errortable:	.word okz
 		.word internalz	
 
 ; geterrorstr - gets the error string by looking in the error table,
-; and putting the 
+; and putting the appropriate message pointer in y.
 
 geterrorstr::	pshs a
 		lsla			; table is of words

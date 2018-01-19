@@ -206,19 +206,19 @@ totalz:		.asciz 'Total: '
 freez:		.asciz 'Free: '
 largestz:	.asciz 'Largest: '
 
-showmem:	lda #MEM_TOTAL
+showmem:	lda #AVAIL_TOTAL
 		lbsr memoryavail
 		ldx defaultio
 		ldy #totalz
 		lbsr putlabw
 
-		lda #MEM_FREE
+		lda #AVAIL_FREE
 		lbsr memoryavail
 		ldx defaultio
 		ldy #freez
 		lbsr putlabw
 		
-		lda #MEM_LARGEST
+		lda #AVAIL_LARGEST
 		lbsr memoryavail
 		ldx defaultio
 		ldy #largestz
