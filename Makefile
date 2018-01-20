@@ -1,13 +1,13 @@
 AS = tools/as6809-wrapper -oxlsw
 
-6809_SERIAL = /dev/ttyS0
+6809_SERIAL = /dev/ttyS1
 
 BIN = main.bin
 
 AREA_BASES = -b VECTORS=0xfff0 -b ROM=0xc000 -b DEBUGMSG=0xf800 -b RAM=0x0000
 
 INCS = $(addprefix include/, ascii.inc debug.inc hardware.inc \
-	minix.inc scancodes.inc system.inc v99lowlevel.inc)
+	minix.inc scancodes.inc system.inc v99lowlevel.inc version.inc)
 
 SYSTEMVARS_REL = main/systemvars.rel
 SUBTABLE_REL = main/subtable.rel
@@ -19,7 +19,7 @@ include $(addsuffix Makefile, main/ drivers/ executive/ fs/ lib/ misc/ tasks/)
 all: $(BIN) $(SYSTEMVARS_INC)
 
 $(BIN): main.ihx
-	hex2bin -out $@ $<
+	objcopy -I ihex $< -O binary $@
 
 main.ihx: $(RELS) $(MAIN_REL) $(SYSTEMVARS_REL) $(SUBTABLE_REL)
 	aslink $(AREA_BASES) -onmuwi main.ihx \

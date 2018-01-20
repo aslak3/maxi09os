@@ -3,6 +3,7 @@
 		.include 'include/system.inc'
 		.include 'include/debug.inc'
 		.include 'include/hardware.inc'
+		.include 'include/version.inc'
 
 		.globl sysopen
 		.globl sysclose
@@ -96,7 +97,8 @@ writeinitstr:	pshs x
 		puls x
 		rts		
 
-initstartedz:	.asciz '\r\n\r\nInit started\r\n'
+
+initstartedz:	.asciz '\r\n\r\nInit started, build _BUILD_\r\n'
 rootmountedz:	.asciz 'Root mounted\r\n'
 
 _init::		debug ^'Init started',DEBUG_GENERAL
