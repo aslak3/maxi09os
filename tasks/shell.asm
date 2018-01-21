@@ -91,16 +91,19 @@ notbuiltin:	tfr y,u			; get the commandline
 		lbsr closefile		; we can close the file now
 
 		ldx defaultio		; get default io
-		jsr ,y			; run the subroutine
+		tfr y,u			; save the external sub addr
 
-		tfr y,x			; restore the memory pointer
+		lbsr runsub		; run the subroutine, saving u
+
+		tfr u,x			; restore the memory pointer
 		lbsr memoryfree		; free the memory
 
 2$:		rts
 
 nofile:		ldy #commnotfoundz	; no externl file called that
 		lbsr putstrdefio	; print the error message
-		bra shellloop		; back to the top of the shell loop
+
+		rts			; back to the top of the shell loop
 
 ; COMMANDS
 
