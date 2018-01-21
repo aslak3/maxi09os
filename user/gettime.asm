@@ -89,3 +89,5 @@ newlinez:	.asciz '\r\n'
 outputbuffer:	.rmb 16			; the spi buffer
 timeoutput:	.rmb 7			; string to hold formatted data
 spidevice:	.rmb 2			; the open spi device
+
+end:		.byte 0

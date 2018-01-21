@@ -22,3 +22,5 @@ newlinez:	.asciz '\r\n'
 promptz:	.asciz 'What is your name? '
 helloz:		.asciz 'Hello '
 data:		.rmb 100
+
+end:		.byte 0

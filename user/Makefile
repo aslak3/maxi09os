@@ -7,7 +7,7 @@ INCS = ../include/hardware.inc
 all: $(BIN)
 
 %.bin: %.ihx
-	hex2bin -out $@ $<
+	objcopy -I ihex $< -O binary $@
 
 %.ihx: %.rel
 	aslink -nmwi $@ $<

@@ -93,3 +93,5 @@ daymsg:		.asciz "Day? (01-31) "
 monthmsg:	.asciz "Month? (01-12) "
 yearmsg:	.asciz "Year? (00-99) "
 dayofweekmsg:	.asciz "Day number? (01=Sun-07=Sat) "
+
+end:		.byte 0
