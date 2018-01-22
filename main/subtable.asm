@@ -91,3 +91,5 @@
 		.word aschextobyte
 		.word aschextoword
 		.word lengthopenfile
+		.word setgraphicsub
+		.word readfile

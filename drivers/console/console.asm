@@ -3,8 +3,8 @@
 ; video ram (vram) layout:
 ;
 ; 0x0000 - patterns (font data)
-; 0x8000 - console 0 text data
-; 0x9000 - console 1 text data
+; 0x1000 - console 0 text data
+; 0x2000 - console 1 text data
 ; etc upto console 5
 
 		.include 'include/hardware.inc'
@@ -47,6 +47,7 @@ COLS		.equ 80			; number of columns of text
 ROWS		.equ 24			; number of rows of text
 HALF		.equ 12			; for scrolling half a screen
 CURSORVAL	.equ 127		; the cursor pattern number
+GRAPHICALCON	.equ 0x80		; special marker for graphic mode
 
 structstart	DEVICE_SIZE
 member		CON_RX_BUF,32		; receive circular bufrer
@@ -70,6 +71,8 @@ kbdbaseaddr:	.rmb 2			; uart port d base
 activeconsole:	.rmb 1			; the active console
 linestarts:	.rmb 2*ROWS		; 24 line offsets, not per console
 scrollbuffer:	.rmb (ROWS-1)*COLS	; holding area used by scrolling
+graphicmodesub:	.rmb 2			; the registered graphical console
+graphicmodecon:	.rmb 1			; the console behind the graphical
 
 		.area ROM
 
@@ -85,6 +88,8 @@ switchtable:	.byte 0
 		.byte KEY_F5
 		.byte 5
 		.byte KEY_F6
+		.byte GRAPHICALCON	; special graphical mode
+		.byte KEY_F10
 		.byte 0xff		; end of table of switch scancodes
 
 ; palette for console - traditional white text on black background
@@ -118,6 +123,20 @@ _consoledef::	.word consoleopen
 		.word consoleprep
 		.asciz "console"
 
+; temporary - sets the callback for the F10 graphical console
+
+setgraphicsub::	pshs a
+		stx graphicmodesub	; save new graphical sub
+		beq 1$			; exiting graphical console?
+		lda activeconsole	; no, get active console
+		sta graphicmodecon	; save it as one behind graphical
+		bra 2$			; out
+1$:		lda graphicmodecon	; exiting graphical console
+		sta activeconsole	; get saved console
+		lbsr showactive		; and make it active
+2$:		puls a
+		rts
+
 ; consoleprepare - open the uart and init the display, this is global to
 ; all consoles
 
@@ -147,6 +166,8 @@ consoleprep:	pshs a,b,x,y,u
 		bne 1$			; back to the next row?
 		clr activeconsole	; start on console 0 though not open
 		lbsr showactive		; show this unopen console
+		ldx #0			; graphical console on f10 ...
+		stx graphicmodesub	; ... starts disabled
 		debug ^'Console prep end',DEBUG_DRIVER
 		puls a,b,x,y,u
 		rts
@@ -315,12 +336,17 @@ showactive:	pshs a,x,y
 		lda #0x10		; foreground=white, background=black
 		loadareg VCOLOUR1REG	; set the text colour register
 		lda activeconsole	; get the current console
-		ldx #convbasetable	; uart device pointer table
-		lda a,x			; two bytes for a pointer
+		cmpa #GRAPHICALCON	; special, graphical console?
+		beq showgraphic		; yes, call the registered sub
+		ldx #convbasetable	; the talbe of VIDBASEREG's
+		lda a,x			; get the VIDBASEREG
 		loadareg VVIDBASEREG	; top half, 6 consoles of video
-		puls a,x,y
+showactiveo:	puls a,x,y
 		rts
-
+showgraphic:	ldx graphicmodesub	; run the registered sub
+		beq showactiveo		; do nothing if one not registered
+		jsr ,x
+		bra showactiveo
 ; clear the console at x, which may be active
 
 clearconsole:	pshs y,u
@@ -436,7 +462,7 @@ _conrxhandler::	debug ^'Console in UART RX handler',DEBUG_INT
 2$:		ldb ,y+
 		cmpb #0xff		; end of table marker
 		lbeq 3$			; end of list, no match
-		cmpa ,y+
+		cmpa ,y+		; check for a match
 		bne 2$			; back for more
 		debugreg ^'Switching to console: ',DEBUG_INT,DEBUG_REG_B
 		stb activeconsole	; save new console number
