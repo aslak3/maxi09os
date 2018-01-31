@@ -37,10 +37,9 @@ echo2taskname:	.asciz 'echo2'
 echo3taskname:	.asciz 'echo3'
 echo4taskname:	.asciz 'echo4'
 sertermtaskname:.asciz 'serterm'
-shell1taskname:	.asciz 'shell1'
-shell2taskname:	.asciz 'shell2'
-shell3taskname:	.asciz 'shell3'
-shell4taskname:	.asciz 'shell4'
+shell1taskname:	.asciz 'shellcon2'
+shell2taskname:	.asciz 'shellcon3'
+shell3taskname:	.asciz 'shelluart0'
 
 rootdevnamez:	.asciz 'ide'
 rootunit:	.byte 1

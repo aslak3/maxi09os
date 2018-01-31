@@ -80,7 +80,7 @@ member		TASK_SIGRECVD,1		; signal bits recieved
 member		TASK_INTNEST,1		; interrupt nest count
 member		TASK_PERMITNEST,1	; permit nest count
 member		TASK_DISPCOUNT,2	; dispatch counter
-member		TASK_NAME,8		; task name ("my task\0")
+member		TASK_NAME,12		; task name ("my task\0")
 member		TASK_DEF_IO,2		; the default io device
 member		TASK_PARENT,2		; the parent task
 member		TASK_EXIT_CODE,1	; the exit code of this task
