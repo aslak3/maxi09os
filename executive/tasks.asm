@@ -23,7 +23,7 @@
 
 		.globl _runtimers
 
-STACK		.equ 128
+STACK		.equ 256
 
 		.area ROM
 
