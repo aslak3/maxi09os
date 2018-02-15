@@ -1,18 +1,16 @@
 #include <stdio.h>
 #include <string.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <termios.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <fcntl.h>
 
 #include <sys/stat.h>
+
+#include "serialio.h"
 
 #define REPLY_SIZE 256
 
 void stripnl(char *s);
-int openserialport(char *portdevice);
-void closeserialport(int serialfd);
 int flashfile(int serialfd, char *filename);
 int waitfornewline(int serialfd);
 void usage(char *argv0);
@@ -42,7 +40,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	int serialfd = openserialport(serialport);
+	int serialfd = openserialport(serialport, B9600, 0);
 	if (!serialfd)
 	{
 		perror("Unable to open serial port");
@@ -68,30 +66,6 @@ void stripnl(char *s)
 
 	while (*t != '\r' && *t != '\n') t++;
 	*t = '\0';
-}
-
-int openserialport(char *portdevice)
-{
-	int serialfd = open(portdevice, O_RDWR | O_NOCTTY | O_NDELAY);
-	if (serialfd < 0)
-		return -1;
-
-	fcntl(serialfd, F_SETFL, 0);
-
-	struct termios options;
-
-	tcgetattr(serialfd, &options);
-	cfsetispeed(&options, B9600);
-	cfsetospeed(&options, B9600);
-	options.c_cflag |= CS8;
-	tcsetattr(serialfd, TCSANOW, &options);
-
-	return serialfd;
-}
-
-void closeserialport(int serialfd)
-{
-	close(serialfd);
 }
 
 int flashfile(int serialfd, char *filename)
@@ -126,14 +100,18 @@ int flashfile(int serialfd, char *filename)
 		return 1;
 	}
 
-	write(serialfd, "f", 1);
+	if (mywrite(serialfd, "f", 1) != 1)
+	{
+		perror("Error writing 'f'");
+		return 1;
+	}
 
 	char gomarker[4];
 	memset(gomarker, 0, 4);
 	
 	printf("Waiting for go signal\n");
 	
-	if (read(serialfd, gomarker, 3) < 1)
+	if (myread(serialfd, gomarker, 3) < 1)
 	{
 		perror("Unable to read serial when waiting for +++");
 		return 1;
@@ -156,14 +134,14 @@ int flashfile(int serialfd, char *filename)
 		unsigned char hashbyte;
 
 		memset(transmissionbuffer, 0, 64);
-		if ((bytesread = read(filefd, transmissionbuffer, 64)) < 0)
+		if ((bytesread = myread(filefd, transmissionbuffer, 64)) < 0)
 		{
 			perror("Unable to read from input file");
 			return 1;
 		}
-		write(serialfd, transmissionbuffer, 64);
+		mywrite(serialfd, transmissionbuffer, 64);
 
-		if (read(serialfd, &hashbyte, 1) < 1)
+		if (myread(serialfd, &hashbyte, 1) < 1)
 		{
 			perror("Unable to read serial when waiting for block");
 			return 1;
@@ -186,13 +164,13 @@ int flashfile(int serialfd, char *filename)
 		unsigned char filebyte;
 		unsigned char memorybyte;
 		
-		if (read(serialfd, &memorybyte, 1) < 1)
+		if (myread(serialfd, &memorybyte, 1) < 1)
 		{
 			perror("Unable to read serial when validating");
 			return 1;
 		}
 		
-		if (read(filefd, &filebyte, 1) < 1)
+		if (myread(filefd, &filebyte, 1) < 1)
 		{
 			perror("Unable to read file when validating");
 			return 1;
@@ -229,7 +207,7 @@ int waitfornewline(int serialfd)
 {
 	char buffer;
 	
-	while (read(serialfd, &buffer, 1) > 0)
+	while (myread(serialfd, &buffer, 1) > 0)
 	{
 		if (buffer == '\n')
 			return 0;

@@ -1,8 +1,18 @@
 CC = gcc
 CFLAGS = -Wall -O2
 
-flasher: flasher.c
-	$(CC) $(CFLAGS) -o flasher flasher.c
+BINS = flasher fileserver
+
+all: $(BINS)
+
+flasher: flasher.o serialio.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+fileserver: fileserver.o serialio.o
+	$(CC) $(LDFLAGS) -o $@ $^
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $<
 
 clean:
-	rm -f flasher *.o
+	rm -f $(BINS) *.o
