@@ -24,7 +24,8 @@ _enddisz::	.asciz 'Enable/Disable: '
 _intz::		.asciz 'Interrupt: '
 _memoryz::	.asciz 'Memory: '
 _driverz::	.asciz 'Drivers: '
-_specdrvz::	.asciz 'Low level driver: '
+_taskuserz::	.asciz 'Tasks (user): '
+_libz::		.asciz 'Library: '
 
 ; write to the debug port the string in x
 
