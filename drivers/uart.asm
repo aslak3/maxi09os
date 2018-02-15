@@ -119,9 +119,7 @@ uartread:	pshs b,u
 		bne gotbreak		; got a break, no data
 		tst UART_FILL_LEVEL,x	; see if we have a byte to read
 		beq nodata		; no character? then return
-		lda UART_FILL_LEVEL,x	; there's a char, get fill level
-		cmpa #16		; see if we should let me chars in
-		dec UART_FILL_LEVEL,x	; reduce the filll level
+		dec UART_FILL_LEVEL,x	; reduce the fill level
 		leau UART_RX_BUF,x	; get the buffer
 		ldb UART_RX_COUNT_U,x	; get counter
 		lda b,u			; get the last char written to buf
