@@ -8,58 +8,58 @@
 		.globl videoinit
 		.globl clearscreen
 		.globl printstrat
-		.globl readjoystick
 		.globl calibrate
 		.globl game
 
-start::		lbsr videoinit
+start::		lbsr videoinit			; set 32x24 tile mode
 
-		leax videoinit,pcr
-		jsr [setgraphicsub]
+		leax videoinit,pcr		; the address of above sub
+		jsr [setgraphicsub]		; save it as f10 graphic sub
 
-menu:		lbsr clearscreen
+menu:		lbsr clearscreen		; clear the screen
 
-		lda #9
-		ldb #2
-		leax pressfire,pcr
-		lbsr printstrat
+		lda #9				; y
+		ldb #2				; x
+		leax pressfirez,pcr		; press fire mssage
+		lbsr printstrat			; print the message
 
-		lda #11
-		ldb #2
-		leax orexit,pcr
-		lbsr printstrat
+		lda #11				; ...
+		ldb #2				; ...
+		leax orexitz,pcr		; or exit with up
+		lbsr printstrat			; ...
 
-		lda #13
-		ldb #2
-		leax orcalibrate,pcr
-		lbsr printstrat
+		lda #13				; ...
+		ldb #2				; ...
+		leax orcalibratez,pcr		; or calibrate with down
+		lbsr printstrat			; ...
 
-menupollloop:	lbsr readjoystick
-		bita #JOYFIRE1
-		bne startgame
-		bita #JOYUP
-		bne exit
-		bita #JOYDOWN
-		bne startcalibrate
+menupollloop:	lbsr readjoystick		; get stick state
+		bita #JOYFIRE1			; fire?
+		bne startgame			; if pressed then start
+		bita #JOYUP			; up?
+		bne exit			; if up then exit
+		bita #JOYDOWN			; down?
+		bne startcalibrate		; if down then calibrate
 
-		bra menupollloop
+		bra menupollloop		; back up to poll
 
-startgame:	lbsr game
+startgame:	lbsr game			; run game as subroutine
 
-		bra menu
+		bra menu			; end game, show menu
 
-startcalibrate:	lbsr calibrate
+startcalibrate:	lbsr calibrate			; run calibrate sub
 
-		bra menu
+		bra menu			; then back to showing menu
 
-exit:		ldx #0
-		jsr [setgraphicsub]
-		rts
+exit:		ldx #0				; reset graphic sub callback
+		jsr [setgraphicsub]		; set it
 
-pressfire:	.asciz 'Press FIRE to start'
-orexit:		.asciz 'Or UP to exit'
-orcalibrate:	.asciz 'Or DOWN to calibrate screen'
+		rts				; back to the shell
 
-readjoystick:	lda JOYPORT0
-		coma
+pressfirez:	.asciz 'Press FIRE to start'
+orexitz:	.asciz 'Or UP to exit'
+orcalibratez:	.asciz 'Or DOWN to calibrate screen'
+
+readjoystick::	lda JOYPORT0			; read joystick state
+		coma				; invert, 1=pressed/pushed
 		rts
