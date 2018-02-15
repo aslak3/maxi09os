@@ -43,26 +43,26 @@
 
 .macro		debug message,type,?label
 .if type & DEBUG_MODE
-		pshs cc
-		disableinterrupts
-		showdebugmode type
 		.area DEBUGMSG
 label:		.ascii "message"
 		.asciz '\r\n'
 		.area ROM
+		pshs cc,x
+		disableinterrupts
+		showdebugmode type
 		emitdebugstr #label
-		puls cc
+		puls cc,x
 .endif
 .endm
 
 .macro		debugreg message,type,register,?label
 .if type & DEBUG_MODE
-		pshs cc
-		disableinterrupts
-		showdebugmode type
 		.area DEBUGMSG
 label:		.asciz "message"
 		.area ROM
+		pshs cc,x
+		disableinterrupts
+		showdebugmode type
 		emitdebugstr #label
 .if (register) & DEBUG_REG_A
 		lbsr _debugprinta
@@ -81,29 +81,29 @@ label:		.asciz "message"
 		emitdebugstr #_spacez
 .endif
 		emitdebugstr #_newlinez
-		puls cc
+		puls cc,x
 .endif
 .endm
 
 .macro		debugxtask message,type,?label
 .if type & DEBUG_MODE
-		pshs cc
-		disableinterrupts
-		showdebugmode type
 		.area DEBUGMSG
 label:		.asciz "message"
 		.area ROM
+		pshs cc,x
+		disableinterrupts
+		showdebugmode type
 		emitdebugstr #label
 		lbsr _debugprintx
 		emitdebugstr #_spacez
-		pshs x
 		leax TASK_NAME,x
 		lbsr _debugprint
 		emitdebugstr #_newlinez
-		puls x
-		puls cc
+		puls cc,x
 .endif
 .endm
+
+; INTERNAL
 
 .macro		showdebugmode type
 
@@ -135,10 +135,8 @@ label:		.asciz "message"
 .endm
 
 .macro		emitdebugstr addr
-		pshs x
 		ldx addr
 		lbsr _debugprint
-		puls x
 .endm
 
 .else 					; no DEBUG_MODE set
