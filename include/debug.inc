@@ -14,7 +14,8 @@
 		.globl _intz
 		.globl _memoryz
 		.globl _driverz
-		.globl _specdrvz
+		.globl _taskuserz
+		.globl _libz
 		.globl _newlinez
 		.globl _spacez
 
@@ -124,8 +125,11 @@ label:		.asciz "message"
 .if DEBUG_DRIVER & type
 		emitdebugstr #_driverz
 .endif
-.if DEBUG_SPEC_DRV & type
-		emitdebugstr #_specdrvz
+.if DEBUG_TASK_USER & type
+		emitdebugstr #_taskuserz
+.endif
+.if DEBUG_LIB & type
+		emitdebugstr #_libz
 .endif
 
 .endm

@@ -4,6 +4,7 @@
 		.include 'include/hardware.inc'
 		.include 'include/minix.inc'
 		.include 'include/ascii.inc'
+		.include 'include/debug.inc'
 
 		.globl changecwd
 		.globl currenttask
@@ -31,12 +32,19 @@
 		.globl syswrite
 		.globl getchar
 		.globl putchar
+		.globl getchars
 		.globl memoryalloc
 		.globl memoryfree
 		.globl putchardefio
 		.globl putworddefio
+		.globl putlabbdefio
+		.globl putlabwdefio
+		.globl forbid
+		.globl permit
 
 		.globl _newlinez
+
+; state block, allocated memory available via TASK_USERDATA
 
 structstart	0
 member		SHELL_INPUT,256
@@ -44,10 +52,27 @@ member		SHELL_PARAMS,100
 member		SHELL_DIRENT,MINIXDE_SIZE
 structend	SHELL_SIZE
 
+; getrun constants
+
+; commands
+
+COM_NULL	.equ 0     		; Does nothing, replies REP_NULL
+COM_GET		.equ 1			; Filename\0.
+COM_SIZE	.equ 2			; Filename\0.
+
+; replies
+
+REP_NULL 	.equ 0			; Empty.
+REP_GET_DATA 	.equ 1			; Size, data.
+REP_NOT_FOUND	.equ 2         		; Empty.
+REP_BAD_COMMAND	.equ 3       		; Empty.
+REP_TOO_BIG 	.equ 4			; Empty.
+
 		.area ROM
 
 promptz:	.asciz 'Command > '
 commnotfoundz:	.asciz 'Command not found\r\n'
+transuartz:	.asciz 'uart'
 
 _shellstart::	ldx #SHELL_SIZE		; how many bytes do we need?
 		lbsr memoryalloc	; allocate them
@@ -243,8 +268,6 @@ cd:		lda ,y+			; get type
 ; xrun - read a xmodem transfer on port b into memory and run it as a
 ; subroutine
 
-uartz:		.asciz 'uart'
-
 xrun:		leas -1,s		; grab a byte of stack
 
 		lda ,y+			; get type
@@ -256,9 +279,9 @@ xrun:		leas -1,s		; grab a byte of stack
 		tfr x,y			; save the address for copying
 		tfr x,u			; save the starting address for jsr
 
-		ldx #uartz		; uart device name
+		ldx #transuartz		; uart device name
 		lda #1			; port b
-		ldb #B19200		; set the baudrate
+		ldb #B9600		; set the baudrate
 		lbsr sysopen		; open the port for the transfer
 
 		lda #ASC_NAK		; ask for a start
@@ -332,9 +355,106 @@ xrunerror:	lbsr sysclose		; close the xmodem port
 		setnotzero
 		bra xrunout
 
-runsub:		pshs u
+; getrun - read a file transfer on port b into memory and run it as a
+; subroutine
+
+getrun:		leas -2,s		; two bytes for size
+
+		lda ,y+			; get type
+		cmpa #3			; string?
+		lbne parserfail		; validation error
+		tfr y,u			; get the filename
+
+		ldx #transuartz		; uart device name
+		lda #1			; port b
+		ldb #B19200		; set the baudrate
+		lbsr sysopen		; open the port for the transfer
+
+		lda #COM_GET		; command byte
+		lbsr putchar		; send it
+
+		debugreg ^'Command sent: ',DEBUG_TASK_USER,DEBUG_REG_A
+
+		tfr u,y			; get the filename
+		lbsr putstr		; send the filename
+		clra			; we need a null
+		lbsr putchar		; send it
+
+		debug ^'Filename sent',DEBUG_TASK_USER
+
+		lbsr getchar		; we need the response
+
+		debugreg ^'Got response: ',DEBUG_TASK_USER,DEBUG_REG_A
+
+		cmpa #REP_GET_DATA	; looking for the file data
+		lbne getrunerror	; if not, error path
+
+		lbsr getchar		; now the filesize, high first
+		sta ,s			; save the high byte
+		lbsr getchar		; now the low half of the size
+		sta 1,s			; save the low byte
+
+		tfr x,u			; save the serial port device
+		ldx ,s			; get the filesize again off stack
+
+		debugreg ^'File size: ',DEBUG_TASK_USER,DEBUG_REG_X
+
+		lbsr memoryalloc	; get the memory
+
+		debugreg ^'Got memory: ',DEBUG_TASK_USER,DEBUG_REG_X
+
+		exg x,u			; u now memory, x now device
+		ldy ,s			; get the size again into y
+		stu ,s			; save the start of the block
+
+		lbsr forbid
+
+block:		debug ^'Doing a block',DEBUG_TASK_USER
+
+;		clra			; send a zero
+;		lbsr putchar		; any byte will do
+
+;		ldb #0			; 64 bytes per block
+1$:		lbsr getchar		; get the byte
+		sta ,u+			; save the file byte
+		leay -1,y		; dec overall count
+		beq endfile		; end of file
+;		decb			; dec the inblock count
+;		beq endblock		; end block?
+		bra 1$			; back for another byte
+
+;endblock:	bra block
+
+endfile:	debug ^'Got the file bytes',DEBUG_TASK_USER
+
+		lbsr permit
+
+		ldu ,s			; get subroutine address
+
+		lbsr sysclose		; we are done with the serial port
+
+		ldx defaultio		; get the io channel for the task
+
+		debug ^'About to run the sub',DEBUG_TASK_USER
+
+		lbsr runsub		; run the subroutine
+
+		debugreg ^'RTS with A: ',DEBUG_TASK_USER,DEBUG_REG_A
+
+		tfr u,x			; now restore the subroutine addr
+		lbsr memoryfree		; now we can free the memory
+
+		debug ^'Memory freed',DEBUG_TASK_USER
+
+getrunout:	leas 2,s		; fixup stack
+		rts
+
+getrunerror:	lbsr sysclose		; close the uart
+		bra getrunout		; cleanup
+
+runsub:		pshs x,y,u
 		jsr ,u			; run the recieved file as a sub
-		puls u
+		puls x,y,u
 		rts
 
 ; failure message branches
@@ -371,6 +491,7 @@ listcz:		.asciz 'list'
 typecz:		.asciz 'type'
 cdcz:		.asciz 'cd'
 xruncz:		.asciz 'xrun'
+getruncz:	.asciz 'getrun'
 
 commandarray:	.word listcz
 		.word list
@@ -383,5 +504,8 @@ commandarray:	.word listcz
 
 		.word xruncz
 		.word xrun
+
+		.word getruncz
+		.word getrun
 
 		.word 0x0000

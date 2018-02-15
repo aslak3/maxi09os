@@ -40,14 +40,14 @@ _uartllopen::	pshs a,b,x
 3$:		lda #0b00000001		; receive interrupts
 		sta IER16C654,y		; ... interrupts
 		lda #0b01000111
-		sta FCR16C654,y		; 16 deep fifo, reset fifo
+		sta FCR16C654,y		; trip on 16 read, reset fifo
 		ldx #_uartllhandler	; get uart handler location
 		stx inthandlers+(INTPOSUART*2)	; save it in int table
 		lda #INTMASKUART	; enable the uart interrupt
 		sta IRQSOURCESS		; ... to be routed via disco
 		lbsr enable		; exit critical section
 		setzero
-		debugreg ^'UART-LL h/w addr open: ',DEBUG_SPEC_DRV,DEBUG_REG_Y
+		debugreg ^'UART-LL h/w addr open: ',DEBUG_DRIVER,DEBUG_REG_Y
 		bra 2$
 1$:		lbsr enable		; exit critical section
 		ldy #0			; return 0
@@ -66,7 +66,7 @@ _uartllclose::	pshs y
 		lsla			; ... in a uart port
 		ldy #BASE16C654		; get the base address of quart
 		leay a,y		; y is now the base adress of the port
-		debugreg ^'UART-LL h/w addr close: ',DEBUG_SPEC_DRV,DEBUG_REG_Y
+		debugreg ^'UART-LL h/w addr close: ',DEBUG_DRIVER,DEBUG_REG_Y
 		clr IER16C654,y		; disable interrupts
 		lbsr enable
 		puls y

@@ -28,6 +28,7 @@ member		UART_RX_COUNT_H,2	; rx buffer offset for the handler
 member		UART_TX_COUNT_H,2	; unused
 member		UART_RX_COUNT_U,2	; rx buffer offset for user code
 member		UART_TX_COUNT_U,2	; unused
+member		UART_FILL_LEVEL,1	; number of bytes used in circ buf
 member		UART_BASEADDR,2		; base hardware address
 member		UART_LINE_STATUS,1	; last lsr read in
 member		UART_UNIT,1		; unit number for opend uart
@@ -50,7 +51,7 @@ uartprepare:	rts
 
 uartopen:	pshs y
 		lbsr disable
-		lbsr _uartllopen		; y has base address
+		lbsr _uartllopen	; y has base address
 		lbne 1$			; 0 for good, else bad
 		lbsr _uartllsetbaud	; set the rate from b
 ;		lbsr _uartllsethwhs	; enable hardware handshaking
@@ -58,7 +59,7 @@ uartopen:	pshs y
 		lbsr memoryalloc	; get the memory for the struct
 		sta UART_UNIT,x		; save unit number for uartclose
 		sty UART_BASEADDR,x	; save port base address
-		debugreg ^'UART open h/w addr: ',DEBUG_SPEC_DRV,DEBUG_REG_Y
+		debugreg ^'UART open h/w addr: ',DEBUG_DRIVER,DEBUG_REG_Y
 		ldy #uartdevices	; uart device pointer table
 		lsla			; two bytes for a pointer
 		stx a,y			; save the device pointer
@@ -68,6 +69,7 @@ uartopen:	pshs y
 		clr UART_TX_COUNT_H,x	; ...
 		clr UART_RX_COUNT_U,x	; ...
 		clr UART_TX_COUNT_U,x	; ...
+		clr UART_FILL_LEVEL,x	; empty circular buffer
 		clr UART_LINE_STATUS,x	; clear the line status
 		ldy #uartclose		; save the close pointer
 		sty DEVICE_CLOSE,x	; ... in the device struct
@@ -95,7 +97,7 @@ uartclose:	pshs a,y
 		lda DEVICE_SIGNAL,x	; get the signal used by this dev
 		lbsr signalfree		; free the signal used
 		lda UART_UNIT,x		; obtain the port number
-		debugreg ^'UART close port no: ',DEBUG_SPEC_DRV,DEBUG_REG_A
+		debugreg ^'UART close port no: ',DEBUG_DRIVER,DEBUG_REG_A
 		lbsr _uartllclose	; close the lowlevel unit
 		lbsr memoryfree		; free the open device handle
 		lsla			; two bytes for dev table pointers
@@ -115,22 +117,26 @@ uartread:	pshs b,u
 		clr UART_LINE_STATUS,x	; clear the current line status
 		bita #0x10		; break?
 		bne gotbreak		; got a break, no data
-		ldb UART_RX_COUNT_U,x	; get counter
-		cmpb UART_RX_COUNT_H,x	; compare..,
+		tst UART_FILL_LEVEL,x	; see if we have a byte to read
 		beq nodata		; no character? then return
+		lda UART_FILL_LEVEL,x	; there's a char, get fill level
+		cmpa #16		; see if we should let me chars in
+		dec UART_FILL_LEVEL,x	; reduce the filll level
 		leau UART_RX_BUF,x	; get the buffer
+		ldb UART_RX_COUNT_U,x	; get counter
 		lda b,u			; get the last char written to buf
 		incb			; move along to the next
 		andb #63		; wrapping to 32 byte window
 		stb UART_RX_COUNT_U,x	; and save it
 		lbsr enable		; enable ints
-		debug ^'UART done read',DEBUG_SPEC_DRV
+		debug ^'UART done read',DEBUG_DRIVER
 		setzero			; got data
 		bra uartreadout
-gotbreak:	lda #IO_ERR_BREAK	; set error state
+gotbreak:	debug ^'Break condition',DEBUG_DRIVER
+		lda #IO_ERR_BREAK	; set error state
 		bra uartreaderror
 nodata:		lda #IO_ERR_WAIT	; caller should wait
-uartreaderror:	debugreg ^'UART read error: ',DEBUG_SPEC_DRV,DEBUG_REG_A
+uartreaderror:	debugreg ^'UART read error: ',DEBUG_DRIVER,DEBUG_REG_A
 		lbsr enable		; exit critical section
 		setnotzero		; got no data
 uartreadout:	puls b,u
@@ -193,6 +199,8 @@ noint:		debug ^'No interrupt generated',DEBUG_INT
 		bra uartrxout
 portclosed:	debug ^'UART port is closed',DEBUG_INT
 		bra nosignal
+uartrxovrun:	debug ^'Overrun!',DEBUG_INT
+		bra uartrxout
 
 rxonechar:	tfr a,b			; save the lsr in b
 		orb UART_LINE_STATUS,x	; or it over current line status
@@ -208,8 +216,10 @@ rxonechar:	tfr a,b			; save the lsr in b
 		inca			; we got a char
 		anda #63		; wrap 0->63
 		sta UART_RX_COUNT_H,x	; save the buffer write counter
-		suba UART_RX_COUNT_U,x	; get current user pointer
-		cmpa #-1		; one behind?
-		lbeq uartrxout		; overrun? exit
+		lda UART_FILL_LEVEL,x	; get fill level
+		inca			; add one
+		sta UART_FILL_LEVEL,x	; save it
+		cmpa #48		; see if 3/4 full
+		lbgt uartrxovrun	; overrun? exit
 		lda LSR16C654,y		; get the current status again
 		bra rxonechar		; get more chars

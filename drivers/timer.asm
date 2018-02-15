@@ -74,7 +74,7 @@ timerclose:	lbsr remove		; remove the node
 
 ; write to the device in x, reg a is command, reg y is param block
 
-timercontrol:	debug ^'Timer control',DEBUG_SPEC_DRV
+timercontrol:	debug ^'Timer control',DEBUG_DRIVER
 		cmpa #TIMERCMD_START	; is it a start message?
 		beq starttimer		; if so, start it up
 		cmpa #TIMERCMD_STOP	; is it a stop message?
@@ -93,7 +93,7 @@ starttimer:	lbsr disable		; stop handler playing with timer
 		sty TIMER_COUNTER,x	; ... current timer value
 		lda #1			; and mark the timer as ...
 		sta TIMER_RUNNING,x	; running
-		debug ^'Timer start',DEBUG_SPEC_DRV
+		debug ^'Timer start',DEBUG_DRIVER
 		lbsr enable		; now we can enable ints again
 		bra timercontrolo	; back to common exit path
 stoptimer:	lbsr disable		; stop handler playing with timer

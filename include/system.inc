@@ -8,7 +8,7 @@ DEBUG_ENDDIS	.equ 0x04
 DEBUG_INT	.equ 0x08
 DEBUG_MEMORY	.equ 0x10
 DEBUG_DRIVER	.equ 0x20
-DEBUG_SPEC_DRV	.equ 0x40
+DEBUG_TASK_USER	.equ 0x40
 DEBUG_LIB	.equ 0x80
 DEBUG_ALL	.equ 0xff
 
@@ -19,7 +19,7 @@ DEBUG_REG_Y	.equ 0x08
 
 .ifdef DEBUG
 .msg 'Debug is enabled'
-DEBUG_MODE	.equ DEBUG_SPEC_DRV
+DEBUG_MODE	.equ DEBUG_TASK_USER
 ;DEBUG_MODE	.equ 0xff
 .else
 DEBUG_MODE	.equ 0
