@@ -281,14 +281,13 @@ xrun:		leas -1,s		; grab a byte of stack
 
 		ldx #transuartz		; uart device name
 		lda #1			; port b
-		ldb #B9600		; set the baudrate
+		ldb #B19200		; set the baudrate
 		lbsr sysopen		; open the port for the transfer
 
 		lda #ASC_NAK		; ask for a start
 		lbsr putchar		; ask sender to start sending
 
-blockloop:	
-		lbsr getchar		; get header byte	
+blockloop:	lbsr getchar		; get header byte
 		cmpa #ASC_EOT		; eot for end of file
 		beq xrunrun		; if so then we run
 		cmpa #ASC_SOH		; soh for start of block
