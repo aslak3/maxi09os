@@ -163,7 +163,7 @@ getstrbs:	tstb			; see if the char count is 0
 		lbsr putchar
 		bra getstrloop		; echo the bs and charry on
 
-; putnib - convert a low nibble in a and output it via x
+; putnib - convert a low nibble in a and output it via x - a is modified
 
 putnib:		anda #0x0f		; mask out the high nibble
 		adda #0x30		; add '0'
@@ -183,14 +183,16 @@ putbytedefio::	pshs x
 
 ; putbyte - convert a byte in a to two characters and send them via x
 	
-putbyte::	pshs a			; save original input byte
+putbyte::	pshs a,b
+		tfr a,b			; save the input in b
 		lsra			; move high nibble into low nibble
 		lsra			; ..
 		lsra			; ..
 		lsra			; ..
 		bsr putnib		; convert the low nibble
-		puls a			; get the original input back
+		tfr b,a			; get the original input back
 		bsr putnib		; convert the high nibble
+		puls a,b
 		rts
 
 ; putbytebdefio - output the byte in a in binary form to the default device
@@ -226,10 +228,11 @@ putworddefio::	pshs x
 
 ; putword - convert a word in d to four characters and send them via x
 
-putword::	pshs b			; save low byte
+putword::	pshs a,b
 		bsr putbyte		; output high byte
-		puls a			; restore low byte
+		exg a,b			; restore low byte
 		bsr putbyte		; and output low byte
+		puls a,b
 		rts
 
 ; putlabwdefio - output the string in y, then the word in d, followed by
@@ -242,12 +245,14 @@ putlabwdefio::	pshs x
 		rts
 
 ; putlabw - output the string in y, then the word in d, followed by a
-; newline to the device in x
+; newline to the device in x.
 
-putlabw::	lbsr putstr		; output the label
+putlabw::	pshs y
+		lbsr putstr		; output the label
 		lbsr putword		; output the word
 		ldy #_newlinez		; and also...
 		lbsr putstr		; output a newline
+		puls y
 		rts
 
 ; putlabbdefio - output the string in y, then the byte in a, followed by
@@ -263,7 +268,7 @@ putlabbdefio::	pshs x
 ; newline to the device in x
 
 putlabb::	lbsr putstr		; output the label
-		lbsr putbyte		; output the word
+		lbsr putbyte		; output the byte
 		ldy #_newlinez		; and also...
 		lbsr putstr		; output a newline
 		rts
