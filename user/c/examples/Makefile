@@ -1,7 +1,5 @@
-CC = m6809-unknown-gcc
-LD = m6809-unknown-ld
+include ../Makefile.inc
 
-CFLAGS = -O0 -Wall -std=gnu99 -fPIC -I../libc/
 LDFLAGS = -T linkerscript -nostdlib -L../libc -L../libgcc -lc -lgcc
 
 all : prime.bin easter.bin io.bin

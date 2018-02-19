@@ -1,7 +1,5 @@
-CC = m6809-unknown-gcc
-AR = m6809-unknown-ar
+include ../Makefile.inc
 
-CFLAGS = -Wall -std=gnu99 -fPIC
 ARFLAGS = -r
 
 OBJS = divmodhi3.o
