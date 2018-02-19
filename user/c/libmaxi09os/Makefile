@@ -2,11 +2,11 @@ include ../Makefile.inc
 
 ARFLAGS = -r
 
-OBJS = ctype.o string.o stdlib.o mini-printf.o
+OBJS = maxi09os.o
 
-all : libc.a
+all : libmaxi09os.a
 
-libc.a : $(OBJS)
+libmaxi09os.a : $(OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJS)
 
 %.o : %.c
