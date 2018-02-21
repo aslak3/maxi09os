@@ -9,8 +9,5 @@ all : libc.a
 libc.a : $(OBJS)
 	$(AR) $(ARFLAGS) $@ $(OBJS)
 
-%.o : %.c
-	$(CC) $(CFLAGS) -c $<
-
 clean:
 	rm -f $(OBJS) *.a

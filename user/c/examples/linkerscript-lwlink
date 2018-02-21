@@ -1,0 +1,9 @@
+section start
+section code
+section rodata
+section rwdata
+section bss
+section code
+section initgl_start
+section initgl
+section initgl_end

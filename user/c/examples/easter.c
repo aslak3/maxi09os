@@ -54,14 +54,14 @@ int main(void)
 {
 	char buffer[100];
 
-  	m_putstr("Dates of Easter:\r\n");
+	m_putstrdefio("Dates of Easter:\r\n");
 
 	for (year = 1980; year <= 2020; year++)
 	{
 		dateofeaster(year, &day, &month);
 		snprintf(buffer,25,"%d %s %d\r\n", year,
 			(month == 3) ? "March" : "April", day);
-		m_putstr(buffer);
+		m_putstrdefio(buffer);
       }
 
       return 0;

@@ -8,13 +8,13 @@ int main(void)
 	char buffer[100];
 	int test, max;
 
-	m_putstr("Enter the highest integer to test: ");
-	m_getstr(buffer);
+	m_putstrdefio("Enter the highest integer to test: ");
+	m_getstrdefio(buffer);
 	max = atoi(buffer);
 
 	if (max < 2)
 	{
-		m_putstr("Number must be greater then 1\r\n");
+		m_putstrdefio("Number must be greater then 1\r\n");
 		return 1;
 	}
 
@@ -34,11 +34,9 @@ int main(void)
 		if (flag == 0)
 		{
 			snprintf(buffer, 100, "%d is a prime number.\r\n", test);
-			m_putstr(buffer);
+			m_putstrdefio(buffer);
 		}
 	}
 
-	m_putstr("Done\r\n");
-	
 	return 0;
 }
