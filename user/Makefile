@@ -1,4 +1,4 @@
-AS = ../tools/as6809-wrapper -oxsw
+AS = ../tools/as6809-wrapper -oxlsw
 
 BIN = test.bin gettime.bin settime.bin
 
