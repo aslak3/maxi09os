@@ -5,6 +5,9 @@
 		.include 'include/v99lowlevel.inc'
 		.include 'include/debug.inc'
 
+		.globl forbid
+		.globl permit
+
 		.area ROM
 
 ; save into the registers, starting from the register in a. the value
@@ -63,40 +66,46 @@ vinit::		pshs a
 ; writes to y in vram, count u bytes, from x in mpu ram
 
 vwrite::	pshs y,a
+		lbsr forbid
 		lbsr vseekwrite		; seek to y for writing
 		tfr u,y			; leau does not set z, so need y
 1$:		lda ,x+			; get byte from mpu ram
 		writeaport0		; save it to the vdc
 		leay -1,y		; decrement
 		bne 1$			; back for more?
+		lbsr permit
 		puls y,a
 		rts
 
 ; clears (zero) to y in vram, count u bytes
 
 vclear::	pshs y,a
+		lbsr forbid
 		lbsr vseekwrite		; seek to y for writing
 		tfr u,y			; leau does not set z, so need y
 		clra			; we are clearing
 1$:		writeaport0		; clear the byte in vram
 		leay -1,y		; decrement counter
 		bne 1$			; back for more?
+		lbsr permit
 		puls y,a
 		rts
 
 ; reads into x in mpu, count u bytes, from y in vram
 
 vread::		pshs y,a
+		lbsr forbid
 		lbsr vseekread
 		tfr u,y			; leau does not set z, so need y
 1$:		readaport0		; get the vram byte
 		sta ,x+			; sve in mpu ram
 		leay -1,y		; dec counter
 		bne 1$			; back for more?
+		lbsr permit
 		puls y,a
 		rts
 
-; seek to vram address y for writing
+; seek to vram address y for writing - does not forbid!
 
 vseekwrite::	pshs a,b
 		lbsr vseekcommon	; common address register stuff
@@ -106,7 +115,7 @@ vseekwrite::	pshs a,b
 		puls a,b
 		rts
 
-; seek to vram address at y for reading
+; seek to vram address at y for reading - does not forbid!
 
 vseekread::	pshs a,b
 		lbsr vseekcommon	; common addess register stuff
