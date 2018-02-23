@@ -10,10 +10,14 @@
 		.globl clearplayarea
 		.globl drawplayarea
 		.globl readjoystick
+		.globl defaultlives
+		.globl showlives
 
 calibrate::	lbsr clearscreen	; clear scren at the start
 		lbsr drawplayarea	; draw the border
 		lbsr clearplayarea	; clear the middle of the screen
+		lbsr defaultlives	; reset the number of lives
+		lbsr showlives		; show the number of lives
 
 		clrb
 

@@ -25,8 +25,7 @@ gameovermsg:	.asciz 'Game Over...'
 
 game::		lbsr randominit		; prepare the pseudo random numbers
 
-		lda #3			; start with 3 lives
-		sta lives,pcr		; save the lives
+		lbsr defaultlives	; 3 lives to start with
 
 		ldx #0x2000		; starting delay
 		stx movementdelay,pcr	; it's reduced as snake grows
@@ -110,6 +109,12 @@ gameoverloop:	lbsr readjoystick	; read the joystick
 		jsr [delay]
 
 		rts			; end of game
+
+; clears the number of lives to 3
+
+defaultlives::	lda #3			; start with 3 lives
+		sta lives,pcr		; save the lives
+		rts
 
 ; draws a bit of the snake, tile in a. may be blank (0), maybe body or maybe
 ; head. b has position along snake array we want to draw.
@@ -282,7 +287,7 @@ drawplayarea::	clra			; top left is 0, 0
 
 		rts
 
-showlives:	leas -1,s
+showlives::	leas -1,s
 		ldb #25
 		lda #3
 		sta ,s
@@ -319,6 +324,9 @@ demoprepare::	lda #16			; start at length of two
 2$:		sta ,x+			; save the smae col along the table
 		decb			; 256 bytes
 		bne 2$			; back for more
+
+		clr rowdirection,pcr	; start with no movement
+		clr coldirection,pcr	; ...
 
 		lbra moveright		; start moving right and return
 
