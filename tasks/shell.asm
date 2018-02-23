@@ -448,7 +448,11 @@ endfile:	debug ^'Got the file bytes',DEBUG_TASK_USER
 getrunout:	leas 2,s		; fixup stack
 		rts
 
-getrunerror:	lbsr sysclose		; close the uart
+getrunerrmessz:	.asciz 'Error code: '
+
+getrunerror:	ldy #getrunerrmessz	; error message, with error number
+		lbsr putlabbdefio	; show the message with the code
+		lbsr sysclose		; close the uart
 		bra getrunout		; cleanup
 
 runsub:		pshs x,y,u

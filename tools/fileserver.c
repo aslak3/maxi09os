@@ -195,7 +195,7 @@ int handleget(int serialfd)
 	if (filesize > 65535)
 	{
 		fprintf(stderr, "File >64KB\n");
-		writeword(serialfd, REP_TOO_BIG);
+		writebyte(serialfd, REP_TOO_BIG);
 		return 1;
 	}
 
