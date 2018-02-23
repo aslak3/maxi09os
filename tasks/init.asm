@@ -8,18 +8,17 @@
 		.globl sysopen
 		.globl sysclose
 		.globl syscontrol
-		.globl sysread
-		.globl syswrite
 		.globl mountminix
 		.globl rootsuperblock
 		.globl putstr
-		.globl currenttask
 		.globl createtask
 		.globl wait
 
 		.globl _timertask
 		.globl _echotask
 		.globl _shellstart
+
+		.globl currenttask
 		
 		.area RAM
 
