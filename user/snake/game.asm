@@ -9,7 +9,6 @@
 		.include 'snake.inc'
 
 		.globl clearscreen
-		.globl drawplayarea
 		.globl clearplayarea
 		.globl printstrat
 		.globl readjoystick
@@ -45,16 +44,16 @@ lifeloop:	lbsr clearplayarea	; clear the main portion
 		lda #12			; row coord of where snake starts
 		leax rowsnake,pcr	; get the top of the row table
 		clrb			; counter
-rowinitloop:	sta ,x+			; save the same row along the table
+1$:		sta ,x+			; save the same row along the table
 		decb			; 256 bytess
-		bne rowinitloop		; back for more
+		bne 1$			; back for more
 
 		lda #16			; col coord of whee snake starts
 		leax colsnake,pcr	; get the top of the col table
 		clrb			; counter
-colinitloop:	sta ,x+			; save the smae col along the table
+2$:		sta ,x+			; save the smae col along the table
 		decb			; 256 bytes
-		bne colinitloop		; back for more
+		bne 2$			; back for more
 
 		clr rowdirection,pcr	; snake moves...
 		lda #1			; across to the right...
@@ -194,18 +193,19 @@ yumyumo:	lda #1			; we dont die when eating food!
 ; place some new food at a random empty place. returns with a nd b at food
 ; location.
 
-placenewfood:	lda #FOODTILE
-		sta stamp,pcr
-tryplaceagain:	lbsr randomnumber
-		anda #31
-		tfr a,b
-		lbsr randomnumber
-		cmpa #24
-		bhs tryplaceagain
-		lbsr peekat
-		tst peek,pcr
-		bne tryplaceagain
-		lbsr stampat
+placenewfood:	lda #FOODTILE		; we are putting food down!
+		sta stamp,pcr		; set it as the stamp
+tryplaceagain:	lbsr randomnumber	; get a "random" number
+		anda #31		; mask it to the columnk
+		tfr a,b			; columns are in b, rows in a
+		lbsr randomnumber	; get another random number
+		anda #41		; mask with 31 to get rid of highs
+		cmpa #24		; can't mask, compare wih 24
+		bhs tryplaceagain	; if more, then try again
+		lbsr peekat		; see if there is something here
+		tst peek,pcr		; peekat should set zero, hmm?
+		bne tryplaceagain	; anyway, if not empty try again
+		lbsr stampat		; otherwise stamp the food
 		rts
 
 controlsnake:	lbsr readjoystick
@@ -218,6 +218,8 @@ controlsnake:	lbsr readjoystick
 		bita #JOYDOWN
 		bne movedown
 controlsnakeo:	rts
+
+; also used by "demo snake"
 
 moveleft:	lda #1
 		bra moveleftright
@@ -233,13 +235,13 @@ moveleftright:	cmpa coldirection,pcr
 		nega
 		sta coldirection,pcr
 		clr rowdirection,pcr
-		bra controlsnakeo
+		rts
 moveupdown:	cmpa rowdirection,pcr
 		beq controlsnakeo
 		nega
 		clr coldirection,pcr
 		sta rowdirection,pcr
-		bra controlsnakeo
+		rts
 
 randominit:	lda #42
 		sta randomseed
@@ -250,7 +252,7 @@ randomnumber:	lda randomseed
 		asla
 		beq noeor		; if the input was $80, skip the eor
 		bcc noeor
-doeor:		eora #0xf5
+doeor:		eora #0xf5		; the "magic"
 noeor:		sta randomseed
 
 		rts
@@ -258,7 +260,7 @@ noeor:		sta randomseed
 titlemessage:	.asciz ' SNAKE! '
 livesmessage:	.asciz '     '
 
-drawplayarea:	clra			; top left is 0, 0
+drawplayarea::	clra			; top left is 0, 0
 		clrb			; ..
 		pshs a,b		; push this on the u stack
 		lda #23			; bottom right is 23, 31
@@ -300,6 +302,77 @@ showlivesstate:	lda #23
 showliveso:	leas 1,s
 		rts
 
+demoprepare::	lda #16			; start at length of two
+		sta snakelength,pcr	; save the length
+		clr headpos,pcr		; snake snarts at the top of table
+
+		lda #7			; row coord of where snake starts
+		leax rowsnake,pcr	; get the top of the row table
+		clrb			; counter
+1$:		sta ,x+			; save the same row along the table
+		decb			; 256 bytess
+		bne 1$			; back for more
+
+		lda #1			; col coord of whee snake starts
+		leax colsnake,pcr	; get the top of the col table
+		clrb			; counter
+2$:		sta ,x+			; save the smae col along the table
+		decb			; 256 bytes
+		bne 2$			; back for more
+
+		lbra moveright		; start moving right and return
+
+demosnakemove::	clra			; we are blanking out the far end
+		ldb headpos,pcr		; get the current end index
+		subb snakelength,pcr	; subtract the length (may wrap)
+		lbsr drawsnakepart	; and rubout the far end of the snake
+
+		lda #SNAKEBODYTILE	; draw over the last head tile
+		ldb headpos,pcr		; with a body tile
+		lbsr drawsnakepart	; snake is now headless :(
+
+		lbsr movesnake		; move snake, inrementing headpos
+
+		lda #SNAKEHEADTILE	; finally we can draw the new head
+		ldb headpos,pcr		; get the headposition again
+		lbsr drawsnakepart	; and draw the head
+
+		lbsr democontrol	; but in each delay loop, poll stick
+
+		rts
+
+democontrol:	ldb headpos,pcr		; get current head position
+
+		leax rowsnake,pcr	; setup row table pointer
+		abx			; add (unsigned) the snake pos
+		lda ,x			; and deref to get row of head
+
+		leax colsnake,pcr	; setup col table pointer
+		abx			; add (unsigned) the snake pos
+		ldb ,x			; and deref to get col of head
+
+		cmpa #7			; at top row?
+		bne 1$			; else skip
+		cmpb #30		; gap between snake and right border
+		lbeq movedown		; steer down
+
+1$:		cmpb #30		; at right row?
+		bne 2$			; else skip
+		cmpa #15		; gap between snake and bot border
+		lbeq moveleft		; steer left
+
+2$:		cmpa #15		; at bottom row?
+		bne 3$			; else skip
+		cmpb #1			; gap between snake and left border
+		lbeq moveup		; steer up
+
+3$:		cmpb #1			; at left row?
+		bne 4$			; else skip
+		cmpa #7			; gap betwween snake and top border
+		lbeq moveright		; steer right
+
+4$:		rts
+
 ; Variables
 
 lives:		.rmb 1			; number of lives left
@@ -314,3 +387,5 @@ rowdirection:	.rmb 1			; either -1, 0 or 1 for row dir
 coldirection:	.rmb 1			; either -1, 0 or 1 for col dir
 
 randomseed:	.rmb 1			; seed, and last random made
+
+dummy:		.byte 0

@@ -7,15 +7,20 @@
 		.include '../../include/v99lowlevel.inc'
 
 		.globl clearscreen
+		.globl clearplayarea
 		.globl drawplayarea
 		.globl readjoystick
 
-calibrate::	lbsr clearscreen	; clear scren at te start
+calibrate::	lbsr clearscreen	; clear scren at the start
 		lbsr drawplayarea	; draw the border
+		lbsr clearplayarea	; clear the middle of the screen
 
 		clrb
 
-calibrateloop:	leay 0x8000,y
+		ldy #0
+		jsr [delay]
+
+calibrateloop:	leay 0x2000,y
 		jsr [delay]
 
 		tfr b,a

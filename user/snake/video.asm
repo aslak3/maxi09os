@@ -8,8 +8,6 @@
 
 		.include 'snake.inc'
 
-		.globl clearscreen
-
 		.globl spectrumfont
 		.globl snaketiles
 		.globl badtiles
@@ -26,7 +24,9 @@ peek::		.rmb 1
 printattab:	.rmb 2*24
 vcounter:	.rmb 1
 
-videoinit::	; graphics mode 1 - 32x24, 8x8 tiles
+videoinit::	jsr [forbid]
+
+		; graphics mode 1 - 32x24, 8x8 tiles
 		loadconstreg VMODE0REG, 0b00000000
 		loadconstreg VMODE1REG, 0b01100000
 		loadconstreg VMODE2REG, 0b00001000
@@ -42,7 +42,9 @@ videoinit::	; graphics mode 1 - 32x24, 8x8 tiles
 		; hack
 		loadconstreg VDISPLAYPOSREG, 0x08
 
-		clr vcounter
+		jsr [permit]
+
+		clr vcounter,pcr
 
 		leax printattab,pcr	; prepare lookup table of row->vram
 		ldy #0x8000		; vram starts at 0x8000
@@ -88,31 +90,21 @@ printattabn:	sty ,x++		; save the start of the row
 
 ; clear whole screen
 
-clearscreen:	ldy #0x8000		; start at the top left corner
-		jsr [vseekwrite]	; for writing
-		ldx #24*32		; total number of tiles on screen
-		clra			; cant clr MM as it will read
-clearscreenn:	sta VPORT0		; write to vram
-		leax -1,x		; dec the column count
-		bne clearscreenn	; more tiles?
+clearscreen::	ldy #0x8000		; start at the top left corner
+		ldu #32*24		; 32 x 24 chars
+		jsr [vclear]
 		rts
 
-clearplayarea::	leas -1,s
-		ldy #0x8000		; start at the top left corner
-		lda #22			; we need 22 rows (24-2)
-		sta ,s			; save row count in a variable
-		leay 32,y		; skip the top row of border
-nextrow:	leay 1,y		; move across the left hand border
-		jsr [vseekwrite]	; for writing
-		ldx #30			; we need 32-2=30 blank tiles
-		clra			; clr MM will read, so clear reg a
-nextrown:	sta VPORT0		; store it in the vram
-		leax -1,x		; dec the coloumn counter
-		bne nextrown		; more coloumns?
-		leay 31,y		; skip to the left most col on next row
-		dec ,s			; dec the row counter
+; claear all but the outside border
+
+clearplayarea::	ldy #0x8000		; start at the top left corner
+		ldu #30			; we always clear 30 bytes
+		leay 32+1,y		; skip the top row of border + 1 col
+		lda #22			; 22 rows to clear
+nextrow:	jsr [vclear]		; clear the 30 cols
+		leay 32,y		; skip to the left most col on next row
+		deca			; dec the row counter
 		bne nextrow		; more rows?
-		leas 1,s
 		rts
 
 ; prints the string at x (until null) at row a, col b
@@ -121,12 +113,14 @@ printstrat::	leay printattab,pcr	; the row->vram addres table
 		lsla			; double the row; table of addresses
 		ldy a,y			; get the vram address
 		leay b,y		; add the column count on
+		jsr [forbid]
 		jsr [vseekwrite]	; and set write mode
 printstratn:	lda ,x+			; get the frist byte we are writing
 		beq printstratout	; see if it's a null, then done
-		sta VPORT0		; output it to the vdc
+		writeaport0		; output it to the vdc
 		bra printstratn		; back for more
-printstratout:	rts
+printstratout:	jsr [permit]
+		rts
 
 ; write the stamp byte to row a, col b and output the char. a and b are
 ; retained for conistency with peekat.
@@ -136,9 +130,11 @@ stampat::	pshs a,b		; save a and b
 		lsla			; double the row; table of addresses
 		ldy a,y			; get the vram address
 		leay b,y		; add the column count on
-		jsr [vseekwrite]	; and set write mode
 		lda stamp,pcr		; load what we are stamping
-		sta VPORT0		; output it to the vdc
+		jsr [forbid]
+		jsr [vseekwrite]	; and set write mode
+		writeaport0		; output it to the vdc
+		jsr [permit]
 		puls a,b		; restore a and b
 		rts
 
@@ -151,8 +147,10 @@ peekat::	pshs a,b		; save a and b
 		lsla			; double the row; table of addresses
 		ldy a,y			; get the vram address
 		leay b,y		; add the column count on
+		jsr [forbid]
 		jsr [vseekread]		; set to read mode
 		lda VPORT0		; read what's at the tile position
+		jsr [permit]
 		sta peek,pcr		; ave it into the peek variable
 		puls a,b		; a and b have the row, col on exit
 		rts
@@ -232,4 +230,3 @@ leftborder:	lbsr stampat
 vdchandler:	getstatusreg #0
 		inc vcounter,pcr
 		rts
-

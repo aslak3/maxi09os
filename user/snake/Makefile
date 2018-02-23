@@ -1,6 +1,6 @@
-AS = ../../tools/as6809-wrapper -oxsw
+AS = ../../tools/as6809-wrapper -oxlsw
 
-RELS = snake.rel calibrate.rel game.rel graphics.rel video.rel
+RELS = snake.rel calibrate.rel game.rel video.rel graphics.rel
 BIN = snake.bin
 
 all: $(BIN)
