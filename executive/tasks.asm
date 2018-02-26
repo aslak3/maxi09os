@@ -22,8 +22,9 @@
 		.globl interruptnest
 
 		.globl _runtimers
+		.globl _polljoys
 
-STACK		.equ 256
+STACK		.equ 512
 
 		.area ROM
 
@@ -254,6 +255,7 @@ _tickerhandler::debug ^'Ticker handler',DEBUG_INT
 		lda T1CL6522		; clear interrupt
 
 		lbsr _runtimers		; run all the timer devices
+		lbsr _polljoys		; check all joysticks
 
 _yield::	debug ^'Manual yield entry',DEBUG_TASK
 		tst permitnest		; see if task switch is enabled

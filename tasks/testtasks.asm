@@ -29,6 +29,7 @@
 
 consoledev:	.rmb 2
 timerdev:	.rmb 2
+joydev:		.rmb 2
 waitsigs:	.rmb 1
 
 timertestdata:	.rmb 200
@@ -43,6 +44,7 @@ echotestresult:	.rmb 1
 consolenamez:	.asciz 'console'
 timernamez:	.asciz 'timer'
 uartnamez:	.asciz 'uart'
+joynamez:	.asciz 'joy'
 
 timertaskstartz:.asciz 'Timer task starting\r\n'
 timerexpiredz:	.asciz 'Timer expired\r\n'
@@ -50,6 +52,7 @@ keypressedz:	.asciz 'Key pressed: '
 abouttowaitz:	.asciz 'About to wait\r\n'
 donewaitz:	.asciz 'Done wait\r\n'
 startingtimerz:	.asciz 'Starting timer!\r\n'
+joystickposz:	.asciz 'Joystick moved to pos: '
 
 timerctrlblk:	.byte 1
 		.word 40
@@ -62,6 +65,7 @@ _timertask::	lda #0
 		ldx #consolenamez		; we want a console
 		lbsr sysopen
 		stx consoledev
+
 		ldy #timertaskstartz
 		lbsr putstr
 		lda #ASC_EOT
@@ -70,10 +74,14 @@ _timertask::	lda #0
 		ldx #timernamez
 		lbsr sysopen
 		stx timerdev
-
 		ldy #timerctrlblk
 		lda #TIMERCMD_START
 		lbsr syscontrol
+
+		ldx #joynamez
+		lda #1
+		lbsr sysopen
+		stx joydev
 
 1$:		ldx consoledev
 		ldy #abouttowaitz
@@ -82,6 +90,8 @@ _timertask::	lda #0
 		lda DEVICE_SIGNAL,x
 		ldx consoledev
 		ora DEVICE_SIGNAL,x
+		ldx joydev
+		ora DEVICE_SIGNAL,x
 		lbsr wait
 		sta waitsigs
 
@@ -89,16 +99,21 @@ _timertask::	lda #0
 		ldx timerdev
 		bita DEVICE_SIGNAL,x
 		bne 3$
-2$:		lda waitsigs
+		lda waitsigs
 		ldx consoledev
 		bita DEVICE_SIGNAL,x
 		bne 4$
+		lda waitsigs
+		ldx joydev
+		bita DEVICE_SIGNAL,x
+		bne 6$
+
 		bra 1$
 
 3$:		ldx consoledev
 		ldy #timerexpiredz
 		lbsr putstr
-		bra 2$
+		bra 1$
 
 4$:		ldx consoledev
 		lbsr sysread
@@ -126,6 +141,14 @@ _timertask::	lda #0
 		ldx consoledev
 		ldy #startingtimerz
 		lbsr putstr
+		lbra 1$
+
+6$:		ldx joydev
+		lbsr sysread
+		lbne 1$			; wait
+		ldx consoledev
+		ldy #joystickposz
+		lbsr putlabb
 		lbra 1$
 
 CHILD_TASK	.equ 0
