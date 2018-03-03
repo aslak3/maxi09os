@@ -2,6 +2,7 @@
 
 		.include '../include/subtable.inc'
 
+		.include '../../include/system.inc'
 		.include '../../include/ascii.inc'
 		.include '../../include/hardware.inc'
 		.include '../../include/v99lowlevel.inc'
@@ -11,7 +12,6 @@
 		.globl clearscreen
 		.globl clearplayarea
 		.globl printstrat
-		.globl readjoystick
 		.globl stampat
 		.globl peekat
 		.globl drawbox
@@ -19,15 +19,22 @@
 		.globl stamp
 		.globl peek
 
+		.globl timersignal
+		.globl joysignal
+		.globl timerdevice
+		.globl joydevice
+		.globl timercontrol
+		.globl timerperiod
+
 ; This is a whole game
 
-gameovermsg:	.asciz 'Game Over...'
+gameovermsg:	.asciz 'Game over...'
 
 game::		lbsr randominit		; prepare the pseudo random numbers
 
 		lbsr defaultlives	; 3 lives to start with
 
-		ldx #0x2000		; starting delay
+		ldx #0x018		; starting delay
 		stx movementdelay,pcr	; it's reduced as snake grows
 
 		lda #2			; start at length of two
@@ -37,8 +44,14 @@ game::		lbsr randominit		; prepare the pseudo random numbers
 		lbsr clearscreen	; clear scren at te start
 		lbsr drawplayarea	; draw the border
 
+		ldx #15			; 15/40 of a sec
+		stx timerperiod,pcr	; save it
+
 lifeloop:	lbsr clearplayarea	; clear the main portion
 		lbsr showlives		; show the number of lives
+
+		lda #FOODTILE		; dummy food for start of game
+		lbsr docollision	; place the first food on the map
 
 		lda #12			; row coord of where snake starts
 		leax rowsnake,pcr	; get the top of the row table
@@ -58,7 +71,6 @@ lifeloop:	lbsr clearplayarea	; clear the main portion
 		lda #1			; across to the right...
 		sta coldirection,pcr	; but not along at the start
 
-		lbsr placenewfood	; place the first food on the map
 
 		; main loop of the game
 
@@ -84,15 +96,22 @@ nocollision:	lda #SNAKEHEADTILE	; finally we can draw the new head
 		ldb headpos,pcr		; get the headposition again
 		lbsr drawsnakepart	; and draw the head
 
-		ldx movementdelay,pcr	; delay the game
-controlloop:	lbsr controlsnake	; but in each delay loop, poll stick
-		leax -1,x		; decrement delay
-		bne controlloop		; until zero
+dowait:		lda timersignal,pcr	; get timer signal
+		ora joysignal,pcr	; get the joystick signal
+		jsr [wait]
 
-		bra mainloop		; and back to the top again
+		bita joysignal,pcr	; check for joystick event
+		bne joymoved		; move snake etc
+		bita timersignal,pcr	; check for timer event
+		bne mainloop		; move snake etc
+
+		bra dowait		; don't know this sig, back for more
+
+joymoved:	lbsr controlsnake	; otherwise the timter tripped
+		bra dowait		; back to waiting
 
 death:		dec lives,pcr		; down a life!
-		bne lifeloop		; start of life,  center snake
+		lbne lifeloop		; start of life,  center snake
 
 		lbsr showlives		; show that all lives are gone
 
@@ -101,12 +120,10 @@ death:		dec lives,pcr		; down a life!
 		leax gameovermsg,pcr	; ...
 		lbsr printstrat		; ...
 
-gameoverloop:	lbsr readjoystick	; read the joystick
+gameoverloop:	ldx joydevice,pcr	; get the joy stick device
+		jsr [getchar]		; get an event, waiting if needed
 		bita #JOYFIRE1		; test for fire
 		beq gameoverloop	; not pressed? check again
-
-		ldy #0x0000
-		jsr [delay]
 
 		rts			; end of game
 
@@ -187,11 +204,15 @@ docollisiono:	rts
 
 yumyum:		inc snakelength,pcr	; snake grows as it eats
 		lbsr placenewfood	; put some new food down
-		ldx movementdelay,pcr	; get current snake speed
-		leax -0x0040,x		; at 120 food it will be max speed 
-		cmpx #0x0200		; up 16 times faster then at start
+		ldx timerperiod,pcr	; get current snake speed
+		leax -1,x		; at 120 food it will be max speed 
+		cmpx #2			; up 16 times faster then at start
 		bls yumyumo		; don't make delay too silly!
-		stx movementdelay,pcr	; save it
+                stx timerperiod,pcr     ; set it in control block
+		ldx timerdevice,pcr	; get the timer device
+                leay timercontrol,pcr	; get timer block
+                lda #TIMERCMD_START	; start timer
+                jsr [syscontrol]	; start 0.5sec timer
 yumyumo:	lda #1			; we dont die when eating food!
 		bra docollisiono
 
@@ -213,7 +234,9 @@ tryplaceagain:	lbsr randomnumber	; get a "random" number
 		lbsr stampat		; otherwise stamp the food
 		rts
 
-controlsnake:	lbsr readjoystick
+controlsnake:	ldx joydevice,pcr
+		jsr [sysread]		; get new stick pos
+		bne controlsnake	; should never happen!
 		bita #JOYLEFT
 		bne moveleft
 		bita #JOYRIGHT

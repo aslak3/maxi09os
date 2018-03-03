@@ -4,6 +4,7 @@
 
                 .include '../../include/ascii.inc'
                 .include '../../include/hardware.inc'
+		.include '../../include/system.inc'
 
 		.globl videoinit
 		.globl clearscreen
@@ -13,63 +14,109 @@
 		.globl demoprepare
 		.globl demosnakemove
 
-start::		lbsr videoinit			; set 32x24 tile mode
+start::		leax timerz,pcr		; the timer string
+		jsr [sysopen]		; open the timer
+		stx timerdevice,pcr	; save the handle
+		lda DEVICE_SIGNAL,x	; get the signal bit
+		sta timersignal,pcr	; save it away
 
-		leax videoinit,pcr		; the address of above sub
-		jsr [setgraphicsub]		; save it as f10 graphic sub
+		leax joyz,pcr		; the joy string
+		clra			; we want port 0
+		jsr [sysopen]		; open the joystick
+		stx joydevice,pcr	; save the handle
+		lda DEVICE_SIGNAL,x	; get the signal bit
+		sta joysignal,pcr	; save it away
 
-menu:		lbsr clearscreen		; clear the screen
+		lbsr videoinit		; set 32x24 tile mode
 
-		lda #9				; y
-		ldb #3				; x
-		leax pressfirez,pcr		; press fire mssage
-		lbsr printstrat			; print the message
+		leax videoinit,pcr	; the address of above sub
+		jsr [setgraphicsub]	; save it as f10 graphic sub
 
-		lda #11				; ...
-		ldb #3				; ...
-		leax orexitz,pcr		; or exit with up
-		lbsr printstrat			; ...
+menu:		ldd #15			; 15/40 of a sec
+		std timerperiod,pcr	; set it in control block
+		ldx timerdevice,pcr	; get timer device
+		leay timercontrol,pcr	; get timer block
+		lda #TIMERCMD_START	; start timer
+		jsr [syscontrol]	; start 0.5sec timer
 
-		lda #13				; ...
-		ldb #3				; ...
-		leax orcalibratez,pcr		; or calibrate with down
-		lbsr printstrat			; ...
+		lbsr clearscreen	; clear the screen
 
-		lbsr demoprepare		; prepare the demo snake
+		lda #9			; y
+		ldb #3			; x
+		leax pressfirez,pcr	; press fire mssage
+		lbsr printstrat		; print the message
 
-menuloop:	ldx #0x2000			; go round polling
+		lda #11			; ...
+		ldb #3			; ...
+		leax orexitz,pcr	; or exit with up
+		lbsr printstrat		; ...
 
-menupollloop:	lbsr readjoystick		; get stick state
-		bita #JOYFIRE1			; fire?
-		bne startgame			; if pressed then start
-		bita #JOYUP			; up?
-		bne exit			; if up then exit
-		bita #JOYDOWN			; down?
-		bne startcalibrate		; if down then calibrate
-		leax -1,x			; dec poll counter
-		bne menupollloop		; back to check stick
+		lda #13			; ...
+		ldb #3			; ...
+		leax orcalibratez,pcr	; or calibrate with down
+		lbsr printstrat		; ...
 
-		lbsr demosnakemove		; move the demo snake
+		lbsr demoprepare	; prepare the demo snake
 
-		bra menuloop			; back up to poll
+menuloop:	lda timersignal,pcr	; get the signal bit
+		ora joysignal,pcr	; or in the joystick sigbit
+                jsr [wait]		; wait for the half sec
 
-startgame:	lbsr game			; run game as subroutine
+		bita timersignal,pcr	; check the timer
+		bne timersig		; handle the timer
 
-		bra menu			; end game, show menu
+		bita joysignal,pcr	; check the timer
+		bne joysig		; handle the timer
 
-startcalibrate:	lbsr calibrate			; run calibrate sub
+		bra menuloop		; unknown sig
 
-		bra menu			; then back to showing menu
+timersig:	lbsr demosnakemove	; move the demo snake
 
-exit:		ldx #0				; reset graphic sub callback
-		jsr [setgraphicsub]		; set it
+		bra menuloop		; back up to poll
 
-		rts				; back to the shell
+joysig:		ldx joydevice,pcr	; get stick state
+		jsr [sysread]
+		bne menuloop		; no event yet?
+		bita #JOYFIRE1		; fire?
+		bne startgame		; if pressed then start
+		bita #JOYUP		; up?
+		bne exit		; if up then exit
+		bita #JOYDOWN		; down?
+		bne startcalibrate	; if down then calibrate
+
+		bra menuloop
+
+startgame:	lbsr game		; run game as subroutine
+
+		bra menu		; end game, show menu
+
+startcalibrate:	lbsr calibrate		; run calibrate sub
+
+		bra menu		; then back to showing menu
+
+exit:		ldx timerdevice,pcr	; get the timer
+		jsr [sysclose]		; close it
+		ldx joydevice,pcr	; get the joystick
+		jsr [sysclose]		; close it
+
+		ldx #0			; reset graphic sub callback
+		jsr [setgraphicsub]	; set it
+
+		rts			; back to the shell
 
 pressfirez:	.asciz 'Press FIRE to start'
 orexitz:	.asciz 'Or UP to exit'
 orcalibratez:	.asciz 'Or DOWN to position screen'
 
-readjoystick::	lda JOYPORT0			; read joystick state
-		coma				; invert, 1=pressed/pushed
-		rts
+timerz:		.asciz 'timer'
+timerdevice::	.rmb 2			; open timer device (global)
+timersignal::	.rmb 1			; signal bit
+
+joyz:		.asciz 'joy'
+joydevice::	.rmb 2			; open joy device (global)
+joysignal::	.rmb 1			; signal bit
+
+timercontrol::	.byte 1			; repeating timer
+timerperiod::	.word 0			; rewritten as needed
+
+dummy:		.byte 0

@@ -8,6 +8,7 @@
 		.globl memoryfree
 		.globl currenttask
 		.globl signalalloc
+		.globl signalfree
 		.globl enable
 		.globl disable
 		.globl initlist
@@ -68,7 +69,11 @@ timeropen:	ldx #TIMER_SIZE		; allocate the device struct
 
 ; timer close - give it the device in x
 
-timerclose:	lbsr remove		; remove the node
+timerclose:	lda DEVICE_SIGNAL,x	; get the signal used by this dev
+		lbsr signalfree		; free the signal used
+		lbsr disable		; list is read by  isr
+		lbsr remove		; remove the node
+		lbsr enable		; release
 		lbsr memoryfree		; free the open device handle
 		rts
 

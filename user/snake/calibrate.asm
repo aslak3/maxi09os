@@ -9,9 +9,10 @@
 		.globl clearscreen
 		.globl clearplayarea
 		.globl drawplayarea
-		.globl readjoystick
 		.globl defaultlives
 		.globl showlives
+
+		.globl joydevice
 
 calibrate::	lbsr clearscreen	; clear scren at the start
 		lbsr drawplayarea	; draw the border
@@ -21,16 +22,11 @@ calibrate::	lbsr clearscreen	; clear scren at the start
 
 		clrb
 
-		ldy #0
-		jsr [delay]
-
-calibrateloop:	leay 0x2000,y
-		jsr [delay]
-
-		tfr b,a
+calibrateloop:	tfr b,a
 		loadareg VDISPLAYPOSREG 
 
-		lbsr readjoystick
+		ldx joydevice,pcr
+		jsr [getchar]
 		bita #JOYFIRE1
 		bne calibrateo
 		bita #JOYLEFT
@@ -42,10 +38,7 @@ calibrateloop:	leay 0x2000,y
 		bita #JOYDOWN
 calibratenext:	bra calibrateloop
 
-calibrateo:	ldy #0x0000
-		jsr [delay]
-
-		rts
+calibrateo:	rts
 
 calibrateleft:	incb
 		bra calibratenext
