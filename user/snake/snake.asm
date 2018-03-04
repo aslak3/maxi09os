@@ -109,10 +109,11 @@ orexitz:	.asciz 'Or UP to exit'
 orcalibratez:	.asciz 'Or DOWN to position screen'
 
 timerz:		.asciz 'timer'
+joyz:		.asciz 'joy'
+
 timerdevice::	.rmb 2			; open timer device (global)
 timersignal::	.rmb 1			; signal bit
 
-joyz:		.asciz 'joy'
 joydevice::	.rmb 2			; open joy device (global)
 joysignal::	.rmb 1			; signal bit
 

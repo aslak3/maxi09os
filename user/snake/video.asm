@@ -14,7 +14,7 @@
 		.globl walltiles
 		.globl colours
 
-; Global variables
+; global variables
 
 stamp::		.rmb 1
 peek::		.rmb 1
@@ -225,8 +225,4 @@ leftborder:	lbsr stampat
 		cmpa 2,s
 		bne leftborder
 
-		rts
-
-vdchandler:	getstatusreg #0
-		inc vcounter,pcr
 		rts

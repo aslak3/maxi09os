@@ -7,12 +7,14 @@
 		.include '../../include/v99lowlevel.inc'
 
 		.globl clearscreen
-		.globl clearplayarea
 		.globl drawplayarea
+		.globl clearplayarea
 		.globl defaultlives
 		.globl showlives
 
 		.globl joydevice
+
+vidpos:		.byte 0			; video position (updated)
 
 calibrate::	lbsr clearscreen	; clear scren at the start
 		lbsr drawplayarea	; draw the border
@@ -20,31 +22,32 @@ calibrate::	lbsr clearscreen	; clear scren at the start
 		lbsr defaultlives	; reset the number of lives
 		lbsr showlives		; show the number of lives
 
-		clrb
+		ldb vidpos,pcr		; get current position
 
-calibrateloop:	tfr b,a
-		loadareg VDISPLAYPOSREG 
+calibrateloop:	tfr b,a			; transfer position to a
+		loadareg VDISPLAYPOSREG	; assert position in the vdc
 
-		ldx joydevice,pcr
-		jsr [getchar]
-		bita #JOYFIRE1
-		bne calibrateo
-		bita #JOYLEFT
-		bne calibrateleft
-		bita #JOYRIGHT
-		bne calibrateright
-		bita #JOYUP
-		bne calibrateup
-		bita #JOYDOWN
-calibratenext:	bra calibrateloop
+		ldx joydevice,pcr	; get the joystick dev
+		jsr [getchar]		; wait for one byte
+		bita #JOYFIRE1		; checking for fire ...
+		bne calibrateo		; ... if pressed, jump out
+		bita #JOYLEFT		; ...
+		bne calibrateleft	; pan screen left
+		bita #JOYRIGHT		; ...
+		bne calibrateright	; pan screen right
+		bita #JOYUP		; ...
+		bne calibrateup		; pan screen up
+		bita #JOYDOWN		; ...
+		bra calibrateloop	; back to the top
 
-calibrateo:	rts
+calibrateo:	stb vidpos,pcr		; on the way out save the pos in ram
+		rts
 
-calibrateleft:	incb
-		bra calibratenext
-calibrateright:	decb
-		bra calibratenext
-calibrateup:	addb #0x10
-		bra calibratenext
-calibratedown:	subb #0x10
-		bra calibratenext		
+calibrateleft:	incb			; low nibble is horizontal
+		bra calibrateloop	; assert new position
+calibrateright:	decb			; ...
+		bra calibrateloop	; ...
+calibrateup:	addb #0x10		; high bibble is verticle
+		bra calibrateloop	; assert new posiion
+calibratedown:	subb #0x10		; ...
+		bra calibrateloop	; ...

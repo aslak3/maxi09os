@@ -237,52 +237,56 @@ tryplaceagain:	lbsr randomnumber	; get a "random" number
 controlsnake:	ldx joydevice,pcr
 		jsr [sysread]		; get new stick pos
 		bne controlsnake	; should never happen!
-		bita #JOYLEFT
-		bne moveleft
-		bita #JOYRIGHT
-		bne moveright
-		bita #JOYUP
-		bne moveup
-		bita #JOYDOWN
-		bne movedown
+		bita #JOYLEFT		; ...
+		bne moveleft		; ...
+		bita #JOYRIGHT		; ...
+		bne moveright		; ...
+		bita #JOYUP		; ...
+		bne moveup		; ...
+		bita #JOYDOWN		; ...
+		bne movedown		; ...
 controlsnakeo:	rts
 
 ; also used by "demo snake"
 
-moveleft:	lda #1
-		bra moveleftright
-moveright:	lda #-1
-		bra moveleftright
-moveup:		lda #1
-		bra moveupdown
-movedown:	lda #-1
-		bra moveupdown
+moveleft:	lda #1			; x increases to the right
+		bra moveleftright	; horizontal mover, reversed
+moveright:	lda #-1			; x increases to the right
+		bra moveleftright	; horizontal mover, reversed
+moveup:		lda #1			; y increases down
+		bra moveupdown		; vertical mover, reversed
+movedown:	lda #-1			; ...
+		bra moveupdown		; vertical mover, reversed
 
-moveleftright:	cmpa coldirection,pcr
-		beq controlsnakeo
-		nega
-		sta coldirection,pcr
-		clr rowdirection,pcr
+; first check current direction, then flip it and assert it as a new
+; direction
+
+moveleftright:	cmpa coldirection,pcr	; already going that way?
+		beq controlsnakeo	; yes, so out
+		nega			; flip for the new direction
+		sta coldirection,pcr	; save new diretion left/right
+		clr rowdirection,pcr	; constant up/down
 		rts
-moveupdown:	cmpa rowdirection,pcr
-		beq controlsnakeo
-		nega
-		clr coldirection,pcr
-		sta rowdirection,pcr
+moveupdown:	cmpa rowdirection,pcr	; ...
+		beq controlsnakeo	; ...
+		nega			; ...
+		clr coldirection,pcr	; constant left/right
+		sta rowdirection,pcr	; save new direction up/down
 		rts
 
-randominit:	lda #42
-		sta randomseed
+; rng based on http://codebase64.org/doku.php?id=base:small_fast_8-bit_prng
+
+randominit:	lda #42			; it's the answer to everything
+		sta randomseed,pcr	; save it
 		rts
 
-randomnumber:	lda randomseed
-		beq doeor
-		asla
+randomnumber:	lda randomseed,pcr	; get the current seed
+		beq doeor		; if zero xor
+		asla			; shift it
 		beq noeor		; if the input was $80, skip the eor
-		bcc noeor
+		bcc noeor		; ??
 doeor:		eora #0xf5		; the "magic"
-noeor:		sta randomseed
-
+noeor:		sta randomseed,pcr	; save the seed
 		rts
 
 titlemessage:	.asciz ' SNAKE! '
@@ -309,6 +313,8 @@ drawplayarea::	clra			; top left is 0, 0
 		lbsr printstrat		; and print it
 
 		rts
+
+; todo: this needs rewriting
 
 showlives::	leas -1,s
 		ldb #25
@@ -404,7 +410,7 @@ democontrol:	ldb headpos,pcr		; get current head position
 
 4$:		rts
 
-; Variables
+; variables
 
 lives:		.rmb 1			; number of lives left
 movementdelay:	.rmb 2			; how long to pause between steps
