@@ -141,6 +141,10 @@ getstrloop:	lbsr getchar		; get a char in a
 		beq getstrout		; if it is, then out
 		cmpa #ASC_BS		; backspace pressed?
 		beq getstrbs		; handle backspace
+		cmpa #ASC_SP		; less then space ...
+		blo getstrloop		; ... ignore, and get another
+		bita #0x80		; top bit set?
+		bne getstrloop		; .... ignore (cursor etc)
 		sta ,y+			; add it to string
 		incb			; increment the number of chars
 getstrecho:	lbsr putchar		; echo it
