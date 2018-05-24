@@ -6,16 +6,12 @@
 
 		.globl memoryalloc
 		.globl memoryfree
-		.globl signalalloc
 		.globl forbid
 		.globl permit
 
 		.globl _devicenotimp
 
-SPIUNUSED	.equ 0xff
-
-structstart	DEVICE_SIZE
-structend	SPI_SIZE
+SPIUNUSED	.equ 0xff		; spi device isn't open
 
 		.area RAM
 
@@ -42,9 +38,8 @@ spiopen:	pshs b,y
 		cmpb #SPIUNUSED		; used?
 		bne 1$			; yes, so out we go
 		sta spiunit		; ... as being in use
-		clr SPIOUT		; clear clock and mosi
 		sta SPISELECTS		; set the selects
-		ldx #SPI_SIZE		; allocate device block
+		ldx #DEVICE_SIZE	; allocate device block
 		lbsr memoryalloc	; get the block
 		ldy #spiclose		; save the close pointer
 		sty DEVICE_CLOSE,x	; ... in the device struct
@@ -70,7 +65,6 @@ spiclose:	pshs a
 		lbsr forbid
 		lda #SPIUNUSED		; set the "unused" select value
 		sta SPISELECTS		; write it into the register
-		clr SPIOUT		; clear clock and mosi
 		sta spiunit		; mark host controller not in use
 		lbsr memoryfree		; free the open device handle
 		lbsr permit
@@ -89,181 +83,21 @@ spicontrol:	pshs a
 		puls a
 		rts
 
-; spiread - read a byte into a for the open spi device
-
-spiread:	pshs b
-		clra			; clear the read byte
-
-; bit 7
-
-		ldb #SCLK		; clock high ...
-		stb SPIOUT		; ... set it
-		ldb SPIIN		; get state of miso
-		rorb			; rotate into carry
-		rola			; rotate back into a
-		clr SPIOUT		; clock low
-
-; bit 6
-
-		ldb #SCLK		; clock high ...
-		stb SPIOUT		; ... set it
-		ldb SPIIN		; get state of miso
-		rorb			; rotate into carry
-		rola			; rotate back into a
-		clr SPIOUT		; clock low
-
-
-; bit 5
-
-		ldb #SCLK		; clock high ...
-		stb SPIOUT		; ... set it
-		ldb SPIIN		; get state of miso
-		rorb			; rotate into carry
-		rola			; rotate back into a
-		clr SPIOUT		; clock low
-
-
-; bit 4
-
-		ldb #SCLK		; clock high ...
-		stb SPIOUT		; ... set it
-		ldb SPIIN		; get state of miso
-		rorb			; rotate into carry
-		rola			; rotate back into a
-		clr SPIOUT		; clock low
-
-; bit 3
-
-		ldb #SCLK		; clock high ...
-		stb SPIOUT		; ... set it
-		ldb SPIIN		; get state of miso
-		rorb			; rotate into carry
-		rola			; rotate back into a
-		clr SPIOUT		; clock low
-
-; bit 2
-
-		ldb #SCLK		; clock high ...
-		stb SPIOUT		; ... set it
-		ldb SPIIN		; get state of miso
-		rorb			; rotate into carry
-		rola			; rotate back into a
-		clr SPIOUT		; clock low
-
-; bit 1
-
-		ldb #SCLK		; clock high ...
-		stb SPIOUT		; ... set it
-		ldb SPIIN		; get state of miso
-		rorb			; rotate into carry
-		rola			; rotate back into a
-		clr SPIOUT		; clock low
-
-; bit 0
-
-		ldb #SCLK		; clock high ...
-		stb SPIOUT		; ... set it
-		ldb SPIIN		; get state of miso
-		rorb			; rotate into carry
-		rola			; rotate back into a
-		clr SPIOUT		; clock low
-
+; spiread and spiwrite - read and write a byte into the open spi device
+; this busy waits while disco shifts the byte out (and in). this is
+; simpler then polling a status bit in a register. [ each poll
+; will take 8 cycles (lda; bpl), against 16 ticks to shift a byte
+; in disco. so this will be done some day ]
+spiread:	clra			; for reads send a zero
+spiwrite:	sta SPIOUT		; force 8 bits out
+		nop			; now do 8 nops ...
+		nop			; ... 2 clocks per nop
+		nop			; spi clock runs at 2 ticks ...
+		nop			; ... per bit transfererd
+		nop			; so after 8 nops ... 
+		nop			; ... a byte has been sent
+		nop			; and ...
+		nop			; ... a byte has been is vailable
+		lda SPIIN		; for reading too
 		setzero
-		puls b
-		rts
-
-; spiwrite - send the byte in a
-
-spiwrite:	pshs b
-
-; bit 7
-
-		clrb			; start from nothing
-		lsla			; move the bit to send into carry
-		adcb #0			; add carry so low bit is set for out
-		stb SPIOUT		; output
-		orb #SCLK		; assert the clock by oring it in
-		stb SPIOUT		; output
-		eorb #SCLK		; clear the clock
-		stb SPIOUT		; output
-
-; bit 6
-
-		clrb			; start from nothing
-		lsla			; move the bit to send into carry
-		adcb #0			; add carry so low bit is set for out
-		stb SPIOUT		; output
-		orb #SCLK		; assert the clock by oring it in
-		stb SPIOUT		; output
-		eorb #SCLK		; clear the clock
-		stb SPIOUT		; output
-
-; bit 5
-
-		clrb			; start from nothing
-		lsla			; move the bit to send into carry
-		adcb #0			; add carry so low bit is set for out
-		stb SPIOUT		; output
-		orb #SCLK		; assert the clock by oring it in
-		stb SPIOUT		; output
-		eorb #SCLK		; clear the clock
-		stb SPIOUT		; output
-
-; bit 4
-
-		clrb			; start from nothing
-		lsla			; move the bit to send into carry
-		adcb #0			; add carry so low bit is set for out
-		stb SPIOUT		; output
-		orb #SCLK		; assert the clock by oring it in
-		stb SPIOUT		; output
-		eorb #SCLK		; clear the clock
-		stb SPIOUT		; output
-
-; bit 3
-
-		clrb			; start from nothing
-		lsla			; move the bit to send into carry
-		adcb #0			; add carry so low bit is set for out
-		stb SPIOUT		; output
-		orb #SCLK		; assert the clock by oring it in
-		stb SPIOUT		; output
-		eorb #SCLK		; clear the clock
-		stb SPIOUT		; output
-
-; bit 2
-
-		clrb			; start from nothing
-		lsla			; move the bit to send into carry
-		adcb #0			; add carry so low bit is set for out
-		stb SPIOUT		; output
-		orb #SCLK		; assert the clock by oring it in
-		stb SPIOUT		; output
-		eorb #SCLK		; clear the clock
-		stb SPIOUT		; output
-
-; bit 1
-
-		clrb			; start from nothing
-		lsla			; move the bit to send into carry
-		adcb #0			; add carry so low bit is set for out
-		stb SPIOUT		; output
-		orb #SCLK		; assert the clock by oring it in
-		stb SPIOUT		; output
-		eorb #SCLK		; clear the clock
-		stb SPIOUT		; output
-
-; bit 0
-
-		clrb			; start from nothing
-		lsla			; move the bit to send into carry
-		adcb #0			; add carry so low bit is set for out
-		stb SPIOUT		; output
-		orb #SCLK		; assert the clock by oring it in
-		stb SPIOUT		; output
-		eorb #SCLK		; clear the clock
-		stb SPIOUT		; output
-
-		setzero
-		puls b
 		rts
