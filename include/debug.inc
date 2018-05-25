@@ -66,19 +66,15 @@ label:		.asciz "message"
 		emitdebugstr #label
 .if (register) & DEBUG_REG_A
 		lbsr _debugprinta
-		emitdebugstr #_spacez
 .endif
 .if (register) & DEBUG_REG_B
 		lbsr _debugprintb
-		emitdebugstr #_spacez
 .endif
 .if (register) & DEBUG_REG_X
 		lbsr _debugprintx
-		emitdebugstr #_spacez
 .endif
 .if (register) & DEBUG_REG_Y
 		lbsr _debugprinty
-		emitdebugstr #_spacez
 .endif
 		emitdebugstr #_newlinez
 		puls cc,x

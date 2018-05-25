@@ -47,6 +47,8 @@ _debugprinta::	pshs a,b,cc,x
 		clr ,x+
 		ldx #debugbuffer
 		lbsr _debugprint
+		ldx #_spacez
+		lbsr _debugprint
 		puls a,b,cc,x
 		rts
 
@@ -56,6 +58,8 @@ _debugprintb::	pshs a,b,cc,x
 		lbsr bytetoaschex
 		clr ,x+
 		ldx #debugbuffer
+		lbsr _debugprint
+		ldx #_spacez
 		lbsr _debugprint
 		puls a,b,cc,x
 		rts
@@ -67,6 +71,8 @@ _debugprintx::	pshs a,b,cc,x
 		clr ,x+
 		ldx #debugbuffer
 		lbsr _debugprint
+		ldx #_spacez
+		lbsr _debugprint
 		puls a,b,cc,x
 		rts
 
@@ -76,6 +82,8 @@ _debugprinty::	pshs a,b,cc,x
 		lbsr wordtoaschex
 		clr ,x+
 		ldx #debugbuffer
+		lbsr _debugprint
+		ldx #_spacez
 		lbsr _debugprint
 		puls a,b,cc,x
 		rts
