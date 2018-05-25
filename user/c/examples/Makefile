@@ -5,15 +5,15 @@ LDFLAGS = -T linkerscript-gcc -nostdlib -L../libgcc -L../libc -L../libmaxi09os \
 	-lgcc -lc -lmaxi09os
 else ifeq ($(TOOLCHAIN), cmoc)
 ifeq ($(LD), lwlink)
-LDFLAGS = -r -s linkerscript-cmoc -L/usr/share/cmoc/lib -L../libc -L../libmaxi09os \
-	-lcmoc-std-ecb -lc -lmaxi09os
+LDFLAGS = -r -s linkerscript-lwlink -L/usr/share/cmoc/lib -L../libc -L../libmaxi09os \
+	-lcmoc-crt-ecb -lc -lmaxi09os
 else
-LDFLAGS = --srec -L/usr/share/cmoc/lib -L../libc -L../libmaxi09os
-LIBS = -lcmoc-std-ecb -lc -lmaxi09os
+LDFLAGS = -nodefaultlibs --srec -L../libc -L../libmaxi09os
+LIBS = -lc -lmaxi09os
 endif
 endif
-
-all : prime.bin easter.bin io.bin avail.bin gettime.bin
+#-lcmoc-crt-ecb -L/usr/share/cmoc/lib
+all : prime.bin easter.bin io.bin avail.bin gettime.bin joystick.bin
 
 %.bin : %.o ../libc/libc.a ../libgcc/libgcc.a ../libmaxi09os/libmaxi09os.a
 ifeq ($(LD), cmoc)
