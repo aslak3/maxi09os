@@ -47,7 +47,7 @@ uint8_t getpos(DEVICE joy, int yflag)
 	spidata[1] = m_sysread(joy);
 
 	/* Flip open again so we can get the next reading. */
-	m_syscontrol(joy, 0, NULL);
+	m_syscontrol(joy, 0, 0);
 
 	/* Squish the 10 bit value spread over two bytes into an 8 bit
 	 * byte, discarding the low 2 bits from the 10. */

@@ -6,10 +6,10 @@ LDFLAGS = -T linkerscript-gcc -nostdlib -L../libgcc -L../libc -L../libmaxi09os \
 else ifeq ($(TOOLCHAIN), cmoc)
 ifeq ($(LD), lwlink)
 LDFLAGS = -r -s linkerscript-lwlink -L/usr/share/cmoc/lib -L../libc -L../libmaxi09os \
-	-lcmoc-crt-ecb -lc -lmaxi09os
+	-lcmoc-std-ecb -lc -lmaxi09os
 else
 LDFLAGS = -nodefaultlibs --srec -L../libc -L../libmaxi09os
-LIBS = -lc -lmaxi09os
+LIBS = -lcmoc-std-ecb -lc -lmaxi09os
 endif
 endif
 #-lcmoc-crt-ecb -L/usr/share/cmoc/lib
