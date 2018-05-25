@@ -35,7 +35,8 @@
 		.word 0x0000		; nmi
 		.word reset		; reset
 
-; this is the start of rom
+; this is the start of rom, after the subtable which always starts at
+; 0xc000
 
 		.area ROM
 
@@ -49,7 +50,10 @@ reset:		ldx #RAMSTART		; start at the beginning of ram
 		clr interruptnest	; set interrupt nest counter to 0
 		clr permitnest		; and the permit nest counter to 0
 
-; setup stack to the end of ram so it can go grown backwards
+; setup stack to the end of ram so it can go grown backwards - this stack is
+; used only while task switching has not been started. after task switch
+; has started all stacking, including interrupts, happens on the current
+; tasks stack.
 
 		lds #STACKEND+1		; with no ints, we can setup s
 
