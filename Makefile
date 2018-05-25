@@ -14,7 +14,8 @@ SUBTABLE_REL = main/subtable.rel
 
 SYSTEMVARS_INC = user/include/systemvars.inc
 
-include $(addsuffix Makefile, main/ drivers/ executive/ fs/ lib/ misc/ tasks/)
+include $(addsuffix Makefile, main/ drivers/ executive/ fs/ lib/ misc/ \
+	tasks/ monitor/)
 
 all: $(BIN) $(SYSTEMVARS_INC)
 
