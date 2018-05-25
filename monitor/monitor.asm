@@ -35,6 +35,7 @@
 		.globl sysseek
 		.globl syswrite
 		.globl waitingtasks
+		.globl disassentry
 
 		.globl _newlinez
 
@@ -508,6 +509,19 @@ showtask:	pshs x
 1$:		puls x
 		rts
 
+disass:		lda ,y+			; get the type
+		cmpa #2			; is it a word?
+		lbne generalerror	; validation error
+		ldu ,y++		; start address
+		lda ,y+                 ; get the type
+		cmpa #2                 ; is it a word?
+		lbne generalerror       ; validation error
+		ldx ,y++                ; instruction count
+
+		lbsr disassentry	; do the disassembly
+
+		rts
+
 ; shows the registers as they were when the monitor was entered
 
 ccz:		.asciz 'CC: '
@@ -943,6 +957,7 @@ memorycz:	.asciz 'memory'
 debugmemorycz:	.asciz 'debugmemory'
 taskscz:	.asciz 'tasks'
 taskcz:		.asciz 'task'
+disasscz:	.asciz 'disass'
 
 dosysopencz:	.asciz 'sysopen'
 dosysclosecz:	.asciz 'sysclose'
@@ -998,6 +1013,9 @@ commandarray:	.word helpcz
 
 		.word taskcz
 		.word task
+
+		.word disasscz
+		.word disass
 
 		.word dosysopencz
 		.word dosysopen
