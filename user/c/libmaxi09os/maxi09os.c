@@ -48,7 +48,7 @@ void m_sysclose(DEVICE device)
 
 uint8_t m_sysread(DEVICE device)
 {
-	uint8_t byte = 0;
+	uint8_t read_byte = 0;
 
 #ifdef __GNUC__
 	asm(
@@ -59,42 +59,57 @@ uint8_t m_sysread(DEVICE device)
 	"noerror:\n\t" \
 	"sta %0\n\t" \
 	"out:\n\t"
-	: "=m" (byte) :
+	: "=m" (read_byte) :
 	);
 #else
 	asm {
 	pshs x
 	ldx device
 	jsr [0xc00c]
-	beq noerror
+	beq @noerror
 	sta _ioerror
-	bra out
-	noerror:
-	sta byte
-	out:
+	bra @out
+	@noerror:
+	sta read_byte
+	@out:
 	puls x
 	}
 #endif
-	return byte;
+	return read_byte;
 }
 
-void m_syswrite(DEVICE device, uint8_t byte)
+uint8_t m_syswrite(DEVICE device, uint8_t write_byte)
 {
+	uint8_t read_byte = 0;
+
 #ifdef __GNUC__
 	asm(
 	"tfr b,a\n\t"
 	"jsr [0xc00e]\n\t"
-	: : : "a"
+	"beq noerror\n\t" \
+	"sta _ioerror\n\t" \
+	"bra out\n\t" \
+	"noerror:\n\t" \
+	"sta %0\n\t" \
+	"out:\n\t"
+	: "=m" (read_byte) :
 	);
 #else
 	asm {
-	pshs x,a
+	pshs x
 	ldx device
-	lda byte
+	lda write_byte
 	jsr [0xc00e]
-	puls x,a
+	beq @noerror
+	sta _ioerror
+	bra @out
+	@noerror:
+	sta read_byte
+	@out:
+	puls x
 	}
 #endif
+	return read_byte;
 }
 
 void m_sysseek(DEVICE device, uint16_t offset)
@@ -115,6 +130,28 @@ void m_sysseek(DEVICE device, uint16_t offset)
 	}
 #endif
 }
+
+void m_syscontrol(DEVICE device, uint8_t command, void *param)
+{
+#ifdef __GNUC__
+	asm(
+	"tfr b,a\n\t"
+	"ldy %0\n\t"
+	"jsr [0xc012]\n\t"
+	: : "m" (param) : "y", "a"
+	);
+#else
+	asm {
+	pshs a,x,y
+	ldx device
+	lda command
+	ldy param
+	jsr [0xc012]
+	puls a,x,y
+	}
+#endif
+}
+
 
 /* lib/io */
 

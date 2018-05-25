@@ -19,8 +19,9 @@ typedef void *DEVICE;
 DEVICE m_sysopen(char *name, uint8_t param1, uint8_t param2);
 void m_sysclose(DEVICE device);
 uint8_t m_sysread(DEVICE device);
-void m_syswrite(DEVICE device, uint8_t byte);
+uint8_t m_syswrite(DEVICE device, uint8_t byte);
 void m_sysseek(DEVICE device, uint16_t offset);
+void m_syscontrol(DEVICE device, uint8_t command, void *param);
 
 /* lib io */
 
