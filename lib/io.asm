@@ -72,10 +72,10 @@ putchardefio::	pshs x
 ; put a char to device x, waiting if needed
 
 putchar::	lbsr syswrite		; get the byte into a
-		bne getcharerror	; error? deal with it
+		bne putcharerror	; error? deal with it
 		rts
 putcharerror:	lbsr handleioerror	; deal with error
-		beq getchar
+		beq putchar
 		rts
 
 ; gets a buffer from device at x, memory in y, length in u, notzero if
