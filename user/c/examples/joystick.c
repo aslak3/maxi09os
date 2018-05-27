@@ -51,5 +51,8 @@ uint8_t getpos(DEVICE joy, int yflag)
 
 	/* Squish the 10 bit value spread over two bytes into an 8 bit
 	 * byte, discarding the low 2 bits from the 10. */
-	return ((spidata[0] << 6) | (spidata[1] >> 2));
+	uint8_t pos = ((spidata[0] << 6) | (spidata[1] >> 2));
+
+	/* Reverse the x dir, so left,up is 0. */
+	return yflag ? pos : 255 - pos;
 }
