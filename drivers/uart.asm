@@ -51,6 +51,7 @@ uartprepare:	rts
 
 uartopen:	pshs y
 		lbsr disable
+		ldx #_uartrxhandler	; get the high level handler
 		lbsr _uartllopen	; y has base address
 		lbne 1$			; 0 for good, else bad
 		lbsr _uartllsetbaud	; set the rate from b

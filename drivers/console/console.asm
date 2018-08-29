@@ -142,8 +142,9 @@ setgraphicsub::	pshs a
 
 consoleprep:	pshs a,b,x,y,u
 		debug ^'Console prep start',DEBUG_DRIVER
-		lda #PORTKEYBOARD	; open the port attached to...
-		lbsr _uartllopen	; the keyboard mcu
+		lda #PORTKEYBOARD	; opening the port attached to the mcu
+		ldx #_conrxhandler	; get the high level isr
+		lbsr _uartllopen	; now open it
 		sty kbdbaseaddr		; save the base address
 		ldb #B9600		; the mcu currently uses 9600...
 		lbsr _uartllsetbaud	; for its baud rate
@@ -199,9 +200,10 @@ consoleopen:	ldx #CON_SIZE		; allocate the device struct
 		sty DEVICE_READ,x	; ... in the device struct
 		ldy #consolewrite	; save the write pointer
 		sty DEVICE_WRITE,x	; ... in the device struct
+		ldy #consolecontrol	; control for sending mcu commands
+		sty DEVICE_CONTROL,x	; and control
 		ldy #_devicenotimp	; not implemented ,,,
 		sty DEVICE_SEEK,x	; seek
-		sty DEVICE_CONTROL,x	; and control
 		lbsr signalalloc	; get a signal bit
 		sta DEVICE_SIGNAL,x	; save it in the device struct
 		lbsr clearconsole	; clear the newly opened console
@@ -347,6 +349,19 @@ showgraphic:	ldx graphicmodesub	; run the registered sub
 		beq showactiveo		; do nothing if one not registered
 		jsr ,x
 		bra showactiveo
+
+; send the command in a to the mcu
+
+consolecontrol:	pshs b,y
+		ldy kbdbaseaddr		; get the base address
+1$:		ldb LSR16C654,y		; get status
+		bitb #0b00100000	; transmit empty
+		beq 1$			; wait for port to be idle
+		sta THR16C654,y		; output the char
+		setzero
+		puls b,y
+		rts
+
 ; clear the console at x, which may be active
 
 clearconsole:	pshs y,u
